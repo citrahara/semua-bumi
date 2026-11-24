@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Meja Malam</title>
-  <meta name="description" content="Ruang baca dan kedai teh malam hujan bersama rekan ngobrol AI, deduksi berkas, dan dekorasi 3D." />
+  <title>Atlas Bumi 3D</title>
+  <meta name="description" content="Gim bola bumi 3D interaktif lintas film, buku, sejarah, sains, teknologi, dan seni bersama teman obrolan Ramyeon." />
   <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -12,98 +12,91 @@
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
-  <canvas id="world-canvas" aria-label="Ruang Baca 3D Meja Malam"></canvas>
+  <canvas id="globe-canvas" aria-label="Bola Bumi 3D Interaktif Atlas Bumi"></canvas>
 
+  <!-- Lapisan HUD Mengambang yang Ringan & Lega -->
   <div id="hud-layer" class="hud-layer hidden">
-    <!-- Top Left: Profil, Malam, Token Dekor -->
+    <!-- Kiri Atas: Akun, Skor, Streak, Koleksi, Filter Bidang -->
     <div class="hud-top-left">
-      <div class="garden-stat-bar">
-        <button class="player-avatar-btn" id="btn-open-profile" type="button" title="Profil & Ingatan">
-          <span class="player-initial" id="hud-initial">M</span>
+      <div class="stat-pill-bar">
+        <button class="avatar-btn" id="btn-open-profile" type="button" title="Akun & Pengaturan">
+          <span id="hud-initial">A</span>
         </button>
-        <div class="garden-res-group">
-          <span class="res-pill night-pill" id="hud-night">Malam 1</span>
-          <button class="res-pill stars" id="btn-open-decor-top" type="button" title="Dekor Ruang 3D">
-            <span class="res-ico">★</span>
-            <span id="hud-tokens">1</span>
-            <small id="hud-decor-count">0/8</small>
-          </button>
+        <div class="stat-metric">
+          <span class="stat-label">Skor</span>
+          <strong id="hud-score">0</strong>
         </div>
+        <div class="stat-divider"></div>
+        <div class="stat-metric">
+          <span class="stat-label">Streak</span>
+          <strong id="hud-streak">0</strong>
+        </div>
+        <div class="stat-divider"></div>
+        <button class="collection-pill" id="btn-open-collection" type="button" title="Lihat semua fakta yang sudah terbuka">
+          <span class="collection-dot"></span>
+          <span id="hud-collection">0/55</span>
+        </button>
       </div>
 
-      <div class="tea-status-chip" id="hud-tea-chip" title="Teh di meja saat ini">
-        <span class="tea-dot" id="hud-tea-dot"></span>
-        <span id="hud-tea-name">Teh Melati Murni</span>
+      <div class="filter-bar">
+        <label class="sr-only" for="category-select">Saring bidang pengetahuan</label>
+        <select id="category-select" class="category-select" aria-label="Bidang pengetahuan"></select>
       </div>
     </div>
 
-    <!-- Top Right: Rak Buku, Hujan, Suara, Koneksi AI -->
+    <!-- Tengah Atas: Readout Negara & Koordinat Kursor -->
+    <div class="globe-hover-pill" id="globe-hover-pill" aria-live="polite">
+      Geser untuk memutar bumi · Gulir untuk memperbesar
+    </div>
+
+    <!-- Kanan Atas: Pilihan Mode, Suara, dan Ramyeon -->
     <div class="hud-top-right">
-      <div class="hud-icon-row">
-        <button class="hud-btn" id="btn-open-books" type="button">Rak Buku</button>
-        <button class="hud-btn" id="btn-toggle-rain" type="button">Hujan</button>
-        <button class="hud-btn" id="btn-toggle-sound" type="button">Suara</button>
-        <button class="hud-btn ai-status-btn" id="btn-open-ai" type="button">
-          <span class="ai-dot" id="hud-ai-dot"></span>
-          <span id="hud-ai-label">Koneksi AI</span>
+      <div class="mode-switcher" role="tablist" aria-label="Mode permainan">
+        <button class="mode-tab active" data-mode="mix" type="button">Campur</button>
+        <button class="mode-tab" data-mode="pin" type="button">Tancap Peta</button>
+        <button class="mode-tab" data-mode="duel" type="button">Duel Tahun</button>
+        <button class="mode-tab" data-mode="connect" type="button">Benang Merah</button>
+      </div>
+      <div class="utility-row">
+        <button class="util-btn" id="btn-toggle-sound" type="button">Suara</button>
+        <button class="util-btn ramyeon-btn" id="btn-toggle-ramyeon" type="button">
+          <span class="ramyeon-dot"></span>
+          <span>Ramyeon</span>
         </button>
       </div>
     </div>
 
-    <!-- Banner singkat -->
-    <div class="zone-banner" id="zone-banner" aria-live="polite">
-      <div class="zone-banner-sub" id="zone-banner-sub">MALAM 1</div>
-      <div class="zone-banner-name" id="zone-banner-name">Meja Malam</div>
-    </div>
+    <!-- Tengah Bawah: Kartu Ronde Interaktif Ringkas -->
+    <section class="round-dock" id="round-dock" aria-label="Ronde Aktif">
+      <div class="round-card" id="round-card"></div>
+    </section>
 
-    <!-- Bottom Left: Aksi Taktil Meja (Seduh Teh, Berkas Malam, Dekor 3D) -->
-    <div class="salon-dock-left">
-      <button class="salon-action-btn primary-case" id="btn-open-case" type="button">
-        <strong id="case-btn-title">Berkas Malam 1</strong>
-        <span id="case-btn-sub">Nadia · Draf Siaran Pers</span>
-      </button>
-      <div class="salon-action-row">
-        <button class="salon-action-btn" id="btn-open-tea" type="button">
-          <strong>Seduh Teh</strong>
-          <span>Racik 3 bahan</span>
-        </button>
-        <button class="salon-action-btn" id="btn-open-decor" type="button">
-          <strong>Dekor 3D</strong>
-          <span id="decor-btn-sub">8 sudut ruang</span>
-        </button>
-      </div>
-    </div>
-
-    <!-- Right Side: Panel Obrolan Terbuka dengan Arka -->
-    <aside class="arka-panel" id="arka-panel" aria-label="Obrolan dengan Arka">
-      <div class="arka-head">
+    <!-- Kanan: Laci Obrolan & Saran Ramyeon (100% Offline, Opsional) -->
+    <aside class="ramyeon-drawer hidden" id="ramyeon-drawer" aria-label="Obrolan dengan Ramyeon">
+      <div class="ramyeon-head">
         <div>
-          <strong>Arka</strong>
-          <span class="arka-mode" id="arka-mode-tag">Mode Lokal</span>
+          <strong>Ramyeon</strong>
+          <span class="ramyeon-sub">Teman saran dan obrolan</span>
         </div>
-        <button class="arka-min-btn" id="btn-toggle-chat" type="button" title="Lipat obrolan">Tutup</button>
+        <button class="icon-close-btn" id="btn-close-ramyeon" type="button" aria-label="Tutup Ramyeon">Tutup</button>
       </div>
-      <div class="arka-messages" id="arka-messages"></div>
-      <div class="arka-starters" id="arka-starters"></div>
-      <form class="arka-form" id="arka-form">
-        <input id="arka-input" class="arka-input" type="text" autocomplete="off" placeholder="Tulis apa saja ke Arka..." />
-        <button class="arka-send" id="arka-send-btn" type="submit">Kirim</button>
+      <div class="ramyeon-messages" id="ramyeon-messages"></div>
+      <div class="ramyeon-chips" id="ramyeon-chips"></div>
+      <form class="ramyeon-form" id="ramyeon-form">
+        <input id="ramyeon-input" class="ramyeon-input" type="text" autocomplete="off" placeholder="Tanya saran film, buku, atau petunjuk..." />
+        <button class="ramyeon-send" type="submit">Kirim</button>
       </form>
     </aside>
-
-    <!-- Tombol buka ulang obrolan saat dilipat -->
-    <button class="arka-reopen-btn hidden" id="btn-reopen-chat" type="button">Ngobrol dengan Arka</button>
   </div>
 
-  <!-- Daftar Akun 2 Langkah (Username + 3 Soal Verifikasi) -->
-  <div id="title-overlay" class="modal-backdrop">
-    <div id="auth-card-root" class="title-card"></div>
-  </div>
+  <!-- Notifikasi Singkat -->
+  <div id="toast" class="toast" aria-live="polite"></div>
 
-  <!-- Overlay Berkas Deduksi, Baki Teh, Rak Buku, Dekor 3D, Koneksi AI, Profil -->
-  <div id="overlay-root"></div>
+  <!-- Overlay Pendaftaran 2 Langkah (Username + Tes Singkat 3 Soal) -->
+  <div id="auth-overlay" class="modal-overlay hidden"></div>
 
-  <div id="toast" class="toast" role="status" aria-live="assertive"></div>
+  <!-- Modal Koleksi Penemuan / Profil -->
+  <div id="modal-overlay" class="modal-overlay hidden"></div>
 
   <script type="module" src="./js/main.js"></script>
 </body>
