@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Warkop Impact | RPG Jelajah Peta, Quest Wawasan, Bahasa & Segel Matematika</title>
+  <meta name="description" content="Game RPG 2D dunia terbuka bergaya petualangan quest: gerakkan tokohmu keliling 4 wilayah, selesaikan quest wawasan dan bahasa, lalu pecahkan Segel Matematika untuk naik level!" />
+  <meta property="og:title" content="Warkop Impact | RPG Jelajah Peta & Segel Matematika" />
+  <meta property="og:description" content="Jalan-jalan di dunia 2D, bantu warga warkop, pecahkan segel matematika buat buka level baru, dan taklukkan Panggung Orator!" />
+  <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <!-- Fullscreen 60FPS World Canvas -->
+  <canvas id="world-canvas" aria-label="Peta dunia Warkop Impact"></canvas>
+
+  <!-- Genshin-Style HUD Layer -->
+  <div id="hud-layer" class="hud-layer hidden">
+    <!-- Top Left: Player Profile + Active Quest Tracker -->
+    <div class="hud-top-left">
+      <div class="player-pill" id="btn-open-profile" role="button" tabindex="0" title="Buka Kartu Petualang">
+        <div class="player-avatar-mini" id="hud-avatar"></div>
+        <div class="player-meta">
+          <div class="player-name-row">
+            <span id="hud-player-name">Petualang</span>
+            <span class="ar-badge" id="hud-ar-badge">LV 1</span>
+          </div>
+          <div class="xp-bar-track">
+            <div class="xp-bar-fill" id="hud-xp-fill" style="width:0%"></div>
+          </div>
+          <div class="player-sub">
+            <span id="hud-zone-mini">Desa Warkop</span>
+            <span>·</span>
+            <span id="hud-coins">0 Koin</span>
+          </div>
+        </div>
+      </div>
+
+      <button class="quest-tracker" id="btn-quest-tracker" type="button">
+        <div class="quest-chapter" id="quest-chapter">MISI UTAMA I</div>
+        <div class="quest-title-row">
+          <span class="quest-diamond" aria-hidden="true">◆</span>
+          <span class="quest-title" id="quest-title">Temui Bang Jaja</span>
+        </div>
+        <div class="quest-dist" id="quest-dist">Jarak: 12m</div>
+      </button>
+    </div>
+
+    <!-- Top Right: Interactive Minimap + Action Buttons -->
+    <div class="hud-top-right">
+      <button class="minimap-frame" id="btn-open-map" type="button" title="Buka Peta Dunia & Teleportasi (M)">
+        <canvas id="minimap-canvas" width="168" height="112"></canvas>
+        <span class="minimap-tag">PETA [M]</span>
+      </button>
+
+      <div class="hud-icon-row">
+        <button class="hud-btn" id="btn-open-codex" type="button" title="Buka Codex Wawasan & Bahasa (C)">
+          Codex <span id="hud-codex-count">0/60</span>
+        </button>
+        <button class="hud-btn" id="btn-toggle-sound" type="button" title="Matikan atau nyalakan suara">
+          Suara
+        </button>
+      </div>
+    </div>
+
+    <!-- Zone Entry Banner (muncul saat pindah wilayah) -->
+    <div class="zone-banner" id="zone-banner" aria-live="polite">
+      <div class="zone-banner-sub" id="zone-banner-sub">WILAYAH BARU</div>
+      <div class="zone-banner-name" id="zone-banner-name">Desa Warkop</div>
+    </div>
+
+    <!-- Bottom Center: Contextual Interact Prompt -->
+    <button class="interact-prompt hidden" id="btn-interact" type="button">
+      <span class="key-cap">E</span>
+      <span id="interact-label">Bicara dengan Bang Jaja</span>
+    </button>
+
+    <!-- Desktop Controls Hint -->
+    <div class="controls-hint" id="controls-hint">
+      Gerak: WASD / Panah / Klik Peta · Lari: Shift · Aksi: E · Peta: M · Codex: C
+    </div>
+
+    <!-- Mobile Touch D-Pad + Action Controls -->
+    <div class="touch-controls" id="touch-controls">
+      <div class="dpad">
+        <button class="dpad-btn up" data-dir="up" type="button" aria-label="Jalan ke atas">▲</button>
+        <button class="dpad-btn left" data-dir="left" type="button" aria-label="Jalan ke kiri">◀</button>
+        <button class="dpad-btn right" data-dir="right" type="button" aria-label="Jalan ke kanan">▶</button>
+        <button class="dpad-btn down" data-dir="down" type="button" aria-label="Jalan ke bawah">▼</button>
+      </div>
+      <div class="touch-right-btns">
+        <button class="touch-action-btn sprint" id="btn-touch-sprint" type="button">LARI</button>
+        <button class="touch-action-btn act" id="btn-touch-act" type="button">AKSI</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Title Overlay (transparan di atas dunia hidup 2D!) -->
+  <div id="title-overlay" class="modal-backdrop">
+    <div class="title-card">
+      <div class="title-kicker">OPEN-WORLD RPG · WAWASAN, BAHASA & SEGEL MATEMATIKA</div>
+      <h1 class="title-logo">WARKOP IMPACT</h1>
+      <p class="title-desc">
+        Jelajahi 4 wilayah dunia 2D bersama <strong>Ciko</strong> si roh kopi. Bantu warga menumpas mitos, naikkan level diksi, menangkan duel logika, lalu pecahkan <strong>Segel Matematika</strong> di tiap jembatan untuk membuka level baru!
+      </p>
+
+      <div class="title-form">
+        <label class="title-label" for="input-player-name">Nama Petualangmu</label>
+        <input id="input-player-name" class="rpg-input" type="text" maxlength="16" placeholder="Ketik namamu..." value="Petualang" />
+      </div>
+
+      <div class="title-actions">
+        <button class="rpg-btn primary" id="btn-start-adventure" type="button">Masuk Dunia Warkop</button>
+        <button class="rpg-btn ghost hidden" id="btn-reset-adventure" type="button">Mulai Ulang dari Lv. 1</button>
+      </div>
+
+      <div class="title-mini-feats">
+        <span>Gerak bebas WASD / Klik / Joystick HP</span>
+        <span>4 Wilayah + 3 Segel Matematika</span>
+        <span>7 Peti Harta & 4 Waypoint Teleport</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dynamic Overlay Container (Dialogue, Battle, Math Seal, Stage Mic, World Map, Codex, Profile) -->
+  <div id="overlay-root"></div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="toast" role="status" aria-live="assertive"></div>
+
+  <script type="module" src="./js/main.js"></script>
+</body>
+</html>
