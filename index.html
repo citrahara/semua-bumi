@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Taman Kronik</title>
-  <meta name="description" content="Puzzle Match-3 bertingkat dan renovasi taman 3D dalam buku." />
+  <title>Meja Malam</title>
+  <meta name="description" content="Ruang baca dan kedai teh malam hujan bersama rekan ngobrol AI, deduksi berkas, dan dekorasi 3D." />
   <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -12,117 +12,95 @@
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
-  <canvas id="world-canvas" aria-label="Taman 3D Taman Kronik"></canvas>
+  <canvas id="world-canvas" aria-label="Ruang Baca 3D Meja Malam"></canvas>
 
   <div id="hud-layer" class="hud-layer hidden">
-    <!-- Top Left: Akun, Nyawa, Bintang, Koin, Tugas -->
+    <!-- Top Left: Profil, Malam, Token Dekor -->
     <div class="hud-top-left">
       <div class="garden-stat-bar">
-        <button class="player-avatar-btn" id="btn-open-profile" type="button" title="Profil">
-          <span class="player-initial" id="hud-initial">T</span>
+        <button class="player-avatar-btn" id="btn-open-profile" type="button" title="Profil & Ingatan">
+          <span class="player-initial" id="hud-initial">M</span>
         </button>
         <div class="garden-res-group">
-          <button class="res-pill hearts" id="btn-refill-heart" type="button" title="Isi nyawa">
-            <span class="res-ico">♥</span>
-            <span id="hud-lives">5/5</span>
-          </button>
-          <span class="res-pill stars" title="Bintang renovasi">
+          <span class="res-pill night-pill" id="hud-night">Malam 1</span>
+          <button class="res-pill stars" id="btn-open-decor-top" type="button" title="Dekor Ruang 3D">
             <span class="res-ico">★</span>
-            <span id="hud-stars">1</span>
-          </span>
-          <span class="res-pill coins" title="Koin">
-            <span id="hud-coins">120</span>
-            <small>Koin</small>
-          </span>
+            <span id="hud-tokens">1</span>
+            <small id="hud-decor-count">0/8</small>
+          </button>
         </div>
       </div>
 
-      <button class="quest-ribbon" id="btn-open-tasks" type="button" title="Daftar renovasi (T)">
-        <span class="quest-diamond" aria-hidden="true">★</span>
-        <span class="quest-title" id="hud-next-task">Gerbang Utama · 1 ★</span>
-        <span class="quest-dist" id="hud-task-progress">0/12</span>
-      </button>
+      <div class="tea-status-chip" id="hud-tea-chip" title="Teh di meja saat ini">
+        <span class="tea-dot" id="hud-tea-dot"></span>
+        <span id="hud-tea-name">Teh Melati Murni</span>
+      </div>
     </div>
 
-    <!-- Top Right: Arsip, Suara, Kontrol -->
+    <!-- Top Right: Rak Buku, Hujan, Suara, Koneksi AI -->
     <div class="hud-top-right">
       <div class="hud-icon-row">
-        <button class="hud-btn" id="btn-open-study" type="button" title="Arsip (C)">Arsip <span id="hud-codex-count">0/78</span></button>
+        <button class="hud-btn" id="btn-open-books" type="button">Rak Buku</button>
+        <button class="hud-btn" id="btn-toggle-rain" type="button">Hujan</button>
         <button class="hud-btn" id="btn-toggle-sound" type="button">Suara</button>
-        <button class="hud-btn help-circle" id="btn-toggle-help" type="button" title="Kontrol">?</button>
-      </div>
-      <div class="help-popover hidden" id="help-popover">
-        <div><strong>Gerak:</strong> WASD / klik tanah · <strong>Lari:</strong> Shift</div>
-        <div><strong>Kamera:</strong> seret kursor / scroll zoom / [V] POV bebas</div>
-        <div><strong>Pintasan:</strong> [E] Renovasi · [P] Puzzle · [T] Area · [C] Arsip</div>
+        <button class="hud-btn ai-status-btn" id="btn-open-ai" type="button">
+          <span class="ai-dot" id="hud-ai-dot"></span>
+          <span id="hud-ai-label">Koneksi AI</span>
+        </button>
       </div>
     </div>
 
     <!-- Banner singkat -->
     <div class="zone-banner" id="zone-banner" aria-live="polite">
-      <div class="zone-banner-sub" id="zone-banner-sub">RENOVASI</div>
-      <div class="zone-banner-name" id="zone-banner-name">Gerbang Utama</div>
+      <div class="zone-banner-sub" id="zone-banner-sub">MALAM 1</div>
+      <div class="zone-banner-name" id="zone-banner-name">Meja Malam</div>
     </div>
 
-    <!-- Bottom Left: Peta Taman & Area Terkunci -->
-    <div class="estate-minimap" id="estate-minimap">
-      <div class="mm-head">
-        <span>Peta Taman</span>
-        <strong id="mm-progress">0/12</strong>
-      </div>
-      <div class="mm-canvas" id="mm-canvas">
-        <svg class="mm-bg" viewBox="0 0 140 110" aria-hidden="true">
-          <rect x="4" y="4" width="132" height="102" rx="8" fill="#233022" stroke="#6B5C47" stroke-width="1.5" />
-          <path d="M70 100 L70 14 M22 56 L118 56" stroke="#8C7E68" stroke-width="4" stroke-linecap="round" opacity="0.5" />
-          <circle cx="70" cy="56" r="10" fill="#2D4A52" opacity="0.7" />
-          <ellipse cx="31" cy="74" rx="14" ry="9" fill="#2D4A52" opacity="0.75" />
-        </svg>
-        <div class="mm-pins" id="mm-pins"></div>
-        <div class="mm-player" id="mm-player" title="Posisi kamu"></div>
-      </div>
-      <div class="mm-legend">
-        <span><i class="lg-dot me"></i>Kamu</span>
-        <span><i class="lg-dot ready"></i>Siap</span>
-        <span><i class="lg-dot locked"></i>Kunci</span>
-        <span><i class="lg-dot open"></i>Buka</span>
-      </div>
-    </div>
-
-    <!-- Bottom Center: Interaksi Kontekstual -->
-    <button class="interact-prompt hidden" id="btn-interact" type="button">
-      <span class="key-cap">E</span>
-      <span id="interact-label">Gerbang Utama</span>
-    </button>
-
-    <!-- Bottom Right: Tombol Main Puzzle -->
-    <div class="hud-bottom-right">
-      <button class="play-level-btn" id="btn-play-level" type="button">
-        <span class="play-diff-tag normal" id="play-diff-tag">Normal · +1 ★</span>
-        <strong id="play-level-label">Main · Level 1</strong>
+    <!-- Bottom Left: Aksi Taktil Meja (Seduh Teh, Berkas Malam, Dekor 3D) -->
+    <div class="salon-dock-left">
+      <button class="salon-action-btn primary-case" id="btn-open-case" type="button">
+        <strong id="case-btn-title">Berkas Malam 1</strong>
+        <span id="case-btn-sub">Nadia · Draf Siaran Pers</span>
       </button>
+      <div class="salon-action-row">
+        <button class="salon-action-btn" id="btn-open-tea" type="button">
+          <strong>Seduh Teh</strong>
+          <span>Racik 3 bahan</span>
+        </button>
+        <button class="salon-action-btn" id="btn-open-decor" type="button">
+          <strong>Dekor 3D</strong>
+          <span id="decor-btn-sub">8 sudut ruang</span>
+        </button>
+      </div>
     </div>
 
-    <!-- Kontrol Sentuh Mobile -->
-    <div class="touch-controls" id="touch-controls">
-      <div class="dpad">
-        <button class="dpad-btn up" data-dir="up" type="button" aria-label="Atas">▲</button>
-        <button class="dpad-btn left" data-dir="left" type="button" aria-label="Kiri">◀</button>
-        <button class="dpad-btn right" data-dir="right" type="button" aria-label="Kanan">▶</button>
-        <button class="dpad-btn down" data-dir="down" type="button" aria-label="Bawah">▼</button>
+    <!-- Right Side: Panel Obrolan Terbuka dengan Arka -->
+    <aside class="arka-panel" id="arka-panel" aria-label="Obrolan dengan Arka">
+      <div class="arka-head">
+        <div>
+          <strong>Arka</strong>
+          <span class="arka-mode" id="arka-mode-tag">Mode Lokal</span>
+        </div>
+        <button class="arka-min-btn" id="btn-toggle-chat" type="button" title="Lipat obrolan">Tutup</button>
       </div>
-      <div class="touch-right-btns">
-        <button class="touch-action-btn act" id="btn-touch-act" type="button">AKSI</button>
-        <button class="touch-action-btn strike" id="btn-touch-play" type="button">MAIN</button>
-      </div>
-    </div>
+      <div class="arka-messages" id="arka-messages"></div>
+      <div class="arka-starters" id="arka-starters"></div>
+      <form class="arka-form" id="arka-form">
+        <input id="arka-input" class="arka-input" type="text" autocomplete="off" placeholder="Tulis apa saja ke Arka..." />
+        <button class="arka-send" id="arka-send-btn" type="submit">Kirim</button>
+      </form>
+    </aside>
+
+    <!-- Tombol buka ulang obrolan saat dilipat -->
+    <button class="arka-reopen-btn hidden" id="btn-reopen-chat" type="button">Ngobrol dengan Arka</button>
   </div>
 
-  <!-- Layar Daftar / Masuk Akun (Tanpa Pilih Karakter) -->
+  <!-- Daftar Akun 2 Langkah (Username + 3 Soal Verifikasi) -->
   <div id="title-overlay" class="modal-backdrop">
     <div id="auth-card-root" class="title-card"></div>
   </div>
 
-  <!-- Overlay Puzzle, Pratinjau Renovasi 3D, Daftar Area, Arsip, Profil -->
+  <!-- Overlay Berkas Deduksi, Baki Teh, Rak Buku, Dekor 3D, Koneksi AI, Profil -->
   <div id="overlay-root"></div>
 
   <div id="toast" class="toast" role="status" aria-live="assertive"></div>

@@ -5,10 +5,73 @@ class RpgAudio {
     this.ctx = null;
     this.muted = false;
     this.lastStepAt = 0;
+    this.rainNode = null;
+    this.rainGain = null;
+    this.rainWanted = false;
   }
 
   setMuted(value) {
     this.muted = Boolean(value);
+    if (this.muted) this.stopRainNodes();
+    else if (this.rainWanted) this.startRainNodes();
+  }
+
+  setRain(enabled) {
+    this.rainWanted = Boolean(enabled);
+    if (!this.rainWanted || this.muted) {
+      this.stopRainNodes();
+    } else {
+      this.startRainNodes();
+    }
+  }
+
+  startRainNodes() {
+    if (this.rainNode) return;
+    const ctx = this.ensureContext();
+    if (!ctx) return;
+    const len = ctx.sampleRate * 2;
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    let last = 0;
+    for (let i = 0; i < len; i++) {
+      const white = Math.random() * 2 - 1;
+      last = (last + 0.03 * white) / 1.03;
+      data[i] = last * 1.8;
+    }
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.loop = true;
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.value = 950;
+    filter.Q.value = 0.65;
+
+    const gain = ctx.createGain();
+    gain.gain.value = 0.06;
+
+    src.connect(filter);
+    filter.connect(gain);
+    gain.connect(ctx.destination);
+    src.start();
+    this.rainNode = src;
+    this.rainGain = gain;
+  }
+
+  stopRainNodes() {
+    if (this.rainNode) {
+      try {
+        this.rainNode.stop();
+      } catch {
+        // Abaikan jika sudah berhenti
+      }
+      this.rainNode.disconnect();
+      this.rainNode = null;
+    }
+    if (this.rainGain) {
+      this.rainGain.disconnect();
+      this.rainGain = null;
+    }
   }
 
   ensureContext() {
@@ -181,6 +244,15 @@ class RpgAudio {
     notes.forEach((n, i) => {
       this.playTone(n, i === notes.length - 1 ? 0.45 : 0.14, 'triangle', 0.14, i * 0.07);
     });
+  }
+
+  playTeaPour() {
+    this.playTone(320, 0.18, 'sine', 0.08, 0, 520);
+    this.playTone(540, 0.24, 'triangle', 0.07, 0.12, 420);
+  }
+
+  playMark() {
+    this.playTone(520, 0.07, 'sine', 0.07, 0, 680);
   }
 }
 

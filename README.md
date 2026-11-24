@@ -1,14 +1,14 @@
-# Taman Kronik
+# Meja Malam
 
-Game puzzle Match-3 bertingkat dengan renovasi taman 3D dalam buku terbuka.
+Ruang baca dan kedai teh malam hujan 3D bersama rekan ngobrol AI live (BYOK), meja deduksi berkas taktil, baki racikan teh, rak buku referensi, dan 8 sudut dekorasi 3D berbeda struktur.
 
 ## Fitur Utama
 
-- **Pendaftaran Akun 2 Langkah**: Buat username lalu selesaikan 3 soal seleksi singkat (bahasa, hitung, dan nalar) tanpa pemilihan karakter.
-- **Papan Match-3 Bertahap**: Dimulai dari ukuran `5x5` di Level 1 lalu membesar sampai `8x8` pada level lanjutan, dilengkapi aset buah dan Power-Up 3D realistis (`assets/tiles/*.png`), animasi geser dan pantul halus, serta Power-Up yang sepenuhnya menunggu kendali pemain.
-- **Micro-Quest Ringkas**: Satu soal singkat (Bahasa Korea dengan suara `ko-KR`, Sastra Klasik, Diksi KBBI VI, Keamanan Siber, Fakta, Logika, atau Hitung) muncul saat membuka Segel Ilmu, mengaktifkan Booster gratis, menambah `+5 Langkah`, atau mengisi nyawa (`♥`).
-- **Pratinjau Renovasi 3D Langsung**: Memilih salah satu dari 12 area taman mengarahkan kamera 3D ke lokasi objek dan menampilkan 3 pilihan gaya secara langsung sebelum memakai bintang (`★`).
-- **Peta Taman Interaktif**: Menampilkan posisi pemain saat ini serta status seluruh 12 area (`Siap`, `Kunci`, dan `Buka`) dengan penanda gembok 3D di taman.
+- **Teman Ngobrol AI Live (BYOK)**: Pasang API Key milikmu (Google Gemini, OpenAI, OpenRouter, atau Groq) lewat menu `Koneksi AI` untuk mengobrol bebas dengan Arka tentang topik apa saja. Tersedia mode lokal bawaan jika belum memasang API Key, lengkap dengan catatan ingatan lintas sesi.
+- **Meja Deduksi Taktil (tanpa kuis A/B/C/D)**: Tamu malam membawa draf siaran pers, catatan bahasa Korea (dengan audio `ko-KR`), log insiden siber, atau kliping opini. Tandai kalimat janggal langsung di dokumen, periksa Rak Buku Referensi di sampingnya, lalu rangkai kesimpulan. Tersedia juga generator berkas dari topik bebas jika AI Live aktif.
+- **Baki Seduh Teh & Rak Referensi**: Racik 3 dari 6 bahan botani (Teh Hitam, Melati, Jahe, Madu, Mint, Kayu Manis) yang langsung mengubah warna teh beruap di meja 3D serta memengaruhi reaksi tamu.
+- **8 Dekorasi 3D Berbeda Struktur**: Setiap slot ruang dan taman hujan memiliki 3 bentuk struktur 3D yang benar-benar berbeda (misalnya Lampu Banker vs Lentera Kayu vs Tiga Lilin, Mesin Tik vs Gramofon vs Globe, Air Mancur vs Sakura & Lentera Batu vs Paviliun Kaca) dengan pratinjau 3D langsung sebelum dipasang.
+- **Pendaftaran 2 Langkah**: Buat username lalu selesaikan 3 soal singkat tanpa pemilihan karakter.
 
 ## Menjalankan Secara Lokal
 
