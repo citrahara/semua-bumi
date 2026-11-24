@@ -32,6 +32,14 @@ import {
 } from './world.js';
 import { CAST, renderCharacterSVG } from './characters.js';
 import { WorldRenderer } from './renderer.js';
+import { WorldRenderer3D } from './renderer3d.js';
+import {
+  openVintagePrologue,
+  openStandUpStage,
+  openEndlessTowerModal,
+  openDailyCommissionsModal
+} from './standup_ui.js';
+import { getTodayWIBKey } from './data/standup.js';
 import { audio } from './audio.js';
 import { MicStudio, detectKeywords } from './speech.js';
 import {
@@ -76,6 +84,7 @@ const hudXpFill = document.getElementById('hud-xp-fill');
 const hudZoneMini = document.getElementById('hud-zone-mini');
 const hudCoins = document.getElementById('hud-coins');
 const hudCodexCount = document.getElementById('hud-codex-count');
+const hudDailyCount = document.getElementById('hud-daily-count');
 const btnToggleSound = document.getElementById('btn-toggle-sound');
 
 const questChapterEl = document.getElementById('quest-chapter');
@@ -91,7 +100,16 @@ const interactLabel = document.getElementById('interact-label');
 let save = getActiveAccount() || createFreshAccount('Tamu', 'orator');
 audio.setMuted(save.muted);
 
-const renderer = new WorldRenderer(worldCanvas, minimapCanvas);
+// Gunakan Engine 3D Three.js dengan fallback aman ke 2D Canvas jika perangkat tidak mendukung WebGL
+let renderer;
+let is3D = false;
+try {
+  renderer = new WorldRenderer3D(worldCanvas, minimapCanvas);
+  is3D = true;
+} catch {
+  renderer = new WorldRenderer(worldCanvas, minimapCanvas);
+  is3D = false;
+}
 renderer.resize();
 window.addEventListener('resize', () => renderer.resize());
 
@@ -198,7 +216,26 @@ function awardAndNotify({ xp = 0, coins = 0, codexId = null, category = null }) 
   return save.level > prevLvl;
 }
 
+function ensureTodayDaily() {
+  const today = getTodayWIBKey();
+  if (!save.dailyState || save.dailyState.date !== today) {
+    save.dailyState = { date: today, completed: [], bonusClaimed: false };
+    persistSave(save);
+  }
+}
+
+function markDailyCommission(commId) {
+  ensureTodayDaily();
+  if (!save.dailyState.completed.includes(commId)) {
+    save.dailyState.completed.push(commId);
+    persistSave(save);
+    showToast(`Komisi Harian selesai (${save.dailyState.completed.length}/4)!`);
+    refreshHud();
+  }
+}
+
 function refreshHud() {
+  ensureTodayDaily();
   const cls = getCharacterClass(save.characterClass);
   hudAvatar.innerHTML = renderCharacterSVG(cls.portraitKey, 'idle');
   hudPlayerName.textContent = `@${save.username || save.playerName || 'Petualang'}`;
@@ -211,6 +248,7 @@ function refreshHud() {
   hudZoneMini.textContent = zone.name;
   hudCoins.textContent = `${save.coins} Koin`;
   hudCodexCount.textContent = `${save.codexIds.length}/${TOTAL_CODEX}`;
+  if (hudDailyCount) hudDailyCount.textContent = `${save.dailyState.completed.length}/4`;
   btnToggleSound.textContent = save.muted ? 'Mati' : 'Suara';
 
   const q = getActiveMainQuest(save);
@@ -250,12 +288,20 @@ function findNearestInteractable() {
     if (d < bestDist) {
       bestDist = d;
       const isAc = npc.challengeType.startsWith('academy_');
+      const label =
+        npc.challengeType === 'standup'
+          ? 'Naik Panggung Open-Mic Stand-Up 1894'
+          : npc.challengeType === 'endless_tower'
+          ? `Masuki Menara Abadi (Lantai ${(save.towerFloor || 0) + 1})`
+          : isAc
+          ? `Masuk Ruang Belajar: ${CAST[npc.id].name}`
+          : `Bicara dengan ${CAST[npc.id].name}`;
       best = {
         kind: 'npc',
         id: npc.id,
         x: npc.x,
         y: npc.y,
-        label: isAc ? `Masuk Ruang Belajar: ${CAST[npc.id].name}` : `Bicara dengan ${CAST[npc.id].name}`,
+        label,
         data: npc
       };
     }
@@ -370,6 +416,7 @@ function startEnemyCombat(enemy) {
       });
       renderer.spawnBurst(enemy.curX, enemy.curY, '#48DBFB', 36);
       enemyBumpCooldown = 4.0;
+      markDailyCommission('comm-combat');
       closeOverlay();
       showZoneBanner('DUEL SIBER MENANG!', `${enemy.name} Berhasil Dilumpuhkan!`);
       sayCiko('Gacor! Pertahanan & seranganmu makin tajam!', 4);
@@ -404,6 +451,7 @@ function handleAcademyComplete({ academyId, badgeName, npcId, xp, coins }) {
   });
   audio.playVictory();
   renderer.spawnBurst(player.x, player.y, '#FFD166', 32);
+  markDailyCommission('comm-study');
   closeOverlay();
   showZoneBanner(firstTime ? `LENCANA DIRAIH: ${badgeName.toUpperCase()}` : 'LATIHAN SELESAI!', `Ilmu baru berhasil dikuasai (+${firstTime ? xp : Math.round(xp * 0.4)} XP)`);
   sayCiko(`Keren! ${badgeName} sekarang terpajang di profilmu!`, 4.4);
@@ -666,6 +714,31 @@ function openNpcDialogue(npc) {
       });
     }
     renderStory();
+    return;
+  }
+
+  // Panggung Stand-Up Comedy Vintage 1894 & Menara Kronik Abadi (Endless!)
+  if (npc.challengeType === 'standup') {
+    openStandUpStage({
+      overlayRoot,
+      save,
+      mic,
+      onComplete: ({ xp, coins, fame }) => {
+        save.comedyFame = (save.comedyFame || 0) + fame;
+        awardAndNotify({ xp, coins, category: 'stage' });
+        markDailyCommission('comm-standup');
+        renderer.spawnBurst(npc.x, npc.y, '#FFD166', 34);
+        closeOverlay();
+        showZoneBanner('OPEN-MIC PECAH!', `Reputasi Komika: ${save.comedyFame}`);
+        sayCiko('HAHA! Penonton 1894 sampai minta tambah satu bit lagi!', 4.5);
+      },
+      onClose: closeOverlay
+    });
+    return;
+  }
+
+  if (npc.challengeType === 'endless_tower') {
+    openTowerEntry();
     return;
   }
 
@@ -1400,6 +1473,75 @@ function openCodexModal() {
   renderCodex();
 }
 
+function openTowerEntry() {
+  modalOpen = true;
+  openEndlessTowerModal({
+    overlayRoot,
+    save,
+    onStartFloorCombat: (scaledEnemy, floorNum) => {
+      launchCyberCombat({
+        overlayRoot,
+        save,
+        enemy: scaledEnemy,
+        onVictory: () => {
+          save.towerFloor = Math.max(save.towerFloor || 0, floorNum);
+          awardAndNotify({ xp: scaledEnemy.xpReward, coins: scaledEnemy.coinReward, category: 'logic' });
+          markDailyCommission('comm-tower');
+          markDailyCommission('comm-combat');
+          renderer.spawnBurst(player.x, player.y, '#48DBFB', 36);
+          closeOverlay();
+          showZoneBanner(`MENARA ABADI · LANTAI ${floorNum} TAKLUK!`, `Rekor Baru: Lantai ${save.towerFloor}`);
+          sayCiko(`Gacor! Lantai ${floorNum + 1} sudah menunggu!`, 4.2);
+        },
+        onDefeat: () => {
+          closeOverlay();
+          showToast(`Coba lagi Lantai ${floorNum} dengan jurus BERTAHAN & COUNTER!`);
+        },
+        onFlee: closeOverlay
+      });
+    },
+    onFloorCleared: (floorNum, xp, coins) => {
+      save.towerFloor = Math.max(save.towerFloor || 0, floorNum);
+      awardAndNotify({ xp, coins, category: 'math' });
+      markDailyCommission('comm-tower');
+      audio.playVictory();
+      renderer.spawnBurst(player.x, player.y, '#FFD166', 36);
+      closeOverlay();
+      showZoneBanner(`MENARA ABADI · LANTAI ${floorNum} TAKLUK!`, `Lanjut Lantai ${floorNum + 1} kapan saja!`);
+      sayCiko(`Makin tinggi! Rekor Menara Abadi: Lantai ${save.towerFloor}!`, 4.2);
+    },
+    onClose: closeOverlay
+  });
+}
+
+function openDailyModal() {
+  modalOpen = true;
+  ensureTodayDaily();
+  audio.playClick();
+  openDailyCommissionsModal({
+    overlayRoot,
+    save,
+    onClaimBonus: () => {
+      save.dailyState.bonusClaimed = true;
+      save.dailyStreak = (save.dailyStreak || 0) + 1;
+      awardAndNotify({ xp: 200, coins: 150 });
+      audio.playVictory();
+      closeOverlay();
+      showZoneBanner(`STREAK HARIAN ${save.dailyStreak} HARI!`, 'Peti Bonus Komisi Harian Diklaim!');
+    },
+    onAscend: () => {
+      save.worldTier = (save.worldTier || 1) + 1;
+      save.openedChests = [];
+      save.defeatedEnemies = [];
+      awardAndNotify({ xp: 250, coins: 200 });
+      audio.playGateUnlock();
+      closeOverlay();
+      showZoneBanner(`ASCENSION · ERA DUNIA ${save.worldTier}`, 'Semua Peti & Musuh Siber Bangkit Kembali dengan Bonus Baru!');
+    },
+    onClose: closeOverlay
+  });
+}
+
 function openProfileModal() {
   modalOpen = true;
   audio.playClick();
@@ -1429,15 +1571,16 @@ function openProfileModal() {
         </div>
 
         <div class="zone-map-grid" style="margin-bottom:16px;">
-          <div class="zone-card unlocked"><h3>${save.solvedGates.length + 1}/6</h3><p>Wilayah Terbuka</p></div>
-          <div class="zone-card unlocked"><h3>${(save.defeatedEnemies || []).length}/${ENEMIES.length}</h3><p>Musuh Siber Kalah</p></div>
-          <div class="zone-card unlocked"><h3>${(save.academyBadges || []).length}/4</h3><p>Lencana Akademi</p></div>
+          <div class="zone-card unlocked"><h3>${save.solvedGates.length + 1}/6</h3><p>Wilayah · Era ${save.worldTier || 1}</p></div>
+          <div class="zone-card unlocked"><h3>Lt. ${save.towerFloor || 0}</h3><p>Rekor Menara Abadi (∞)</p></div>
+          <div class="zone-card unlocked"><h3>${save.comedyFame || 0}</h3><p>Reputasi Stand-Up 1894</p></div>
           <div class="zone-card unlocked"><h3>${save.codexIds.length}/${TOTAL_CODEX}</h3><p>Codex & Intel Siber</p></div>
         </div>
 
         <div style="display:flex; flex-wrap:wrap; gap:8px; justify-content:space-between;">
           <button class="rpg-btn gold" id="btn-share-profile" type="button">Salin Kartu</button>
-          <button class="rpg-btn ghost" id="btn-switch-acc" type="button">Ganti / Buat Akun</button>
+          <button class="rpg-btn ghost" id="btn-replay-prologue" type="button">Prolog 1894</button>
+          <button class="rpg-btn ghost" id="btn-switch-acc" type="button">Ganti Akun</button>
           <button class="rpg-btn ghost" id="btn-reset-from-prof" type="button">Reset Lv. 1</button>
         </div>
       </div>
@@ -1445,6 +1588,15 @@ function openProfileModal() {
   `;
 
   document.getElementById('btn-close-prof')?.addEventListener('click', closeOverlay);
+  document.getElementById('btn-replay-prologue')?.addEventListener('click', () => {
+    closeOverlay();
+    modalOpen = true;
+    openVintagePrologue({
+      overlayRoot,
+      playerName: save.username || save.playerName,
+      onDone: closeOverlay
+    });
+  });
   document.getElementById('btn-share-profile')?.addEventListener('click', async () => {
     const shareText = [
       `WARKOP IMPACT | Kartu Petualang`,
@@ -1488,10 +1640,12 @@ window.addEventListener('keydown', (e) => {
 
   if (modalOpen) return;
 
-  if (['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'shift'].includes(k)) {
+  if (['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'shift', 'q', 'r'].includes(k)) {
     keys.add(k);
-    player.walkTarget = null;
-    player.autoInteractAfterWalk = null;
+    if (k !== 'q' && k !== 'r') {
+      player.walkTarget = null;
+      player.autoInteractAfterWalk = null;
+    }
   } else if (k === 'e' || k === ' ' || k === 'enter') {
     e.preventDefault();
     triggerNearestInteraction();
@@ -1499,6 +1653,8 @@ window.addEventListener('keydown', (e) => {
     openWorldMapModal();
   } else if (k === 'c') {
     openCodexModal();
+  } else if (k === 'h') {
+    openDailyModal();
   }
 });
 
@@ -1506,14 +1662,37 @@ window.addEventListener('keyup', (e) => {
   keys.delete(e.key.toLowerCase());
 });
 
+let dragOrbit = false;
+let dragLastX = 0;
+
+worldCanvas.addEventListener('contextmenu', (e) => e.preventDefault());
 worldCanvas.addEventListener('pointerdown', (e) => {
   if (modalOpen || !titleOverlay.classList.contains('hidden')) return;
+  if (e.button === 2 && is3D) {
+    dragOrbit = true;
+    dragLastX = e.clientX;
+    return;
+  }
   const rect = worldCanvas.getBoundingClientRect();
-  const pos = renderer.screenToWorld(e.clientX - rect.left, e.clientY - rect.top);
+  const pos = is3D
+    ? renderer.screenToWorld(e.clientX, e.clientY)
+    : renderer.screenToWorld(e.clientX - rect.left, e.clientY - rect.top);
+  if (!pos) return;
   player.walkTarget = pos;
   player.autoInteractAfterWalk = true;
   renderer.setClickTarget(pos.x, pos.y);
   audio.playClick();
+});
+
+window.addEventListener('pointermove', (e) => {
+  if (!dragOrbit || !is3D) return;
+  const dx = e.clientX - dragLastX;
+  dragLastX = e.clientX;
+  renderer.rotateCamera(-dx * 0.008);
+});
+
+window.addEventListener('pointerup', () => {
+  dragOrbit = false;
 });
 
 // Touch D-Pad
@@ -1544,8 +1723,15 @@ document.getElementById('btn-touch-act')?.addEventListener('click', triggerNeare
 // HUD Buttons
 btnInteract.addEventListener('click', triggerNearestInteraction);
 document.getElementById('btn-open-map')?.addEventListener('click', openWorldMapModal);
+document.getElementById('btn-open-daily')?.addEventListener('click', openDailyModal);
 document.getElementById('btn-open-codex')?.addEventListener('click', openCodexModal);
 document.getElementById('btn-open-profile')?.addEventListener('click', openProfileModal);
+document.getElementById('btn-cam-left')?.addEventListener('click', () => {
+  if (is3D) renderer.rotateCamera(0.45);
+});
+document.getElementById('btn-cam-right')?.addEventListener('click', () => {
+  if (is3D) renderer.rotateCamera(-0.45);
+});
 document.getElementById('btn-quest-tracker')?.addEventListener('click', () => {
   const q = getActiveMainQuest(save);
   showToast(q.hint);
@@ -1614,13 +1800,35 @@ function enterWorldWithAccount(account, isBrandNew = false) {
   audio.playWaypoint();
   const cls = getCharacterClass(save.characterClass);
   const z = getZoneAt(player.x, player.y);
-  showZoneBanner(isBrandNew ? `AKUN RESMI · ${cls.name.toUpperCase()}` : z.subtitle, isBrandNew ? `@${save.username} Masuk Dunia!` : z.name);
-  sayCiko(
-    isBrandNew
-      ? `Selamat datang @${save.username} sang ${cls.name}! Ayo temui Bang Jaja!`
-      : `Halo lagi @${save.username}! Lanjutkan petualangan kita!`,
-    4.8
-  );
+
+  const showArrival = () => {
+    showZoneBanner(
+      isBrandNew ? `AKUN RESMI · ${cls.name.toUpperCase()}` : z.subtitle,
+      isBrandNew ? `@${save.username} · Kedai 1894` : z.name
+    );
+    sayCiko(
+      isBrandNew
+        ? `Selamat datang @${save.username}! Coba Panggung Stand-Up atau temui Bang Jaja!`
+        : `Halo lagi @${save.username}! Lanjutkan petualangan 3D kita!`,
+      4.8
+    );
+  };
+
+  if (!save.prologueSeen) {
+    modalOpen = true;
+    openVintagePrologue({
+      overlayRoot,
+      playerName: save.username || save.playerName,
+      onDone: () => {
+        save.prologueSeen = true;
+        persistSave(save);
+        closeOverlay();
+        showArrival();
+      }
+    });
+  } else {
+    showArrival();
+  }
 }
 
 function openAuthFlow(startStep = 'username') {
@@ -2061,12 +2269,25 @@ function updateWorld(dt) {
   let vy = 0;
 
   if (canMove) {
-    if (keys.has('w') || keys.has('arrowup') || touchDirs.has('up')) vy -= 1;
-    if (keys.has('s') || keys.has('arrowdown') || touchDirs.has('down')) vy += 1;
-    if (keys.has('a') || keys.has('arrowleft') || touchDirs.has('left')) vx -= 1;
-    if (keys.has('d') || keys.has('arrowright') || touchDirs.has('right')) vx += 1;
+    if (is3D) {
+      if (keys.has('q')) renderer.rotateCamera(1.8 * dt);
+      if (keys.has('r')) renderer.rotateCamera(-1.8 * dt);
+    }
 
-    if (vx === 0 && vy === 0 && player.walkTarget) {
+    let inX = 0;
+    let inY = 0;
+    if (keys.has('w') || keys.has('arrowup') || touchDirs.has('up')) inY -= 1;
+    if (keys.has('s') || keys.has('arrowdown') || touchDirs.has('down')) inY += 1;
+    if (keys.has('a') || keys.has('arrowleft') || touchDirs.has('left')) inX -= 1;
+    if (keys.has('d') || keys.has('arrowright') || touchDirs.has('right')) inX += 1;
+
+    if (inX !== 0 || inY !== 0) {
+      const yaw = is3D ? renderer.getCameraYaw() : 0;
+      const cosY = Math.cos(yaw);
+      const sinY = Math.sin(yaw);
+      vx = inX * cosY + inY * sinY;
+      vy = -inX * sinY + inY * cosY;
+    } else if (player.walkTarget) {
       const dx = player.walkTarget.x - player.x;
       const dy = player.walkTarget.y - player.y;
       const dist = Math.hypot(dx, dy);

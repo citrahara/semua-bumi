@@ -138,6 +138,14 @@ class RpgAudio {
       this.playTone(n, i === notes.length - 1 ? 0.6 : 0.16, 'triangle', 0.15, i * 0.09);
     });
   }
+
+  playRimshot() {
+    // Ba-dum-tss! khas panggung Stand-Up Comedy
+    this.playTone(170, 0.09, 'triangle', 0.17, 0, 110);
+    this.playNoise(0.06, 0.09, 0, 1400);
+    this.playTone(135, 0.12, 'triangle', 0.19, 0.14, 80);
+    this.playNoise(0.32, 0.11, 0.28, 4200);
+  }
 }
 
 export const audio = new RpgAudio();

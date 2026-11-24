@@ -142,15 +142,35 @@ export const NPCS = [
     x: 450,
     y: 310,
     challengeType: 'story',
-    questTitle: 'Misi Utama I: Heboh Hoaks Desa Warkop',
+    questTitle: 'Misi Utama I: Kronik Kedai 1894',
     introLines: [
-      'Selamat datang, Petualang! Dunia Warkop sekarang makin luas: ada 6 wilayah, Akademi Bahasa Korea & Jepang, sampai Distrik Siber AI!',
-      'Untuk pemanasan di Desa Warkop, bantu aku bongkar teori Kang Deden di utara, audit WA grup Pak Budi, dan kalahkan Slime Hoaks yang berkeliaran di selatan pakai jurus Attack & Defense!',
-      'Kalau sudah siap naik level, dekati Segel Matematika di Jembatan Timur menuju Distrik Bahasa!'
+      'Selamat datang di Kedai Kopi 1894, Petualang! Retakan Waktu Siber bikin hoaks dan monster abad ke-21 tumpah ke lembah vintage kita!',
+      'Coba mampir dulu ke Panggung Open-Mic Stand-Up di sebelah barat kedai buat pemanasan ngelucu, lalu bantu bongkar teori Kang Deden dan kalahkan Slime Hoaks!',
+      'Di timur kedai juga berdiri Menara Kronik Abadi yang tidak pernah ada lantai terakhirnya, serta Segel Matematika menuju Akademi Bahasa Korea dan Distrik Siber!'
     ],
     repeatLines: [
-      'Kopi masih ngebul! Jangan lupa mampir ke Akademi Korea di Distrik Bahasa dan Terminal Radar /berita-terkini di Distrik Siber ya!'
+      'Kopi tubruk 1894 masih panas! Coba naik ke Panggung Open-Mic di sebelah kiri kedai atau tantang Menara Kronik Abadi kalau mau adu skor tanpa batas!'
     ]
+  },
+  {
+    id: 'openmic',
+    zone: 1,
+    x: 245,
+    y: 282,
+    challengeType: 'standup',
+    questTitle: 'Panggung Stand-Up Comedy Vintage 1894',
+    introLines: [],
+    doneLines: []
+  },
+  {
+    id: 'tower_keeper',
+    zone: 1,
+    x: 616,
+    y: 472,
+    challengeType: 'endless_tower',
+    questTitle: 'Menara Kronik Abadi (Lantai 1 sampai Tak Terbatas)',
+    introLines: [],
+    doneLines: []
   },
   {
     id: 'deden',
@@ -312,8 +332,10 @@ export const NPCS = [
 ];
 
 export const LANDMARKS = [
-  // Zona 1: Desa Warkop
-  { type: 'warkop', x: 350, y: 170, w: 200, h: 95, solid: true, label: 'WARKOP BANG JAJA' },
+  // Zona 1: Desa Warkop 1894 + Panggung Stand-Up Vintage + Menara Kronik Abadi
+  { type: 'warkop', x: 350, y: 170, w: 200, h: 95, solid: true, label: 'KEDAI BANG JAJA 1894' },
+  { type: 'standup_stage', x: 185, y: 190, w: 120, h: 70, solid: true, label: 'OPEN-MIC STAND-UP' },
+  { type: 'endless_tower', x: 585, y: 390, w: 62, h: 62, solid: true, label: 'MENARA ABADI' },
   { type: 'posronda', x: 765, y: 105, w: 115, h: 72, solid: true, label: 'POS RONDA' },
   { type: 'pond', x: 140, y: 560, w: 185, h: 110, solid: true },
 

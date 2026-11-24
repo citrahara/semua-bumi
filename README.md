@@ -1,6 +1,13 @@
-# Warkop Impact
+# Warkop Impact: Kronik 1894 (3D Open-World RPG)
 
-Game RPG 2D dunia terbuka (*open-world*) di peramban yang menggabungkan loket pendaftaran akun ber-ujian masuk, 4 jenis karakter RPG, 6 wilayah jelajah, sistem tempur **Attack & Defense** melawan ancaman dunia siber, **Ruang Belajar Bahasa** (Korea, Jepang, Inggris, Indonesia, dan Retorika) lengkap dengan suara pelafalan, **Pusat Komando Siber & Radar `/berita-terkini`** (terobosan AI & IIV/CII + 21 sumber global), serta **5 Segel Matematika** untuk membuka tiap level wilayah baru.
+Game RPG **3D dunia terbuka** (Three.js WebGL dengan *fallback* 2D otomatis) yang memadukan **storyline vintage tahun 1894**, **Panggung Open-Mic Stand-Up Comedy**, **sistem tanpa tamat (Endless RPG)**, loket pendaftaran akun ber-ujian masuk, 4 jenis karakter 3D, 6 wilayah alam 3D, duel **Attack & Defense** melawan ancaman dunia siber, **Ruang Belajar Bahasa** (Korea, Jepang, Inggris, Indonesia, Retorika) lengkap dengan suara pelafalan, **Pusat Komando Siber & Radar `/berita-terkini`**, serta **5 Segel Matematika** untuk membuka tiap level wilayah baru.
+
+## Sistem Tanpa Tamat (Endless Playability)
+
+- **Komisi Harian (WIB)**: 4 misi baru yang reset otomatis tiap hari (Stand-Up, Duel Siber, Menara Abadi, Ruang Belajar) beserta *Daily Streak*.
+- **Menara Kronik Abadi (Lantai 1 sampai Tak Terbatas)**: lantai ganjil menghadirkan duel *Attack & Defense* melawan musuh siber yang terus berevolusi, sedangkan lantai genap menghadirkan ujian campuran Matematika dan Bahasa.
+- **Ascension (Era Dunia I, II, III...)**: setelah menaklukkan seluruh wilayah, pemain bisa menaikkan Era Dunia agar semua peti harta dan musuh bangkit lagi sambil mempertahankan Level, Codex, Lencana, dan rekor Menara.
+- **Panggung Open-Mic Stand-Up Comedy 1894**: mode Rakit Bit 3 ketukan (*Setup*, *Twist*, *Punchline*) dengan *Laugh-O-Meter* plus generator premis *vintage* x siber acak tanpa batas (Mikrofon lokal atau Ketik Kilat).
 
 ## Alur Pendaftaran Akun & 4 Jenis Karakter
 

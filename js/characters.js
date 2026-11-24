@@ -162,6 +162,24 @@ export const CAST = {
     accent: '#FDE047',
     hair: '#1F1B18',
     prop: 'hardhat'
+  },
+  openmic: {
+    name: 'Panggung Stand-Up',
+    role: 'Open-Mic Kedai 1894',
+    skin: '#D79B6E',
+    shirt: '#8C3B2B',
+    accent: '#FFD166',
+    hair: '#231A16',
+    prop: 'maestro_hat'
+  },
+  tower_keeper: {
+    name: 'Menara Kronik Abadi',
+    role: 'Portal Tanpa Batas (∞)',
+    skin: '#CFA07A',
+    shirt: '#2E3A59',
+    accent: '#48DBFB',
+    hair: '#5A5550',
+    prop: 'crown_law'
   }
 };
 
