@@ -4,13 +4,14 @@ import { FALLACIES_BANK } from './data/fallacies.js';
 import { STAGE_PROMPTS } from './data/stage.js';
 import { generateMathQuestion, GATE_META } from './data/math.js';
 import { ENEMIES } from './data/enemies.js';
-import { CYBER_LAB } from './data/academy.js';
+import { CYBER_LAB, CLASSIC_LIT_ACADEMY } from './data/academy.js';
 import { launchCyberCombat } from './combat.js';
 import {
   openKoreanAcademy,
   openPolyglotAcademy,
   openRhetoricAcademy,
-  openCyberLab
+  openCyberLab,
+  openClassicLitAcademy
 } from './academy_ui.js';
 import {
   CHARACTER_CLASSES,
@@ -58,7 +59,8 @@ const TOTAL_CODEX =
   FACTS_BANK.length +
   DICTION_BANK.length +
   FALLACIES_BANK.length +
-  CYBER_LAB.breakthroughs.length;
+  CYBER_LAB.breakthroughs.length +
+  CLASSIC_LIT_ACADEMY.concepts.length;
 
 const enemyRuntime = ENEMIES.map((e, i) => ({
   ...e,
@@ -67,6 +69,7 @@ const enemyRuntime = ENEMIES.map((e, i) => ({
   phase: i * 1.3
 }));
 let enemyBumpCooldown = 0;
+let strikeCooldown = 0;
 
 // DOM Refs
 const worldCanvas = document.getElementById('world-canvas');
@@ -293,6 +296,8 @@ function findNearestInteractable() {
           ? 'Naik Panggung Open-Mic Stand-Up 1894'
           : npc.challengeType === 'endless_tower'
           ? `Masuki Menara Abadi (Lantai ${(save.towerFloor || 0) + 1})`
+          : npc.challengeType === 'academy_lit'
+          ? 'Masuk Arsip Sastra Orwell: Tuan George'
           : isAc
           ? `Masuk Ruang Belajar: ${CAST[npc.id].name}`
           : `Bicara dengan ${CAST[npc.id].name}`;
@@ -395,7 +400,59 @@ function triggerNearestInteraction() {
   }
 }
 
-function startEnemyCombat(enemy) {
+function performWorldStrike() {
+  if (modalOpen || !titleOverlay.classList.contains('hidden') || strikeCooldown > 0) return;
+  strikeCooldown = 0.55;
+
+  // Cek apakah ada musuh patroli siber dalam jangkauan tebasan Strike (125px) untuk Ambush First-Strike!
+  let targetEnemy = null;
+  let bestDist = 125;
+  for (const en of enemyRuntime) {
+    const d = Math.hypot(en.curX - player.x, en.curY - player.y);
+    if (d < bestDist) {
+      bestDist = d;
+      targetEnemy = en;
+    }
+  }
+
+  if (targetEnemy) {
+    const dx = targetEnemy.curX - player.x;
+    const dy = targetEnemy.curY - player.y;
+    if (Math.abs(dx) > Math.abs(dy)) {
+      player.facing = dx > 0 ? 'right' : 'left';
+    } else {
+      player.facing = dy > 0 ? 'down' : 'up';
+    }
+    audio.playStrike(true);
+    if (renderer.triggerHeroStrike) {
+      renderer.triggerHeroStrike(player.x, player.y, player.facing, true);
+    } else {
+      renderer.spawnBurst(targetEnemy.curX, targetEnemy.curY, '#FFD166', 28);
+      renderer.triggerShake(10);
+    }
+    renderer.spawnBurst(targetEnemy.curX, targetEnemy.curY, '#FF5252', 26);
+    showToast(`AMBUSH STRIKE! Tebasan pembuka menghantam ${targetEnemy.name} (-22 HP)!`);
+    sayCiko('Telak! Musuh langsung kena Ambush Strike -22 HP!', 3.2);
+    enemyBumpCooldown = 1.5;
+    const chosen = targetEnemy;
+    setTimeout(() => {
+      if (!modalOpen && titleOverlay.classList.contains('hidden')) {
+        startEnemyCombat(chosen, { ambushDamage: 22 });
+      }
+    }, 300);
+    return;
+  }
+
+  audio.playStrike(false);
+  if (renderer.triggerHeroStrike) {
+    renderer.triggerHeroStrike(player.x, player.y, player.facing, false);
+  } else {
+    renderer.spawnBurst(player.x, player.y, '#FFD166', 18);
+    renderer.triggerShake(5);
+  }
+}
+
+function startEnemyCombat(enemy, { ambushDamage = 0 } = {}) {
   if (modalOpen) return;
   modalOpen = true;
   player.walkTarget = null;
@@ -404,6 +461,7 @@ function startEnemyCombat(enemy) {
     overlayRoot,
     save,
     enemy,
+    ambushDamage,
     onVictory: () => {
       if (!save.defeatedEnemies) save.defeatedEnemies = [];
       const firstKill = !save.defeatedEnemies.includes(enemy.id);
@@ -762,6 +820,22 @@ function openNpcDialogue(npc) {
       onUnlockIntel: (intelId) => {
         if (!save.codexIds.includes(intelId)) {
           save.codexIds.push(intelId);
+          persistSave(save);
+          refreshHud();
+        }
+      },
+      onComplete: handleAcademyComplete,
+      onClose: closeOverlay
+    });
+    return;
+  }
+  if (npc.challengeType === 'academy_lit') {
+    openClassicLitAcademy({
+      overlayRoot,
+      save,
+      onUnlockLit: (litId) => {
+        if (!save.codexIds.includes(litId)) {
+          save.codexIds.push(litId);
           persistSave(save);
           refreshHud();
         }
@@ -1300,7 +1374,7 @@ function openWorldMapModal() {
         </div>
         <div class="zone-map-grid">${cards}</div>
         <p style="margin:0; font-size:0.84rem; color:var(--muted);">
-          Segel Matematika: ${save.solvedGates.length}/5 gerbang terbuka · Ancaman Siber dilumpuhkan: ${(save.defeatedEnemies || []).length}/${ENEMIES.length} · Lencana Akademi: ${(save.academyBadges || []).length}/4.
+          Segel Matematika: ${save.solvedGates.length}/5 gerbang terbuka · Ancaman Siber dilumpuhkan: ${(save.defeatedEnemies || []).length}/${ENEMIES.length} · Lencana Akademi: ${(save.academyBadges || []).length}/5.
         </p>
       </div>
     </div>
@@ -1329,6 +1403,15 @@ function openWorldMapModal() {
 
 function getAllCodexEntries() {
   return [
+    ...CLASSIC_LIT_ACADEMY.concepts.map((lit) => ({
+      id: lit.id,
+      group: 'lit',
+      groupLabel: `Sastra · ${lit.author}`,
+      title: lit.title,
+      summary: lit.summary,
+      detail: lit.modernLink,
+      example: lit.speakHook
+    })),
     ...CYBER_LAB.breakthroughs.map((cb) => ({
       id: cb.id,
       group: 'cyber',
@@ -1402,6 +1485,7 @@ function openCodexModal() {
           <div class="codex-bar">
             ${[
               ['all', 'Semua'],
+              ['lit', 'Sastra Klasik'],
               ['cyber', 'Terobosan Siber'],
               ['fact', 'Fakta Gacor'],
               ['diction', 'Diksi Keren'],
@@ -1601,7 +1685,7 @@ function openProfileModal() {
     const shareText = [
       `WARKOP IMPACT | Kartu Petualang`,
       `@${save.username || save.playerName} (${cls.name} · LV ${save.level} · ${titleRank})`,
-      `Wilayah: ${save.solvedGates.length + 1}/6 | Segel MTK: ${save.mathSolvedCount} | Siber: ${(save.defeatedEnemies || []).length}/${ENEMIES.length} | Lencana: ${(save.academyBadges || []).length}/4 | Codex: ${save.codexIds.length}/${TOTAL_CODEX}`
+      `Wilayah: ${save.solvedGates.length + 1}/6 | Segel MTK: ${save.mathSolvedCount} | Siber: ${(save.defeatedEnemies || []).length}/${ENEMIES.length} | Lencana: ${(save.academyBadges || []).length}/5 | Codex: ${save.codexIds.length}/${TOTAL_CODEX}`
     ].join('\n');
     try {
       await navigator.clipboard.writeText(shareText);
@@ -1649,6 +1733,9 @@ window.addEventListener('keydown', (e) => {
   } else if (k === 'e' || k === ' ' || k === 'enter') {
     e.preventDefault();
     triggerNearestInteraction();
+  } else if (k === 'f') {
+    e.preventDefault();
+    performWorldStrike();
   } else if (k === 'm') {
     openWorldMapModal();
   } else if (k === 'c') {
@@ -1719,9 +1806,11 @@ btnTouchSprint?.addEventListener('pointerdown', () => (touchSprint = true));
 btnTouchSprint?.addEventListener('pointerup', () => (touchSprint = false));
 btnTouchSprint?.addEventListener('pointerleave', () => (touchSprint = false));
 document.getElementById('btn-touch-act')?.addEventListener('click', triggerNearestInteraction);
+document.getElementById('btn-touch-strike')?.addEventListener('click', performWorldStrike);
 
 // HUD Buttons
 btnInteract.addEventListener('click', triggerNearestInteraction);
+document.getElementById('btn-hud-strike')?.addEventListener('click', performWorldStrike);
 document.getElementById('btn-open-map')?.addEventListener('click', openWorldMapModal);
 document.getElementById('btn-open-daily')?.addEventListener('click', openDailyModal);
 document.getElementById('btn-open-codex')?.addEventListener('click', openCodexModal);
@@ -1808,9 +1897,9 @@ function enterWorldWithAccount(account, isBrandNew = false) {
     );
     sayCiko(
       isBrandNew
-        ? `Selamat datang @${save.username}! Coba Panggung Stand-Up atau temui Bang Jaja!`
+        ? `Selamat datang @${save.username}! Tekan [F] buat Strike 3D, mampir ke Arsip Orwell, atau naik Panggung Stand-Up!`
         : `Halo lagi @${save.username}! Lanjutkan petualangan 3D kita!`,
-      4.8
+      5.2
     );
   };
 
@@ -2246,6 +2335,7 @@ function updateWorld(dt) {
   if (ciko.bubbleTimer > 0) ciko.bubbleTimer -= dt;
   if (gateBumpCooldown > 0) gateBumpCooldown -= dt;
   if (enemyBumpCooldown > 0) enemyBumpCooldown -= dt;
+  if (strikeCooldown > 0) strikeCooldown -= dt;
 
   // Gerakkan musuh patroli secara halus di jalur orbit masing-masing
   const nowSec = performance.now() / 1000;

@@ -173,6 +173,16 @@ export const NPCS = [
     doneLines: []
   },
   {
+    id: 'orwell',
+    zone: 1,
+    x: 910,
+    y: 520,
+    challengeType: 'academy_lit',
+    questTitle: 'Taman Sastra Klasik & Arsip Orwell (1984 & Animal Farm)',
+    introLines: [],
+    doneLines: []
+  },
+  {
     id: 'deden',
     zone: 1,
     x: 820,
@@ -336,6 +346,7 @@ export const LANDMARKS = [
   { type: 'warkop', x: 350, y: 170, w: 200, h: 95, solid: true, label: 'KEDAI BANG JAJA 1894' },
   { type: 'standup_stage', x: 185, y: 190, w: 120, h: 70, solid: true, label: 'OPEN-MIC STAND-UP' },
   { type: 'endless_tower', x: 585, y: 390, w: 62, h: 62, solid: true, label: 'MENARA ABADI' },
+  { type: 'library', x: 840, y: 425, w: 150, h: 72, solid: true, label: 'ARSIP ORWELL' },
   { type: 'posronda', x: 765, y: 105, w: 115, h: 72, solid: true, label: 'POS RONDA' },
   { type: 'pond', x: 140, y: 560, w: 185, h: 110, solid: true },
 

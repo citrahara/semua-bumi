@@ -2,32 +2,39 @@
 
 export const VINTAGE_PROLOGUE = [
   {
-    year: 'TAHUN 1894 · KEDAI KOPI LEMBAH SENJA',
+    year: 'BABAK I · TAHUN 1894 · KEDAI KOPI LEMBAH SENJA',
     speaker: 'jaja',
-    title: 'Babak I: Sebelum Ada Wi-Fi, Ada Panggung Kayu',
-    text: 'Selamat malam, hadirin abad ke-19 yang budiman. Di zaman ini belum ada media sosial; kalau orang mau pamer wawasan atau meledek kebijakan konyol, mereka naik ke panggung kayu Kedai Kopi Bang Jaja sambil pegang gelas tubruk.',
-    aside: 'Catatan Komika: Dulu di Eropa abad ke-17, kedai kopi dijuluki "Penny Universities" karena cukup bayar segelas kopi untuk berdiskusi sains, sastra, dan politik!'
+    title: 'Sebelum Ada Wi-Fi, Ada Panggung Kayu & Koran Kertas',
+    text: 'Selamat malam, hadirin abad ke-19 yang budiman! Di zaman ini belum ada media sosial. Kalau orang mau pamer wawasan, membedah buku sastra, atau meledek aturan konyol, mereka naik ke panggung kayu Kedai Bang Jaja sambil pegang kopi tubruk.',
+    aside: 'Fakta Sejarah: Kedai kopi Eropa abad ke-17 dijuluki "Penny Universities" karena cukup bayar segelas kopi untuk berdiskusi sains, filsafat, dan sastra.'
   },
   {
-    year: 'MALAM HUJAN · PETIR SINYAL MASA DEPAN',
+    year: 'BABAK II · MALAM HUJAN · PETIR SINYAL LINTAS ZAMAN',
     speaker: 'ciko',
-    title: 'Babak II: Biji Kopi Tersambar Sinyal Abad ke-21',
-    text: 'Suatu malam gerimis, sebiji kopi spesial tersambar petir sinyal dari masa depan! Seketika aku, Ciko si Cangkir Porselen Antik, hidup dan bisa ngoceh. Masalahnya, Retakan Waktu Siber ikut terbuka di langit lembah!',
-    aside: 'Ciko berbisik: "Aku juga kaget, baru melek langsung lihat drone phishing terbang lewat atas genteng!"'
+    title: 'Biji Kopi Tersambar Sinyal Abad ke-21',
+    text: 'Suatu malam gerimis, sebiji kopi luwak tersambar petir sinyal dari masa depan! Seketika aku, Ciko si Cangkir Porselen Antik, hidup dan mulai ngoceh. Tapi masalah besarnya: Retakan Waktu Siber ikut menganga di atas lembah kita!',
+    aside: 'Ciko nyengir: "Baru melek semenit, aku langsung lihat drone phishing menyamar jadi tukang pos!"'
   },
   {
-    year: 'KRISIS LINTAS ZAMAN · HOAKS & MONSTER SIBER',
+    year: 'BABAK III · ANCAMAN BAYANGAN · "KEMENTERIAN GEMA" ALA ORWELL',
+    speaker: 'orwell',
+    title: 'Bayangan Newspeak, Doublethink & Memory Hole',
+    text: 'Dari balik retakan muncul sindikat parodi bernama "Kementerian Gema", terinspirasi dari novel klasik George Orwell (1984). Mereka menyebar bahasa sempit (Newspeak), membuang fakta asli ke Memory Hole, dan memasang Telescreen palsu lewat Deepfake dan Prompt Injection!',
+    aside: 'Pesan Kurator Sastra: "George Orwell takut kebenaran disembunyikan dengan larangan; Aldous Huxley takut kebenaran tenggelam dalam lautan konten receh. Di sini kita melawan keduanya sekaligus!"'
+  },
+  {
+    year: 'BABAK IV · ENAM WILAYAH ALAM & SEGEL MATEMATIKA',
     speaker: 'vega',
-    title: 'Babak III: Kekacauan Zaman Modern Tumpah ke Alam Vintage',
-    text: 'Dari retakan itu muncullah ancaman abad ke-21: Phishing Drone, Prompt-Injection Wyrm, Ransomware Titan, sampai jargon rapat korporat yang bikin penyair tahun 1894 pingsan di tempat.',
-    aside: 'Radar /berita-terkini menyala: Keamanan AI dan Infrastruktur Informasi Vital (IIV) kini ikut dipertaruhkan di lembah ini!'
+    title: 'Dari Akademi Bahasa Dunia sampai Benteng Siber AI/IIV',
+    text: 'Untuk memulihkan akal sehat lembah, kamu akan menjelajahi 6 wilayah alam 3D: belajar bahasa Korea, Jepang, Inggris, Indonesia baku, dan sastra klasik, memantau 21 sumber /berita-terkini, menumbangkan monster siber dengan Strike serta Attack-Defense, lalu memecahkan 5 Segel Matematika kuno!',
+    aside: 'Tips Tempur: Di alam 3D kamu bisa menekan [F] atau tombol STRIKE untuk melancarkan tebasan energi langsung ke musuh!'
   },
   {
-    year: 'PANGGILAN PANGGUNG · PETUALANGAN TANPA AKHIR',
+    year: 'BABAK V · PANGGILAN PANGGUNG · KRONIK TANPA TAMAT',
     speaker: 'jaja',
-    title: 'Babak IV: Pegang Mikrofon Kuningan Ini!',
-    text: 'Tugasmu santai tapi keren: jelajahi alam 3D ini, pelajari bahasa Korea, Jepang, Inggris, dan Indonesia baku, tumbangkan monster siber, pecahkan Segel Matematika... lalu naik ke Panggung Open-Mic Stand-Up Comedy dan bikin seisi kedai ngakak terbahak-bahak!',
-    aside: 'Di dunia ini tidak ada kata tamat: Misi Harian terus berganti tiap hari, Menara Abadi naik tanpa batas lantai, dan panggung Stand-Up selalu menunggu bit terbarumu!'
+    title: 'Pegang Mikrofon Kuningan Ini, Komika!',
+    text: 'Senjata paling ditakuti Kementerian Gema bukanlah pidato kaku, melainkan orang yang wawasannya gacor, bahasanya keren, logikanya tajam, dan sanggup menjadikan propaganda mereka bahan tawa di Panggung Stand-Up Comedy 1894! Siap memulai kisah tanpa akhirmu?',
+    aside: 'Tanpa Ending: Komisi Harian reset tiap hari, Menara Abadi naik tanpa batas lantai, dan Open-Mic Stand-Up selalu punya premis baru!'
   }
 ];
 
@@ -348,6 +355,85 @@ export const STANDUP_SETS = [
         ]
       }
     ]
+  },
+  {
+    id: 'su-05',
+    title: 'Kalau Big Brother (Orwell 1984) Ketemu Algoritma Medsos',
+    eraTag: 'Sastra Orwell × Privasi Siber',
+    steps: [
+      {
+        beat: '1. SETUP (Pancing Penonton)',
+        prompt: 'Buka perbandingan kocak antara novel klasik 1984 karya George Orwell dengan kebiasaan kita hari ini:',
+        options: [
+          {
+            line: '"Tuan-tuan, George Orwell tahun 1949 capek-capek bikin novel horor soal Telescreen yang mengawasi warga di rumah. Eh di abad ke-21, kita nggak usah dipaksa: kita malah antre beli sendiri, cicil 12 bulan, lalu bawa sampai ke kamar mandi!"',
+            laugh: 35,
+            crowd: '"WKWKWK! ORWELL GELENG-GELENG DI SURGA! HAHAHA!"',
+            best: true
+          },
+          {
+            line: '"Novel 1984 ditulis oleh George Orwell dan membahas pengawasan negara."',
+            laugh: 10,
+            crowd: '"Ini panggung stand-up atau ringkasan tugas sekolah, Tuan?"',
+            best: false
+          },
+          {
+            line: '"Ponsel modern memang punya banyak fitur kamera."',
+            laugh: 12,
+            crowd: '"Penonton menyeruput kopi tanpa ekspresi."',
+            best: false
+          }
+        ]
+      },
+      {
+        beat: '2. TWIST (Bawa Huxley & Animal Farm!)',
+        prompt: 'Tambahkan twist sastra klasik yang bikin penonton melongo sekaligus ketawa:',
+        options: [
+          {
+            line: '"Yang lebih kocak: di Animal Farm, semua hewan setara tapi ada yang \'lebih setara\'. Di grup chat kita juga sama: semua boleh kasih ide, tapi yang terakhir ngirim stiker kucing lucu biasanya yang menang rapat!"',
+            laugh: 35,
+            crowd: '"HAHAHA! KENA BANGET! STIKER KUCING LEBIH SETARA!"',
+            best: true
+          },
+          {
+            line: '"Animal Farm juga merupakan buku terkenal karya penulis yang sama."',
+            laugh: 11,
+            crowd: '"Hening sejenak..."',
+            best: false
+          },
+          {
+            line: '"Saya lebih suka memelihara marmot dari Swiss."',
+            laugh: 16,
+            crowd: '"Lucu sih, tapi agak nyasar dari topik Orwell!"',
+            best: false
+          }
+        ]
+      },
+      {
+        beat: '3. PUNCHLINE (Tutup Tajam + Call-Back)',
+        prompt: 'Jatuhkan punchline pamungkas tentang Newspeak & literasi siber:',
+        options: [
+          {
+            line: '"Intinya: Orwell takut kita diawasi, Huxley takut kita dibius hiburan. Makanya kita rajin nambah kosakata dan melek keamanan siber, biar kalau suatu hari Big Brother ngintip layar kita, dia malah ikutan belajar KBBI dan lupa mata-matain!"',
+            laugh: 35,
+            crowd: '"BRAVISSIMO!! SEISI KEDAI 1894 NGAKAK GULING-GULING! BA-DUM-TSS!"',
+            best: true
+          },
+          {
+            line: '"Mari kita rajin membaca novel klasik setiap hari."',
+            laugh: 14,
+            crowd: '"Tepuk tangan sopan ala klub buku."',
+            best: false
+          },
+          {
+            line: '"Sekian materi saya soal sastra, terima kasih."',
+            laugh: 10,
+            crowd: '"Kurang meledak di akhir, Bang!"',
+            best: false
+          }
+        ]
+      }
+    ]
   }
 ];
 
@@ -369,7 +455,8 @@ const OPENMIC_TOPICS = [
   'mendebat gurita yang punya 3 jantung dan darah biru',
   'melarang orang bilang "tak bergeming" saat maksudnya diam tenang',
   'kaget tahu gardu listrik kota (SCADA/IIV) ternyata butuh Zero-Trust',
-  'mengomentari paradoks orang kebanyakan pilihan film malah ketiduran'
+  'mengomentari paradoks orang kebanyakan pilihan film malah ketiduran',
+  'membandingkan Telescreen George Orwell (1984) dengan ponsel pintar yang kita cas tiap malam'
 ];
 
 const OPENMIC_WORDS = [
@@ -398,7 +485,7 @@ export function generateEndlessOpenMicPrompt() {
 }
 
 // ==========================================
-// KOMISI HARIAN (DAILY COMMISSIONS WIB — TANPA TAMAT!)
+// KOMISI HARIAN (DAILY COMMISSIONS WIB - TANPA TAMAT!)
 // ==========================================
 export function getTodayWIBKey() {
   const now = new Date();
@@ -439,7 +526,7 @@ export function buildDailyCommissions(dateKey = getTodayWIBKey()) {
     {
       id: 'comm-study',
       title: 'Kunjungi 1 Ruang Belajar / Radar Siber',
-      desc: 'Buka Akademi Korea, Poliglot, Retorika, atau Terminal /berita-terkini.',
+      desc: 'Buka Arsip Orwell, Akademi Korea, Poliglot, Retorika, atau Terminal /berita-terkini.',
       goal: 1,
       xp: 70,
       coins: 50

@@ -180,6 +180,15 @@ export const CAST = {
     accent: '#48DBFB',
     hair: '#5A5550',
     prop: 'crown_law'
+  },
+  orwell: {
+    name: 'Tuan George',
+    role: 'Kurator Sastra Klasik (Arsip Orwell)',
+    skin: '#E6B89C',
+    shirt: '#5C4738',
+    accent: '#D4A373',
+    hair: '#3A2E28',
+    prop: 'vintage_monocle'
   }
 };
 
@@ -355,6 +364,13 @@ export function renderCharacterSVG(key, mood = 'idle') {
       <path d="M32 39 C34 17, 86 17, 88 39 Z" fill="#FACC15" stroke="#1B1714" stroke-width="2.2"/>
       <rect x="28" y="36" width="64" height="6" rx="3" fill="#EAB308" stroke="#1B1714" stroke-width="2"/>
       <rect x="55" y="21" width="10" height="12" rx="2" fill="#FFF"/>
+    `;
+  } else if (c.prop === 'vintage_monocle') {
+    accessory = `
+      <path d="M34 42 C36 20, 84 20, 86 42 C78 33, 42 33, 34 42 Z" fill="${c.hair}"/>
+      <circle cx="72" cy="54" r="9" fill="rgba(255,240,200,0.22)" stroke="#FFD166" stroke-width="2.4"/>
+      <line x1="81" y1="58" x2="84" y2="78" stroke="#FFD166" stroke-width="1.6"/>
+      <path d="M48 64 Q60 60 72 64" stroke="#3A2E28" stroke-width="3.2" fill="none" stroke-linecap="round"/>
     `;
   }
 

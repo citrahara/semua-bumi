@@ -1,6 +1,13 @@
 # Warkop Impact: Kronik 1894 (3D Open-World RPG)
 
-Game RPG **3D dunia terbuka** (Three.js WebGL dengan *fallback* 2D otomatis) yang memadukan **storyline vintage tahun 1894**, **Panggung Open-Mic Stand-Up Comedy**, **sistem tanpa tamat (Endless RPG)**, loket pendaftaran akun ber-ujian masuk, 4 jenis karakter 3D, 6 wilayah alam 3D, duel **Attack & Defense** melawan ancaman dunia siber, **Ruang Belajar Bahasa** (Korea, Jepang, Inggris, Indonesia, Retorika) lengkap dengan suara pelafalan, **Pusat Komando Siber & Radar `/berita-terkini`**, serta **5 Segel Matematika** untuk membuka tiap level wilayah baru.
+Game RPG **3D dunia terbuka** (Three.js WebGL dengan *fallback* 2D otomatis) yang memadukan **storyline vintage tahun 1894 bernuansa satir George Orwell ("Kementerian Gema")**, **karakter 3D ekspresif dengan senjata khas kelas dan efek Strike 3D**, **Panggung Open-Mic Stand-Up Comedy**, **Taman Sastra Klasik & Arsip Orwell**, **sistem tanpa tamat (Endless RPG)**, loket pendaftaran akun ber-ujian masuk, 6 wilayah alam 3D, duel **Attack & Defense** dunia siber dengan efek tebasan sinematik, **Ruang Belajar Bahasa** (Korea, Jepang, Inggris, Indonesia, Retorika) lengkap dengan suara pelafalan, **Pusat Komando Siber & Radar `/berita-terkini`**, serta **5 Segel Matematika** untuk membuka tiap level wilayah baru.
+
+## Karakter 3D Hidup, Efek Strike & Sastra Klasik Orwell
+
+- **Karakter 3D Ekspresif**: setiap kelas membawa senjata ikonik 3D di tangan (Tongkat Mikrofon Emas, Pena Bulu Emas, Kaca Pembesar Kristal Siber, atau Tongkat Rune Alkemis), mata yang berkedip, lengan yang mengayun, dan jubah berkibar. Warga NPC juga menoleh dan melambai saat kamu mendekat.
+- **Strike 3D & Ambush (`F`)**: tekan `F` atau klik tombol `Strike [F]` di alam terbuka untuk menebas sabit energi 3D lengkap dengan gelombang kejut tanah dan kilatan cahaya. Jika mengenai musuh patroli siber, duel langsung dimulai dengan **Ambush First-Strike (-22 HP)**!
+- **Efek Tempur Sinematik**: duel *Attack & Defense* menampilkan animasi maju menyerang, tebasan silang menyala, ledakan *Quantum Blast*, kubah perisai *Zero-Trust Shield Dome*, kilatan *Counter Break*, serta angka kerusakan melayang.
+- **Taman Sastra Klasik & Arsip Orwell (Tuan George)**: pelajari 8 gagasan sastra klasik untuk bahan ngobrol dan kritik cerdas (*Newspeak*, *Doublethink*, *Ministry of Truth & Memory Hole*, *Big Brother & Telescreen*, *Animal Farm*, *Brave New World*, *Fahrenheit 451*, dan *Bumi Manusia*) yang seluruhnya tersimpan di Codex (total 76 kartu), ditambah bit Stand-Up Comedy bertema Big Brother Orwell vs algoritma media sosial.
 
 ## Sistem Tanpa Tamat (Endless Playability)
 
@@ -35,8 +42,8 @@ Game RPG **3D dunia terbuka** (Three.js WebGL dengan *fallback* 2D otomatis) yan
 
 ## Kontrol
 
-- **Desktop**: `WASD` atau tombol panah (atau klik langsung di peta untuk berjalan), `Shift` untuk lari, `E` untuk berinteraksi, `M` untuk Peta Dunia & Teleportasi Waypoint, `C` untuk Codex Wawasan & Intel Siber.
-- **Ponsel**: D-Pad sentuh di kiri bawah, tombol `AKSI` dan `LARI` di kanan bawah, atau ketuk langsung di peta.
+- **Desktop**: `WASD` atau tombol panah (atau klik langsung di tanah 3D untuk berjalan), `F` untuk **Strike 3D & Ambush Musuh**, `Q` / `R` (atau klik kanan geser) untuk memutar kamera 3D, `Shift` untuk lari, `E` untuk berinteraksi, `M` untuk Peta Dunia & Teleportasi Waypoint, `C` untuk Codex Wawasan, Siber & Sastra (76 kartu), `H` untuk Komisi Harian & Ascension.
+- **Ponsel**: D-Pad sentuh di kiri bawah, tombol `STRIKE`, `LARI`, dan `AKSI` di kanan bawah, atau ketuk langsung di tanah 3D.
 
 ## Menjalankan Lokal
 

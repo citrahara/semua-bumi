@@ -355,3 +355,110 @@ export const CYBER_LAB = {
     }
   ]
 };
+
+// ==========================================
+// TAMAN SASTRA KLASIK & ARSIP ORWELL (GEORGE ORWELL, HUXLEY, BRADBURY, PRAMOEDYA)
+// ==========================================
+export const CLASSIC_LIT_ACADEMY = {
+  id: 'academy-lit',
+  npcId: 'orwell',
+  badgeName: 'Lencana Sastra Klasik',
+  title: 'Taman Sastra Klasik & Arsip Orwell',
+  intro: 'Buku sastra klasik bertahan puluhan sampai ratusan tahun karena membedah sifat manusia dengan sangat tajam. Pelajari gagasan George Orwell (1984 & Animal Farm) dan para maestro sastra untuk membuat obrolan serta kritikmu terasa berkelas!',
+  concepts: [
+    {
+      id: 'lit-newspeak',
+      author: 'George Orwell · 1984 (1949)',
+      title: 'Newspeak (Menyempitkan Bahasa untuk Mengendalikan Pikiran)',
+      summary: 'Dalam novel "1984", rezim menghapus ribuan kata dan menggantinya dengan istilah sempit (misalnya "ungood" menggantikan "buruk") supaya warga bahkan tidak punya kosakata untuk memikirkan kritik.',
+      modernLink: 'Relevan hari ini: saat kosakata kita menyusut jadi beberapa kata seragam saja, daya pikir kritis ikut tumpul. Memperkaya diksi adalah cara menjaga kemerdekaan berpikir.',
+      speakHook: 'Bahan ngobrol: "Orwell sudah mengingatkan lewat konsep Newspeak: siapa yang menguasai bahasa dan istilah, dialah yang membingkai cara orang melihat kenyataan."'
+    },
+    {
+      id: 'lit-doublethink',
+      author: 'George Orwell · 1984 (1949)',
+      title: 'Doublethink (Memegang Dua Kontradiksi Sekaligus)',
+      summary: 'Kemampuan menerima dua keyakinan yang saling bertentangan pada saat bersamaan tanpa merasa aneh, demi menyesuaikan diri dengan narasi kelompok atau kekuasaan.',
+      modernLink: 'Relevan hari ini: sering muncul saat seseorang membela perilaku tertentu pada kelompoknya sendiri, tetapi mengecam keras perilaku persis sama pada pihak lawan.',
+      speakHook: 'Bahan ngobrol: "Kalau argumen kita pakai standar ganda begini, lama-lama kita jatuh ke doublethink ala Orwell."'
+    },
+    {
+      id: 'lit-memoryhole',
+      author: 'George Orwell · 1984 (1949)',
+      title: 'Ministry of Truth & Memory Hole (Menghapus Jejak Fakta)',
+      summary: 'Winston Smith bekerja di "Kementerian Kebenaran" yang tugasnya justru mengubah arsip koran lama dan membuang fakta asli ke lubang pembakaran bernama Memory Hole.',
+      modernLink: 'Relevan hari ini: sangat dekat dengan era manipulasi digital, suntingan diam-diam, deepfake, dan mengapa standar verifikasi sumber seperti C2PA serta arsip terbuka itu penting.',
+      speakHook: 'Bahan ngobrol: "Ironi ala Orwell: instansi yang namanya paling indah kadang tugasnya justru kebalikannya, seperti Ministry of Truth yang memproduksi propaganda."'
+    },
+    {
+      id: 'lit-bigbrother',
+      author: 'George Orwell · 1984 (1949)',
+      title: 'Big Brother & Telescreen (Pengawasan Tanpa Henti)',
+      summary: 'Layar dua arah di setiap rumah yang terus menayangkan siaran sekaligus mengawasi gerak-gerik warga dengan semboyan terkenal: "Big Brother is watching you."',
+      modernLink: 'Relevan hari ini: pengingat tajam soal privasi digital, pelacakan data berlebihan, keamanan kamera IoT, dan mengapa arsitektur privasi serta keamanan siber itu hak penting warga.',
+      speakHook: 'Bahan ngobrol: "Bedanya sama 1984: dulu warga dipaksa pasang Telescreen di dinding, sekarang kita malah beli sendiri, cas tiap malam, dan bawa ke mana-mana!"'
+    },
+    {
+      id: 'lit-animalfarm',
+      author: 'George Orwell · Animal Farm (1945)',
+      title: '"All Animals Are Equal, But Some Are More Equal"',
+      summary: 'Fabel satir tentang hewan peternakan yang menggulingkan majikan demi kesetaraan, namun perlahan pemimpin barunya mengubah aturan dinding secara diam-diam demi hak istimewa sendiri.',
+      modernLink: 'Relevan hari ini: metafora paling tajam untuk mengkritik aturan yang di atas kertas tampak adil bagi semua, tetapi praktiknya hanya menguntungkan segelintir pihak.',
+      speakHook: 'Bahan ngobrol: "Hati-hati jangan sampai aturan komunitas kita berakhir kayak Animal Farm: di poster semua setara, di praktik ada yang \'lebih setara\'."'
+    },
+    {
+      id: 'lit-huxley',
+      author: 'Aldous Huxley · Brave New World (1932)',
+      title: 'Orwell vs Huxley: Ditindas Rasa Takut atau Dibius Hiburan?',
+      summary: 'Kritikus media Neil Postman merangkum kontras keduanya: Orwell khawatir kebenaran disembunyikan dengan larangan buku, sedangkan Huxley khawatir orang tak mau lagi membaca karena tenggelam dalam hiburan dangkal.',
+      modernLink: 'Relevan hari ini: kombinasi pengawasan data (Orwell) dan guliran layar tanpa henti (Huxley) adalah gambaran paling akurat soal tantangan fokus generasi digital.',
+      speakHook: 'Bahan ngobrol: "Orwell takut kita dilarang membaca; Huxley takut kita sendiri yang lupa caranya membaca karena terlalu sibuk gulir layar."'
+    },
+    {
+      id: 'lit-bradbury',
+      author: 'Ray Bradbury · Fahrenheit 451 (1953)',
+      title: 'Fahrenheit 451: Saat Ringkasan Menggantikan Pemahaman',
+      summary: 'Dunia di mana buku dibakar bukan semata karena perintah diktator sejak awal, melainkan karena masyarakat sendiri makin tak sabar pada bacaan mendalam dan hanya mau potongan instan.',
+      modernLink: 'Relevan hari ini: mengingatkan pentingnya "deep reading" supaya kita memahami konteks utuh, bukan cuma membaca judul sensasional lalu ikut marah.',
+      speakHook: 'Bahan ngobrol: "Di Fahrenheit 451, buku punah bukan cuma karena dibakar, tapi karena orang makin alergi pada paragraf yang lebih dari dua baris."'
+    },
+    {
+      id: 'lit-pram',
+      author: 'Pramoedya Ananta Toer · Bumi Manusia (1980)',
+      title: 'Menulis untuk Sejarah & Mengenal Manusia Secara Adil',
+      summary: 'Dari tetralogi Pulau Buru lahir dua kalimat abadi: "Orang boleh pandai setinggi langit, tapi selama ia tidak menulis, ia akan hilang di dalam masyarakat dan dari sejarah" serta ajakan "bersikap adil sejak dalam pikiran."',
+      modernLink: 'Relevan hari ini: mengasah bahasa dan menulis gagasan secara jernih adalah cara meninggalkan jejak nyata sekaligus melatih keadilan cara pandang sebelum menghakimi.',
+      speakHook: 'Bahan ngobrol: "Seperti kata Pram, keadilan itu dimulai sejak dalam pikiran, bahkan sebelum kita membuka mulut untuk berkomentar."'
+    }
+  ],
+  practice: [
+    {
+      scene: 'Sebuah kelompok diam-diam mengubah aturan agar semua anggota "setara", tapi pengurusnya mendapat pengecualian khusus. Referensi karya George Orwell mana yang paling tajam untuk menyindir situasi ini?',
+      options: [
+        { label: 'Animal Farm ("All animals are equal, but some are more equal than others")', ok: true },
+        { label: 'Newspeak (penyempitan kosakata)', ok: false },
+        { label: 'Fahrenheit 451 (pembakaran buku)', ok: false }
+      ],
+      feedback: 'Tajam sekali! Satir Animal Farm langsung mengena tanpa perlu berteriak panjang lebar.'
+    },
+    {
+      scene: 'Kamu ingin membandingkan dua ancaman era digital: ketakutan pada pengawasan ketat vs ketakutan kita sendiri yang kecanduan hiburan receh sampai lupa berpikir kritis. Pasangan penulis klasik mana yang tepat kamu kutip?',
+      options: [
+        { label: 'George Orwell (1984) dibanding Aldous Huxley (Brave New World)', ok: true },
+        { label: 'Julius Caesar dibanding Albert Einstein', ok: false },
+        { label: 'Gurita dibanding Bunglon', ok: false }
+      ],
+      feedback: 'Kelas! Perbandingan Orwell vs Huxley adalah salah satu amunisi obrolan intelektual paling keren.'
+    },
+    {
+      scene: 'Saat seseorang menyusutkan bahasa diskusi menjadi beberapa label ekstrem saja sehingga nuansa hilang, konsep Orwellian apa yang sedang terjadi?',
+      options: [
+        { label: 'Newspeak (penyempitan bahasa untuk membatasi cara berpikir)', ok: true },
+        { label: 'Serendipiti', ok: false },
+        { label: 'Kaizen', ok: false }
+      ],
+      feedback: 'Sempurna! Memperkaya kosakata dan berani melihat nuansa adalah penawar terbaik bagi Newspeak.'
+    }
+  ]
+};
+

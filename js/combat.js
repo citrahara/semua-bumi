@@ -19,9 +19,10 @@ function randInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-export function launchCyberCombat({ overlayRoot, save, enemy, onVictory, onDefeat, onFlee }) {
+export function launchCyberCombat({ overlayRoot, save, enemy, ambushDamage = 0, onVictory, onDefeat, onFlee }) {
   const cls = getCharacterClass(save.characterClass);
   const playerMaxHp = 100 + (save.level - 1) * 10;
+  const startEnemyHp = Math.max(1, enemy.maxHp - (ambushDamage || 0));
 
   const battle = {
     playerHp: playerMaxHp,
@@ -29,19 +30,37 @@ export function launchCyberCombat({ overlayRoot, save, enemy, onVictory, onDefea
     shield: cls.id === 'alkemis' ? 14 : 8,
     energy: 1,
     maxEnergy: 3,
-    enemyHp: enemy.maxHp,
+    enemyHp: startEnemyHp,
     enemyMaxHp: enemy.maxHp,
     turn: 1,
     enemyIntent: 'attack', // 'attack' | 'charge' | 'stunned'
     pendingDamage: randInt(enemy.atkMin, enemy.atkMax),
-    log: `${enemy.name} menghadang jalurmu! Atur SERANG, BERTAHAN (perisai), dan COUNTER saat jurus Ultimate muncul!`,
+    log:
+      ambushDamage > 0
+        ? `AMBUSH STRIKE! Tebasan pembukamu dari alam 3D langsung mengurangi ${ambushDamage} HP ${enemy.name}! Lanjutkan dengan SERANG, BERTAHAN, atau COUNTER!`
+        : `${enemy.name} menghadang jalurmu! Atur SERANG, BERTAHAN (perisai), dan COUNTER saat jurus Ultimate muncul!`,
     counterMode: false,
     counterUsed: false,
-    fxHero: '',
-    fxEnemy: '',
+    fxHero: ambushDamage > 0 ? 'lunge-atk' : '',
+    fxEnemy: ambushDamage > 0 ? 'hit' : '',
+    fxHeroOverlay: '',
+    fxEnemyOverlay: ambushDamage > 0 ? 'slash' : '',
+    floatHeroText: '',
+    floatHeroTone: 'dmg',
+    floatEnemyText: ambushDamage > 0 ? `AMBUSH -${ambushDamage}!!` : '',
+    floatEnemyTone: 'crit',
     finished: false,
     won: false
   };
+
+  function clearTurnFx() {
+    battle.fxHero = '';
+    battle.fxEnemy = '';
+    battle.fxHeroOverlay = '';
+    battle.fxEnemyOverlay = '';
+    battle.floatHeroText = '';
+    battle.floatEnemyText = '';
+  }
 
   function rollNextIntent() {
     // Setiap giliran ke-2 atau ke-3 musuh charge ULTIMATE agar Counter & Defense terasa taktis!
@@ -80,15 +99,24 @@ export function launchCyberCombat({ overlayRoot, save, enemy, onVictory, onDefea
     const hpLoss = rawDmg - absorbed;
     battle.shield = Math.max(0, battle.shield - absorbed);
     battle.playerHp = Math.max(0, battle.playerHp - hpLoss);
-    battle.fxHero = 'hit';
 
     if (absorbed > 0 && hpLoss === 0) {
+      battle.fxHero = 'shield';
+      battle.fxHeroOverlay = 'shield-dome';
+      battle.floatHeroText = `TANGKIS ${absorbed}!`;
+      battle.floatHeroTone = 'shield';
       audio.playRuneBreak();
-      battle.log += ` Perisaimu menahan penuh ${absorbed} DMG dari ${enemy.name}!`;
+      battle.log += ` Perisai Zero-Trust menahan penuh ${absorbed} DMG dari ${enemy.name}!`;
     } else if (absorbed > 0) {
+      battle.fxHero = battle.fxHero === 'lunge-atk' ? 'lunge-atk hit' : 'hit';
+      battle.floatHeroText = `-${hpLoss} (Serap ${absorbed})`;
+      battle.floatHeroTone = 'dmg';
       audio.playWrong();
       battle.log += ` ${enemy.name} menyerang ${rawDmg} DMG (Perisai serap ${absorbed}, HP -${hpLoss}).`;
     } else {
+      battle.fxHero = battle.fxHero === 'lunge-atk' ? 'lunge-atk hit' : 'hit';
+      battle.floatHeroText = `-${rawDmg}`;
+      battle.floatHeroTone = 'dmg';
       audio.playWrong();
       battle.log += ` ${enemy.name} menghantam sebesar ${rawDmg} DMG!`;
     }
@@ -108,15 +136,19 @@ export function launchCyberCombat({ overlayRoot, save, enemy, onVictory, onDefea
 
   function doAttack() {
     if (battle.finished || battle.counterMode) return;
-    battle.fxHero = '';
+    clearTurnFx();
+    battle.fxHero = 'lunge-atk';
     battle.fxEnemy = 'hit';
+    battle.fxEnemyOverlay = 'slash';
     const base = randInt(19, 26) + Math.floor(save.level * 1.5);
     const critChance = cls.id === 'detektif' ? 0.35 : 0.18;
     const isCrit = Math.random() < critChance;
     const dmg = isCrit ? Math.round(base * 1.45) : base;
 
     battle.enemyHp = Math.max(0, battle.enemyHp - dmg);
-    audio.playCorrect();
+    battle.floatEnemyText = isCrit ? `CRIT STRIKE -${dmg}!!` : `STRIKE -${dmg}!`;
+    battle.floatEnemyTone = isCrit ? 'crit' : 'dmg';
+    audio.playStrike(isCrit);
     battle.log = isCrit
       ? `SERANGAN KRITIKAL! Patch Strike menembus ${enemy.name} sebesar ${dmg} DMG!`
       : `Kamu melancarkan Patch Strike (${dmg} DMG) ke ${enemy.name}!`;
@@ -125,25 +157,33 @@ export function launchCyberCombat({ overlayRoot, save, enemy, onVictory, onDefea
 
   function doDefend() {
     if (battle.finished || battle.counterMode) return;
+    clearTurnFx();
     battle.fxHero = 'shield';
-    battle.fxEnemy = '';
+    battle.fxHeroOverlay = 'shield-dome';
     const shieldGain = cls.id === 'alkemis' ? 32 : 26;
     const healGain = 12;
     battle.shield = Math.min(65, battle.shield + shieldGain);
     battle.playerHp = Math.min(battle.playerMaxHp, battle.playerHp + healGain);
     battle.energy = Math.min(battle.maxEnergy, battle.energy + 1);
-    audio.playWaypoint();
+    battle.floatHeroText = `+${shieldGain} PERISAI!`;
+    battle.floatHeroTone = 'shield';
+    audio.playShieldUp();
     battle.log = `PERTAHANAN ZERO-TRUST! Perisai +${shieldGain}, HP +${healGain}, Energi +1!`;
     applyEnemyTurn();
   }
 
   function doCyberSkill() {
     if (battle.finished || battle.counterMode || battle.energy < 2) return;
+    clearTurnFx();
     battle.energy -= 2;
-    battle.fxHero = '';
+    battle.fxHero = 'lunge-atk';
     battle.fxEnemy = 'hit';
+    battle.fxEnemyOverlay = 'quantum';
     const dmg = randInt(44, 54) + save.level * 2;
     battle.enemyHp = Math.max(0, battle.enemyHp - dmg);
+    battle.floatEnemyText = `QUANTUM -${dmg}!!`;
+    battle.floatEnemyTone = 'quantum';
+    audio.playStrike(true);
     audio.playGateUnlock();
     battle.log = `JURUS SIBER: ML-KEM QUANTUM BLAST menghajar ${enemy.name} sebesar ${dmg} DMG!`;
     applyEnemyTurn();
@@ -160,6 +200,7 @@ export function launchCyberCombat({ overlayRoot, save, enemy, onVictory, onDefea
     const opt = enemy.counterQ.options[optIdx];
     battle.counterMode = false;
     battle.counterUsed = true;
+    clearTurnFx();
 
     if (opt && opt.ok) {
       const dmg = 46 + save.level * 2;
@@ -167,7 +208,14 @@ export function launchCyberCombat({ overlayRoot, save, enemy, onVictory, onDefea
       battle.enemyIntent = 'stunned';
       battle.shield = Math.min(65, battle.shield + 15);
       battle.fxEnemy = 'hit';
+      battle.fxEnemyOverlay = 'counter';
       battle.fxHero = 'shield';
+      battle.fxHeroOverlay = 'shield-dome';
+      battle.floatEnemyText = `COUNTER BREAK -${dmg}!!`;
+      battle.floatEnemyTone = 'crit';
+      battle.floatHeroText = '+15 PERISAI!';
+      battle.floatHeroTone = 'shield';
+      audio.playStrike(true);
       audio.playGateUnlock();
       battle.log = `COUNTER SIBER SEMPURNA! "${enemy.ultName}" dibatalkan total! ${enemy.name} kena ${dmg} DMG balik + STUN! (${enemy.counterQ.explain})`;
       applyEnemyTurn();
@@ -189,6 +237,20 @@ export function launchCyberCombat({ overlayRoot, save, enemy, onVictory, onDefea
         ? `<div class="intent-pill danger">PERINGATAN ULTIMATE: ${escapeHtml(enemy.ultName)} (${battle.pendingDamage} DMG)! Pakai COUNTER atau BERTAHAN!</div>`
         : `<div class="intent-pill">Niat Musuh: Serangan Siber (${battle.pendingDamage} DMG)</div>`;
 
+    const enemyFxHtml =
+      battle.fxEnemyOverlay === 'slash'
+        ? `<div class="fx-slash-streak"></div><div class="fx-slash-streak second"></div>`
+        : battle.fxEnemyOverlay === 'quantum'
+        ? `<div class="fx-quantum-burst"></div>`
+        : battle.fxEnemyOverlay === 'counter'
+        ? `<div class="fx-counter-flash"></div><div class="fx-slash-streak"></div>`
+        : '';
+
+    const heroFxHtml =
+      battle.fxHeroOverlay === 'shield-dome'
+        ? `<div class="fx-shield-dome"></div>`
+        : '';
+
     overlayRoot.innerHTML = `
       <div class="modal-backdrop">
         <div class="combat-arena">
@@ -209,7 +271,11 @@ export function launchCyberCombat({ overlayRoot, save, enemy, onVictory, onDefea
           <div class="combat-stage">
             <!-- Hero Side -->
             <div class="combatant ${battle.fxHero}">
-              <div class="combat-portrait">${renderCharacterSVG(cls.portraitKey, battle.fxHero === 'hit' ? 'shock' : 'happy')}</div>
+              <div class="combat-portrait-wrap">
+                <div class="combat-portrait">${renderCharacterSVG(cls.portraitKey, battle.fxHero.includes('hit') ? 'shock' : 'happy')}</div>
+                ${heroFxHtml}
+                ${battle.floatHeroText ? `<div class="dmg-float ${battle.floatHeroTone}">${escapeHtml(battle.floatHeroText)}</div>` : ''}
+              </div>
               <div class="combat-name">@${escapeHtml(save.username || save.playerName)}</div>
               <div class="combat-bar-label"><span>HP</span><span>${battle.playerHp}/${battle.playerMaxHp}</span></div>
               <div class="combat-bar"><div class="combat-bar-fill hero" style="width:${pPct}%"></div></div>
@@ -223,7 +289,11 @@ export function launchCyberCombat({ overlayRoot, save, enemy, onVictory, onDefea
 
             <!-- Enemy Side -->
             <div class="combatant ${battle.fxEnemy}">
-              <div class="combat-portrait">${renderEnemySVG(enemy.id)}</div>
+              <div class="combat-portrait-wrap">
+                <div class="combat-portrait">${renderEnemySVG(enemy.id)}</div>
+                ${enemyFxHtml}
+                ${battle.floatEnemyText ? `<div class="dmg-float ${battle.floatEnemyTone}">${escapeHtml(battle.floatEnemyText)}</div>` : ''}
+              </div>
               <div class="combat-name" style="color:#ff8a8a;">${escapeHtml(enemy.name)}</div>
               <div class="combat-bar-label"><span>HP Musuh</span><span>${battle.enemyHp}/${battle.enemyMaxHp}</span></div>
               <div class="combat-bar"><div class="combat-bar-fill enemy" style="width:${ePct}%"></div></div>

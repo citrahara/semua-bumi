@@ -5,7 +5,8 @@ import {
   KOREAN_ACADEMY,
   POLYGLOT_ACADEMY,
   RHETORIC_ACADEMY,
-  CYBER_LAB
+  CYBER_LAB,
+  CLASSIC_LIT_ACADEMY
 } from './data/academy.js';
 import { renderCharacterSVG, CAST } from './characters.js';
 import { audio } from './audio.js';
@@ -597,3 +598,159 @@ export function openCyberLab({ overlayRoot, save, onUnlockIntel, onComplete, onC
   }
   render();
 }
+
+// ==========================================
+// 5. TAMAN SASTRA KLASIK & ARSIP ORWELL (TUAN GEORGE)
+// ==========================================
+export function openClassicLitAcademy({ overlayRoot, save, onUnlockLit, onComplete, onClose }) {
+  let tab = 'concepts'; // concepts | practice
+  let pIdx = 0;
+  let pFeedback = null;
+  const hasBadge = (save.academyBadges || []).includes(CLASSIC_LIT_ACADEMY.id);
+
+  function render() {
+    overlayRoot.innerHTML = `
+      <div class="modal-backdrop">
+        <div class="vintage-book" style="max-width:780px; max-height:86vh; overflow-y:auto;">
+          <div class="vintage-top-row">
+            <span class="vintage-year">TAMAN SASTRA KLASIK · ${hasBadge ? 'LENCANA SASTRA AKTIF' : 'ARSIP ORWELL & MAESTRO'}</span>
+            <button class="vintage-skip" id="btn-lit-close" type="button">Keluar Arsip</button>
+          </div>
+
+          <div style="display:flex; align-items:center; gap:14px; margin-bottom:12px;">
+            <div class="portrait-box" style="width:66px; height:66px; border:2px solid #7c4d25;">${renderCharacterSVG('orwell', 'idle')}</div>
+            <div>
+              <h2 style="margin:0; font-family:var(--font-display); font-size:1.55rem; color:#2b1b12;">${escapeHtml(CLASSIC_LIT_ACADEMY.title)}</h2>
+              <p style="margin:3px 0 0; font-size:0.86rem; color:#5a3e28;">${escapeHtml(CLASSIC_LIT_ACADEMY.intro)}</p>
+            </div>
+          </div>
+
+          <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px;">
+            <button class="filter-chip ${tab === 'concepts' ? 'active' : ''}" id="lit-tab-concepts" type="button">1. Gagasan Orwell & Sastra Klasik (${CLASSIC_LIT_ACADEMY.concepts.length})</button>
+            <button class="filter-chip ${tab === 'practice' ? 'active' : ''}" id="lit-tab-practice" type="button">2. Praktik Referensi Sastra</button>
+          </div>
+
+          ${
+            tab === 'concepts'
+              ? `
+                <div style="display:grid; gap:10px;">
+                  ${CLASSIC_LIT_ACADEMY.concepts
+                    .map(
+                      (c) => `
+                    <div class="standup-card" style="cursor:default;">
+                      <span class="vintage-tag">${escapeHtml(c.author)}</span>
+                      <strong style="font-size:1.05rem;">${escapeHtml(c.title)}</strong>
+                      <p style="margin:4px 0; font-size:0.88rem; color:#2b1b12;">${escapeHtml(c.summary)}</p>
+                      <p style="margin:0 0 4px; font-size:0.82rem; color:#5a3e28;">${escapeHtml(c.modernLink)}</p>
+                      <div class="vintage-aside" style="margin-top:4px;">${escapeHtml(c.speakHook)}</div>
+                    </div>
+                  `
+                    )
+                    .join('')}
+                </div>
+                <div class="vintage-footer" style="margin-top:14px;">
+                  <span style="font-size:0.8rem; color:#6d4c30; font-weight:700;">Seluruh 8 gagasan sastra otomatis tersimpan ke Codex!</span>
+                  <button class="rpg-btn primary" id="btn-lit-go-prac" type="button">Lanjut Praktik (Raih Lencana Sastra!)</button>
+                </div>
+              `
+              : renderLitPractice()
+          }
+        </div>
+      </div>
+    `;
+
+    document.getElementById('btn-lit-close')?.addEventListener('click', onClose);
+    document.getElementById('lit-tab-concepts')?.addEventListener('click', () => {
+      audio.playClick();
+      tab = 'concepts';
+      render();
+    });
+    document.getElementById('lit-tab-practice')?.addEventListener('click', () => {
+      audio.playClick();
+      tab = 'practice';
+      pIdx = 0;
+      pFeedback = null;
+      render();
+    });
+    document.getElementById('btn-lit-go-prac')?.addEventListener('click', () => {
+      audio.playClick();
+      if (onUnlockLit) CLASSIC_LIT_ACADEMY.concepts.forEach((c) => onUnlockLit(c.id));
+      tab = 'practice';
+      pIdx = 0;
+      pFeedback = null;
+      render();
+    });
+    document.querySelectorAll('[data-lp-opt]').forEach((b) => {
+      b.addEventListener('click', () => {
+        const q = CLASSIC_LIT_ACADEMY.practice[pIdx];
+        const chosen = q.options[Number(b.dataset.lpOpt)];
+        if (chosen.ok) {
+          audio.playCorrect();
+          pFeedback = { ok: true, text: q.feedback };
+        } else {
+          audio.playWrong();
+          pFeedback = { ok: false, text: 'Cek ulang catatan George Orwell di tab 1 ya!' };
+        }
+        render();
+      });
+    });
+    document.getElementById('btn-lp-next')?.addEventListener('click', () => {
+      audio.playClick();
+      if (pIdx < CLASSIC_LIT_ACADEMY.practice.length - 1) {
+        pIdx += 1;
+        pFeedback = null;
+        render();
+      } else {
+        if (onUnlockLit) CLASSIC_LIT_ACADEMY.concepts.forEach((c) => onUnlockLit(c.id));
+        onComplete({
+          academyId: CLASSIC_LIT_ACADEMY.id,
+          badgeName: CLASSIC_LIT_ACADEMY.badgeName,
+          npcId: 'orwell',
+          xp: 115,
+          coins: 85
+        });
+      }
+    });
+  }
+
+  function renderLitPractice() {
+    const q = CLASSIC_LIT_ACADEMY.practice[pIdx];
+    return `
+      <div class="vintage-aside" style="font-style:normal; margin-bottom:12px; font-weight:700;">
+        Kasus ${pIdx + 1}/${CLASSIC_LIT_ACADEMY.practice.length}: ${escapeHtml(q.scene)}
+      </div>
+      <div class="choice-grid">
+        ${q.options
+          .map(
+            (opt, idx) => `
+          <button class="vintage-choice" data-lp-opt="${idx}" type="button" ${pFeedback && pFeedback.ok ? 'disabled' : ''}>
+            <span class="choice-badge" style="background:#3b2314; color:#ffd166;">${['A', 'B', 'C'][idx]}</span>
+            <span>${escapeHtml(opt.label)}</span>
+          </button>
+        `
+          )
+          .join('')}
+      </div>
+      ${
+        pFeedback
+          ? `
+        <div class="crowd-vintage-bubble" style="margin-top:12px;">
+          ${pFeedback.ok ? 'Tepat! ' : 'Belum pas! '}${escapeHtml(pFeedback.text)}
+        </div>
+        ${
+          pFeedback.ok
+            ? `<div style="margin-top:12px; text-align:right;"><button class="rpg-btn primary" id="btn-lp-next" type="button">${
+                pIdx >= CLASSIC_LIT_ACADEMY.practice.length - 1 ? 'Klaim Lencana Sastra Klasik!' : 'Lanjut Kasus Berikutnya'
+              }</button></div>`
+            : ''
+        }
+      `
+          : ''
+      }
+    `;
+  }
+
+  if (onUnlockLit) CLASSIC_LIT_ACADEMY.concepts.forEach((c) => onUnlockLit(c.id));
+  render();
+}
+

@@ -146,6 +146,18 @@ class RpgAudio {
     this.playTone(135, 0.12, 'triangle', 0.19, 0.14, 80);
     this.playNoise(0.32, 0.11, 0.28, 4200);
   }
+
+  playStrike(heavy = false) {
+    // Efek tebasan energi + benturan mantap!
+    this.playNoise(heavy ? 0.22 : 0.13, heavy ? 0.16 : 0.11, 0, heavy ? 1200 : 2100);
+    this.playTone(heavy ? 540 : 420, heavy ? 0.24 : 0.14, 'sawtooth', heavy ? 0.16 : 0.11, 0, heavy ? 110 : 140);
+    this.playTone(heavy ? 880 : 660, 0.12, 'triangle', 0.14, 0.04, heavy ? 1320 : 880);
+  }
+
+  playShieldUp() {
+    this.playTone(340, 0.18, 'sine', 0.13, 0, 680);
+    this.playTone(510, 0.24, 'triangle', 0.12, 0.06, 920);
+  }
 }
 
 export const audio = new RpgAudio();

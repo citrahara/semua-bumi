@@ -85,6 +85,8 @@ export class WorldRenderer3D {
 
     this.shake = 0;
     this.particles = [];
+    this.strikeEffects = [];
+    this.strikeAnim = 0;
     this.swayTrees = [];
     this.spinners = [];
     this.clouds = [];
@@ -94,6 +96,7 @@ export class WorldRenderer3D {
     this.npcMeshes = new Map();
     this.enemyMeshes = new Map();
     this.currentHeroClass = null;
+    this.heroYaw = 0;
 
     this.setupLighting();
     this.buildEnvironment();
@@ -395,10 +398,13 @@ export class WorldRenderer3D {
       this.chestMeshes.set(ch.id, { group: cg, lid });
     }
 
-    // 11. Semua NPC 3D + Label + Permata Quest Berputar
+    // 11. Semua NPC 3D Hidup (Mata Ekspresif + Lengan Melambai + Menoleh ke Pemain!) + Label + Permata Quest
+    const eyeDarkMat = new THREE.MeshBasicMaterial({ color: 0x1a1412 });
+    const eyeGlintMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
     for (const npc of NPCS) {
       const info = CAST[npc.id] || CAST.jaja;
       const ng = new THREE.Group();
+      const rig = new THREE.Group();
 
       const body = new THREE.Mesh(
         new THREE.CylinderGeometry(0.38, 0.5, 1.05, 10),
@@ -414,11 +420,50 @@ export class WorldRenderer3D {
       head.position.y = 1.38;
       head.castShadow = true;
 
+      // Mata ekspresif + kilau cahaya di wajah NPC (+Z)
+      for (const sx of [-0.14, 0.14]) {
+        const pupil = new THREE.Mesh(new THREE.SphereGeometry(0.058, 8, 8), eyeDarkMat);
+        pupil.position.set(sx, 1.37, 0.385);
+        const glint = new THREE.Mesh(new THREE.SphereGeometry(0.022, 6, 6), eyeGlintMat);
+        glint.position.set(sx + 0.02, 1.39, 0.432);
+        rig.add(pupil, glint);
+      }
+
+      // Monokel kuningan khas Tuan George (Orwell)
+      if (npc.id === 'orwell') {
+        const mono = new THREE.Mesh(
+          new THREE.TorusGeometry(0.11, 0.018, 6, 16),
+          new THREE.MeshStandardMaterial({ color: 0xffd166, metalness: 0.8, roughness: 0.2 })
+        );
+        mono.position.set(0.14, 1.37, 0.415);
+        rig.add(mono);
+      }
+
       const hat = new THREE.Mesh(
-        new THREE.SphereGeometry(0.44, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.52),
+        new THREE.SphereGeometry(0.44, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.44),
         new THREE.MeshStandardMaterial({ color: info.hair, roughness: 0.8 })
       );
-      hat.position.y = 1.44;
+      hat.position.y = 1.45;
+
+      // Lengan kiri & kanan berengsel di bahu supaya NPC bisa melambai saat pemain mendekat
+      const sleeveMat = new THREE.MeshStandardMaterial({ color: info.shirt, roughness: 0.75 });
+      const handMat = new THREE.MeshStandardMaterial({ color: info.skin, roughness: 0.7 });
+
+      const makeNpcArm = (side) => {
+        const armGrp = new THREE.Group();
+        armGrp.position.set(side * 0.46, 0.96, 0);
+        const sleeve = new THREE.Mesh(new THREE.CapsuleGeometry(0.11, 0.34, 4, 8), sleeveMat);
+        sleeve.position.y = -0.22;
+        sleeve.castShadow = true;
+        const hand = new THREE.Mesh(new THREE.SphereGeometry(0.11, 8, 8), handMat);
+        hand.position.y = -0.44;
+        armGrp.add(sleeve, hand);
+        return armGrp;
+      };
+      const leftArm = makeNpcArm(-1);
+      const rightArm = makeNpcArm(1);
+
+      rig.add(body, head, hat, leftArm, rightArm);
 
       const diamondMat = new THREE.MeshStandardMaterial({
         color: 0xffd166,
@@ -426,15 +471,15 @@ export class WorldRenderer3D {
         emissiveIntensity: 0.55
       });
       const diamond = new THREE.Mesh(new THREE.OctahedronGeometry(0.3, 0), diamondMat);
-      diamond.position.y = 2.45;
+      diamond.position.y = 2.48;
 
       const lbl = makeLabelSprite(info.name, 'rgba(24,18,14,0.85)', '#FBF6EC', info.accent || '#FFD166');
-      lbl.position.y = 3.25;
+      lbl.position.y = 3.28;
 
-      ng.add(body, head, hat, diamond, lbl);
+      ng.add(rig, diamond, lbl);
       ng.position.set(npc.x * S, 0, npc.y * S);
       this.scene.add(ng);
-      this.npcMeshes.set(npc.id, { group: ng, diamond, diamondMat });
+      this.npcMeshes.set(npc.id, { group: ng, rig, leftArm, rightArm, diamond, diamondMat, yaw: 0 });
     }
   }
 
@@ -877,28 +922,159 @@ export class WorldRenderer3D {
     this.rightLeg.position.x = 0.2;
 
     this.heroBody = new THREE.Group();
-    const cloak = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.36, 0.52, 0.96, 10),
-      new THREE.MeshStandardMaterial({ color: cls.cloakColor, roughness: 0.7 })
-    );
+    const cloakMat = new THREE.MeshStandardMaterial({ color: cls.cloakColor, roughness: 0.65 });
+    const cloak = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.52, 0.96, 12), cloakMat);
     cloak.position.y = 0.82;
     cloak.castShadow = true;
 
+    // Jubah punggung berkibar saat lari atau Strike!
+    const capeGeo = new THREE.BoxGeometry(0.76, 0.92, 0.08);
+    capeGeo.translate(0, -0.44, 0);
+    this.capeMesh = new THREE.Mesh(
+      capeGeo,
+      new THREE.MeshStandardMaterial({ color: cls.trimColor, roughness: 0.6, side: THREE.DoubleSide })
+    );
+    this.capeMesh.position.set(0, 1.24, -0.34);
+    this.capeMesh.rotation.x = 0.22;
+    this.capeMesh.castShadow = true;
+
     const scarf = new THREE.Mesh(
       new THREE.TorusGeometry(0.36, 0.1, 8, 16),
-      new THREE.MeshStandardMaterial({ color: cls.trimColor, roughness: 0.5 })
+      new THREE.MeshStandardMaterial({ color: cls.trimColor, roughness: 0.45 })
     );
     scarf.rotation.x = Math.PI / 2;
     scarf.position.y = 1.24;
 
     const head = new THREE.Mesh(
       new THREE.SphereGeometry(0.42, 14, 12),
-      new THREE.MeshStandardMaterial({ color: 0xe0ac84, roughness: 0.7 })
+      new THREE.MeshStandardMaterial({ color: 0xe0ac84, roughness: 0.68 })
     );
     head.position.y = 1.62;
     head.castShadow = true;
 
-    this.heroBody.add(cloak, scarf, head);
+    // Mata ekspresif yang bisa berkedip + rona pipi hangat
+    const eyeMat = new THREE.MeshBasicMaterial({ color: 0x1b1411 });
+    const glintMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const blushMat = new THREE.MeshBasicMaterial({ color: 0xf48c7a, transparent: true, opacity: 0.55 });
+    this.leftEye = new THREE.Group();
+    this.leftEye.position.set(-0.15, 1.6, 0.385);
+    const epL = new THREE.Mesh(new THREE.SphereGeometry(0.062, 8, 8), eyeMat);
+    const egL = new THREE.Mesh(new THREE.SphereGeometry(0.025, 6, 6), glintMat);
+    egL.position.set(0.02, 0.02, 0.05);
+    this.leftEye.add(epL, egL);
+
+    this.rightEye = this.leftEye.clone();
+    this.rightEye.position.x = 0.15;
+
+    const blushL = new THREE.Mesh(new THREE.SphereGeometry(0.055, 6, 6), blushMat);
+    blushL.scale.set(1.3, 0.6, 0.4);
+    blushL.position.set(-0.24, 1.51, 0.34);
+    const blushR = blushL.clone();
+    blushR.position.x = 0.24;
+
+    // Lengan Kiri & Kanan berengsel bahu (mengayun saat jalan & menebas saat Strike!)
+    const handMat = new THREE.MeshStandardMaterial({ color: 0xe0ac84, roughness: 0.68 });
+    const makeArm = (side) => {
+      const grp = new THREE.Group();
+      grp.position.set(side * 0.48, 1.16, 0);
+      const sleeve = new THREE.Mesh(new THREE.CapsuleGeometry(0.115, 0.36, 4, 8), cloakMat);
+      sleeve.position.y = -0.22;
+      sleeve.castShadow = true;
+      const hand = new THREE.Mesh(new THREE.SphereGeometry(0.115, 8, 8), handMat);
+      hand.position.y = -0.46;
+      grp.add(sleeve, hand);
+      return grp;
+    };
+    this.leftArm = makeArm(-1);
+    this.rightArm = makeArm(1);
+
+    // Senjata / Alat Ikonik 3D di Tangan Kanan sesuai Kelas Karakter!
+    this.weaponGroup = new THREE.Group();
+    this.weaponGroup.position.set(0, -0.46, 0.14);
+    this.weaponGroup.rotation.x = Math.PI * 0.38;
+    this.weaponGlowMat = null;
+
+    if (classId === 'pujangga') {
+      // Pena Bulu Emas Pujangga
+      const shaft = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.035, 0.055, 1.25, 8),
+        new THREE.MeshStandardMaterial({ color: 0xffd166, metalness: 0.7, roughness: 0.2 })
+      );
+      shaft.position.y = 0.42;
+      this.weaponGlowMat = new THREE.MeshStandardMaterial({
+        color: 0xffeef2,
+        emissive: 0xe84393,
+        emissiveIntensity: 0.55,
+        roughness: 0.3
+      });
+      const plume = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.78, 6), this.weaponGlowMat);
+      plume.position.y = 0.88;
+      plume.scale.set(1.0, 1.0, 0.35);
+      this.weaponGroup.add(shaft, plume);
+    } else if (classId === 'detektif') {
+      // Kaca Pembesar Kristal Siber
+      const handle = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.05, 0.06, 0.85, 8),
+        new THREE.MeshStandardMaterial({ color: 0x5c3a21, roughness: 0.7 })
+      );
+      handle.position.y = 0.25;
+      const rim = new THREE.Mesh(
+        new THREE.TorusGeometry(0.32, 0.055, 8, 20),
+        new THREE.MeshStandardMaterial({ color: 0xffd166, metalness: 0.8, roughness: 0.2 })
+      );
+      rim.position.y = 0.92;
+      this.weaponGlowMat = new THREE.MeshStandardMaterial({
+        color: 0x48dbfb,
+        emissive: 0x48dbfb,
+        emissiveIntensity: 0.65,
+        transparent: true,
+        opacity: 0.75
+      });
+      const lens = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.05, 16), this.weaponGlowMat);
+      lens.rotation.x = Math.PI / 2;
+      lens.position.y = 0.92;
+      this.weaponGroup.add(handle, rim, lens);
+    } else if (classId === 'alkemis') {
+      // Tongkat Rune Alkemis + Kristal Emas Melayang
+      const staff = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.05, 0.065, 1.45, 8),
+        new THREE.MeshStandardMaterial({ color: 0x1f2937, roughness: 0.5, metalness: 0.4 })
+      );
+      staff.position.y = 0.48;
+      this.weaponGlowMat = new THREE.MeshStandardMaterial({
+        color: 0xffd166,
+        emissive: 0x48dbfb,
+        emissiveIntensity: 0.75
+      });
+      const runeGem = new THREE.Mesh(new THREE.OctahedronGeometry(0.25, 0), this.weaponGlowMat);
+      runeGem.position.y = 1.32;
+      this.weaponGroup.add(staff, runeGem);
+    } else {
+      // Orator Api: Tongkat Mikrofon Emas 1894 Bercahaya!
+      const rod = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.045, 0.06, 1.25, 8),
+        new THREE.MeshStandardMaterial({ color: 0x3b2314, roughness: 0.5, metalness: 0.3 })
+      );
+      rod.position.y = 0.42;
+      this.weaponGlowMat = new THREE.MeshStandardMaterial({
+        color: 0xffd166,
+        emissive: 0xff9f1c,
+        emissiveIntensity: 0.7,
+        metalness: 0.6,
+        roughness: 0.2
+      });
+      const micOrb = new THREE.Mesh(new THREE.SphereGeometry(0.22, 12, 10), this.weaponGlowMat);
+      micOrb.position.y = 1.12;
+      const micHalo = new THREE.Mesh(
+        new THREE.TorusGeometry(0.29, 0.03, 6, 18),
+        new THREE.MeshBasicMaterial({ color: 0xffd166 })
+      );
+      micHalo.position.y = 1.12;
+      this.weaponGroup.add(rod, micOrb, micHalo);
+    }
+
+    this.rightArm.add(this.weaponGroup);
+    this.heroBody.add(cloak, this.capeMesh, scarf, head, this.leftEye, this.rightEye, blushL, blushR, this.leftArm, this.rightArm);
 
     if (cls.hatStyle === 'fedora') {
       const brim = new THREE.Mesh(new THREE.CylinderGeometry(0.68, 0.68, 0.08, 16), new THREE.MeshStandardMaterial({ color: 0x4d3623 }));
@@ -915,10 +1091,10 @@ export class WorldRenderer3D {
       this.heroBody.add(beret);
     } else {
       const hair = new THREE.Mesh(
-        new THREE.SphereGeometry(0.44, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.55),
+        new THREE.SphereGeometry(0.44, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.44),
         new THREE.MeshStandardMaterial({ color: 0x241b17 })
       );
-      hair.position.y = 1.66;
+      hair.position.y = 1.69;
       this.heroBody.add(hair);
       if (cls.hatStyle === 'goggles') {
         const gMat = new THREE.MeshStandardMaterial({ color: 0x48dbfb, emissive: 0x48dbfb, emissiveIntensity: 0.55 });
@@ -959,26 +1135,132 @@ export class WorldRenderer3D {
     const mat = new THREE.MeshStandardMaterial({
       color: en.color,
       emissive: en.accent,
-      emissiveIntensity: 0.25,
-      roughness: 0.4,
+      emissiveIntensity: 0.32,
+      roughness: 0.35,
       flatShading: true
     });
-    const body = new THREE.Mesh(new THREE.IcosahedronGeometry(0.72, 0), mat);
-    body.position.y = 1.05;
+    const body = new THREE.Mesh(new THREE.IcosahedronGeometry(0.74, 0), mat);
+    body.position.y = 1.1;
     body.castShadow = true;
+
+    // Mata menyala + cincin orbit bahaya agar musuh siber terlihat hidup & garang!
+    const eyeGlow = new THREE.MeshBasicMaterial({ color: 0xffd166 });
+    const e1 = new THREE.Mesh(new THREE.SphereGeometry(0.11, 8, 8), eyeGlow);
+    e1.position.set(-0.24, 0.12, 0.62);
+    const e2 = e1.clone();
+    e2.position.x = 0.24;
+    body.add(e1, e2);
+
+    const orbitRing = new THREE.Mesh(
+      new THREE.TorusGeometry(1.05, 0.055, 6, 20),
+      new THREE.MeshBasicMaterial({ color: en.accent || 0xff5252, transparent: true, opacity: 0.78 })
+    );
+    orbitRing.position.y = 1.15;
+    orbitRing.rotation.x = Math.PI / 2.6;
+
     const aura = new THREE.Mesh(
-      new THREE.RingGeometry(0.85, 1.05, 20),
-      new THREE.MeshBasicMaterial({ color: 0xff5252, side: THREE.DoubleSide, transparent: true, opacity: 0.65 })
+      new THREE.RingGeometry(0.88, 1.12, 24),
+      new THREE.MeshBasicMaterial({ color: 0xff5252, side: THREE.DoubleSide, transparent: true, opacity: 0.7 })
     );
     aura.rotation.x = -Math.PI / 2;
     aura.position.y = 0.08;
     const lbl = makeLabelSprite(`⚔ ${en.name}`, 'rgba(38,14,18,0.9)', '#FF9E9E', '#FF5252');
-    lbl.position.y = 2.55;
-    g.add(body, aura, lbl);
+    lbl.position.y = 2.68;
+    g.add(body, orbitRing, aura, lbl);
     this.scene.add(g);
-    const entry = { group: g, body, aura };
+    const entry = { group: g, body, orbitRing, aura };
     this.enemyMeshes.set(en.id, entry);
     return entry;
+  }
+
+  triggerHeroStrike(x, y, facing = 'down', heavy = false) {
+    this.strikeAnim = 0.4;
+    const fx = facing === 'right' ? 1 : facing === 'left' ? -1 : 0;
+    const fz = facing === 'down' ? 1 : facing === 'up' ? -1 : 0;
+    const yaw = Math.atan2(fx, fz);
+    const ox = x * S;
+    const oz = y * S;
+    const primaryCol = heavy ? 0x48dbfb : 0xffd166;
+    const secondaryCol = heavy ? 0xffd166 : 0xff6b35;
+
+    // 1. Tebasan Sabit Energi 3D utama meluncur ke depan!
+    const slashMat = new THREE.MeshBasicMaterial({
+      color: primaryCol,
+      transparent: true,
+      opacity: 0.95,
+      side: THREE.DoubleSide
+    });
+    const slashMesh = new THREE.Mesh(
+      new THREE.TorusGeometry(1.75, heavy ? 0.22 : 0.16, 8, 26, Math.PI * 0.95),
+      slashMat
+    );
+    slashMesh.position.set(ox + fx * 1.1, 1.25, oz + fz * 1.1);
+    slashMesh.rotation.set(Math.PI / 2, 0, -yaw + Math.PI * 0.02);
+    this.scene.add(slashMesh);
+    this.strikeEffects.push({
+      kind: 'slash',
+      mesh: slashMesh,
+      vx: fx * 14.5,
+      vz: fz * 14.5,
+      life: 0.36,
+      maxLife: 0.36
+    });
+
+    // 2. Tebasan Silang Kedua (miring 26 derajat biar terasa sinematik!)
+    const crossMat = new THREE.MeshBasicMaterial({
+      color: secondaryCol,
+      transparent: true,
+      opacity: 0.85,
+      side: THREE.DoubleSide
+    });
+    const crossMesh = new THREE.Mesh(
+      new THREE.TorusGeometry(1.5, 0.12, 8, 22, Math.PI * 0.85),
+      crossMat
+    );
+    crossMesh.position.set(ox + fx * 0.95, 1.32, oz + fz * 0.95);
+    crossMesh.rotation.set(Math.PI / 2 + 0.42, 0.2, -yaw + Math.PI * 0.08);
+    this.scene.add(crossMesh);
+    this.strikeEffects.push({
+      kind: 'slash',
+      mesh: crossMesh,
+      vx: fx * 12.0,
+      vz: fz * 12.0,
+      life: 0.32,
+      maxLife: 0.32
+    });
+
+    // 3. Gelombang Kejut Tanah (Shockwave Ring) mengembang cepat!
+    const ringMat = new THREE.MeshBasicMaterial({
+      color: primaryCol,
+      transparent: true,
+      opacity: 0.9,
+      side: THREE.DoubleSide
+    });
+    const ringMesh = new THREE.Mesh(new THREE.RingGeometry(0.65, 1.05, 28), ringMat);
+    ringMesh.rotation.x = -Math.PI / 2;
+    ringMesh.position.set(ox + fx * 0.9, 0.16, oz + fz * 0.9);
+    this.scene.add(ringMesh);
+    this.strikeEffects.push({
+      kind: 'ring',
+      mesh: ringMesh,
+      life: 0.42,
+      maxLife: 0.42
+    });
+
+    // 4. Kilatan Cahaya Dinamis (PointLight) yang menerangi rumput & karakter di sekitar!
+    const flash = new THREE.PointLight(primaryCol, heavy ? 8 : 5.5, 16);
+    flash.position.set(ox + fx * 1.4, 1.8, oz + fz * 1.4);
+    this.scene.add(flash);
+    this.strikeEffects.push({
+      kind: 'light',
+      light: flash,
+      startIntensity: heavy ? 8 : 5.5,
+      life: 0.28,
+      maxLife: 0.28
+    });
+
+    this.spawnBurst(x + fx * 38, y + fz * 38, heavy ? '#48DBFB' : '#FFD166', heavy ? 28 : 20);
+    this.triggerShake(heavy ? 12 : 7);
   }
 
   spawnBurst(x, y, color = '#FFD166', count = 22) {
@@ -1065,6 +1347,38 @@ export class WorldRenderer3D {
       }
     }
 
+    // 1b. Update 3D Strike VFX (Slash Arc, Shockwave Ring, Flash Light)
+    if (this.strikeAnim > 0) this.strikeAnim = Math.max(0, this.strikeAnim - dt);
+    for (let i = this.strikeEffects.length - 1; i >= 0; i--) {
+      const fx = this.strikeEffects[i];
+      fx.life -= dt;
+      const p = 1 - Math.max(0, fx.life / fx.maxLife);
+      if (fx.kind === 'slash') {
+        fx.mesh.position.x += fx.vx * dt;
+        fx.mesh.position.z += fx.vz * dt;
+        const sc = 0.85 + p * 0.95;
+        fx.mesh.scale.set(sc, sc, sc);
+        fx.mesh.material.opacity = Math.max(0, (1 - p) * 0.95);
+      } else if (fx.kind === 'ring') {
+        const sc = 0.7 + p * 3.8;
+        fx.mesh.scale.set(sc, sc, 1);
+        fx.mesh.material.opacity = Math.max(0, (1 - p) * 0.9);
+      } else if (fx.kind === 'light') {
+        fx.light.intensity = fx.startIntensity * (1 - p);
+      }
+      if (fx.life <= 0) {
+        if (fx.mesh) {
+          this.scene.remove(fx.mesh);
+          fx.mesh.geometry?.dispose();
+          fx.mesh.material?.dispose();
+        }
+        if (fx.light) {
+          this.scene.remove(fx.light);
+        }
+        this.strikeEffects.splice(i, 1);
+      }
+    }
+
     // 2. Drift clouds
     for (const c of this.clouds) {
       c.mesh.position.x += c.speed * dt;
@@ -1097,7 +1411,7 @@ export class WorldRenderer3D {
   render(nowSec, state) {
     const { player, ciko, save, activeQuest, nearestInteract, enemies = [] } = state;
 
-    // 1. Hero 3D transform & walk animation
+    // 1. Hero 3D transform, smooth turning, blinking, cape, arms & Strike slash animation!
     this.rebuildHeroMesh(player.characterClass || 'orator');
     const hx = player.x * S;
     const hz = player.y * S;
@@ -1111,18 +1425,65 @@ export class WorldRenderer3D {
         : player.facing === 'right'
         ? Math.PI / 2
         : -Math.PI / 2;
-    this.heroGroup.rotation.y = targetRot;
+    let diff = targetRot - this.heroYaw;
+    while (diff > Math.PI) diff -= Math.PI * 2;
+    while (diff < -Math.PI) diff += Math.PI * 2;
+    this.heroYaw += diff * 0.22;
+    this.heroGroup.rotation.y = this.heroYaw;
 
-    if (player.moving) {
-      const freq = player.sprinting ? 14 : 10;
-      const swing = Math.sin(nowSec * freq) * 0.55;
-      this.leftLeg.rotation.x = swing;
-      this.rightLeg.rotation.x = -swing;
-      this.heroBody.position.y = Math.abs(Math.cos(nowSec * freq)) * 0.14;
+    // Kedipan mata natural setiap ~3.6 detik
+    const blinkCycle = nowSec % 3.6;
+    const eyeScaleY = blinkCycle > 3.45 ? 0.14 : 1.0;
+    if (this.leftEye && this.rightEye) {
+      this.leftEye.scale.y = eyeScaleY;
+      this.rightEye.scale.y = eyeScaleY;
+    }
+
+    if (this.strikeAnim > 0) {
+      // Animasi ayunan tebasan Strike yang gagah & ekspresif!
+      const prog = 1 - this.strikeAnim / 0.4;
+      const slashCurve = Math.sin(prog * Math.PI);
+      this.heroBody.rotation.x = 0.28 * slashCurve;
+      this.heroBody.rotation.y = -0.65 + prog * 1.45;
+      this.heroBody.position.y = 0.2 * slashCurve;
+      if (this.rightArm && this.leftArm) {
+        this.rightArm.rotation.x = -1.9 + prog * 2.7;
+        this.rightArm.rotation.z = -0.55 + prog * 0.9;
+        this.leftArm.rotation.x = 0.7 * slashCurve;
+      }
+      if (this.capeMesh) this.capeMesh.rotation.x = 0.85 * slashCurve + 0.25;
+      if (this.weaponGlowMat) this.weaponGlowMat.emissiveIntensity = 1.9;
     } else {
-      this.leftLeg.rotation.x *= 0.8;
-      this.rightLeg.rotation.x *= 0.8;
-      this.heroBody.position.y = Math.sin(nowSec * 2.4) * 0.04;
+      this.heroBody.rotation.x *= 0.8;
+      this.heroBody.rotation.y *= 0.8;
+      if (this.weaponGlowMat) this.weaponGlowMat.emissiveIntensity = 0.65 + Math.sin(nowSec * 3.5) * 0.18;
+
+      if (player.moving) {
+        const freq = player.sprinting ? 14.5 : 10;
+        const swing = Math.sin(nowSec * freq) * (player.sprinting ? 0.68 : 0.52);
+        this.leftLeg.rotation.x = swing;
+        this.rightLeg.rotation.x = -swing;
+        if (this.leftArm && this.rightArm) {
+          this.leftArm.rotation.x = -swing * 0.85;
+          this.rightArm.rotation.x = swing * 0.65 - 0.18;
+          this.rightArm.rotation.z = 0;
+        }
+        if (this.capeMesh) {
+          this.capeMesh.rotation.x = (player.sprinting ? 0.65 : 0.36) + Math.sin(nowSec * freq * 1.1) * 0.14;
+        }
+        this.heroBody.position.y = Math.abs(Math.cos(nowSec * freq)) * (player.sprinting ? 0.18 : 0.12);
+        this.heroBody.rotation.x = player.sprinting ? 0.12 : 0.05;
+      } else {
+        this.leftLeg.rotation.x *= 0.8;
+        this.rightLeg.rotation.x *= 0.8;
+        if (this.leftArm && this.rightArm) {
+          this.leftArm.rotation.x = Math.sin(nowSec * 2.2) * 0.06;
+          this.rightArm.rotation.x = -0.18 + Math.cos(nowSec * 2.2) * 0.06;
+          this.rightArm.rotation.z = 0;
+        }
+        if (this.capeMesh) this.capeMesh.rotation.x = 0.18 + Math.sin(nowSec * 2.2) * 0.04;
+        this.heroBody.position.y = Math.sin(nowSec * 2.6) * 0.045;
+      }
     }
 
     // 2. Ciko 3D floating companion
@@ -1186,13 +1547,35 @@ export class WorldRenderer3D {
       const nm = this.npcMeshes.get(npc.id);
       if (!nm) continue;
       nm.diamond.rotation.y = nowSec * 2.4;
-      nm.diamond.position.y = 2.45 + Math.sin(nowSec * 4 + npc.x) * 0.14;
+      nm.diamond.position.y = 2.48 + Math.sin(nowSec * 4 + npc.x) * 0.14;
+      // NPC bernapas halus; bila Hero mendekat, NPC menoleh ke arah Hero dan melambaikan tangan!
+      const dx = hx - npc.x * S;
+      const dz = hz - npc.y * S;
+      const dist = Math.hypot(dx, dz);
+      nm.rig.position.y = Math.sin(nowSec * 2.5 + npc.x) * 0.035;
+      if (dist < 7.5) {
+        const wantYaw = Math.atan2(dx, dz);
+        let dYaw = wantYaw - nm.yaw;
+        while (dYaw > Math.PI) dYaw -= Math.PI * 2;
+        while (dYaw < -Math.PI) dYaw += Math.PI * 2;
+        nm.yaw += dYaw * 0.12;
+        nm.rig.rotation.y = nm.yaw;
+        nm.rightArm.rotation.z = 2.25 + Math.sin(nowSec * 9.5) * 0.35;
+        nm.leftArm.rotation.z = -0.12;
+      } else {
+        nm.rightArm.rotation.z *= 0.86;
+        nm.leftArm.rotation.z = Math.sin(nowSec * 2 + npc.y) * 0.05;
+      }
     }
     for (const en of enemies) {
       const em = this.ensureEnemyMesh(en);
       em.group.position.set(en.curX * S, 0, en.curY * S);
       em.body.rotation.y = nowSec * 2.2;
-      em.body.position.y = 1.05 + Math.sin(nowSec * 4.2 + en.x) * 0.22;
+      em.body.position.y = 1.1 + Math.sin(nowSec * 4.2 + en.x) * 0.24;
+      if (em.orbitRing) {
+        em.orbitRing.rotation.z = nowSec * 3.4;
+        em.orbitRing.position.y = 1.15 + Math.sin(nowSec * 4.2 + en.x) * 0.18;
+      }
       const def = (save.defeatedEnemies || []).includes(en.id);
       em.aura.material.color.setHex(def ? 0x48c78e : 0xff5252);
     }
