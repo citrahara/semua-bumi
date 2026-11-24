@@ -1,21 +1,21 @@
 /* Warkop Impact: Genshin-Inspired Open-World 2D RPG HUD & Modals */
 
 :root {
-  --glass: rgba(20, 18, 22, 0.84);
-  --glass-strong: rgba(20, 18, 22, 0.94);
-  --paper: #fbf6ec;
-  --paper-soft: #f2e8d5;
-  --ink: #1b1714;
-  --ink-light: #fbf6ec;
-  --muted: #c8bfb5;
-  --gold: #ffd166;
-  --accent: #e64a19;
-  --accent-hover: #cc3c10;
-  --cyan: #48dbfb;
-  --ok: #2ea46f;
-  --bad: #e05252;
-  --border: rgba(255, 209, 102, 0.32);
-  --border-soft: rgba(255, 255, 255, 0.14);
+  --glass: rgba(20, 18, 17, 0.78);
+  --glass-strong: rgba(20, 18, 17, 0.94);
+  --paper: #f4efe6;
+  --paper-soft: #eae0ce;
+  --ink: #191614;
+  --ink-light: #f4efe6;
+  --muted: #b6ada3;
+  --gold: #d9b466;
+  --accent: #c45131;
+  --accent-hover: #a84225;
+  --cyan: #57b4c9;
+  --ok: #3ca374;
+  --bad: #cf5555;
+  --border: rgba(217, 180, 102, 0.28);
+  --border-soft: rgba(255, 255, 255, 0.12);
   --font-display: 'Bricolage Grotesque', system-ui, sans-serif;
   --font-body: 'Plus Jakarta Sans', system-ui, sans-serif;
 }
@@ -132,29 +132,76 @@ button {
   font-size: 0.9rem;
 }
 
+.hud-badges {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.vol-badge {
+  background: rgba(217, 180, 102, 0.16);
+  border: 1px solid var(--border);
+  color: var(--gold);
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  padding: 2px 6px;
+  border-radius: 999px;
+}
+
 .ar-badge {
   background: var(--gold);
   color: var(--ink);
   font-family: var(--font-display);
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 800;
   padding: 2px 7px;
   border-radius: 999px;
   flex-shrink: 0;
 }
 
-.xp-bar-track {
-  width: 100%;
+.hp-mini-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 5px;
+}
+
+.hp-mini-track {
+  flex: 1;
   height: 5px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.15);
-  margin: 5px 0 4px;
+  background: rgba(255, 255, 255, 0.14);
+  overflow: hidden;
+}
+
+.hp-mini-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #3ca374, #6fd1a2);
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.hp-mini-text {
+  font-size: 0.64rem;
+  font-weight: 700;
+  color: #9fe0be;
+  flex-shrink: 0;
+}
+
+.xp-bar-track {
+  width: 100%;
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  margin: 4px 0 4px;
   overflow: hidden;
 }
 
 .xp-bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--gold), #ff9f43);
+  background: var(--gold);
   border-radius: 999px;
   transition: width 0.35s ease;
 }
@@ -162,7 +209,7 @@ button {
 .player-sub {
   display: flex;
   gap: 5px;
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   color: var(--muted);
   font-weight: 600;
   white-space: nowrap;
@@ -170,51 +217,145 @@ button {
   text-overflow: ellipsis;
 }
 
-/* Genshin Quest Tracker */
-.quest-tracker {
-  text-align: left;
-  padding: 10px 14px;
-  border-radius: 14px;
-  background: linear-gradient(135deg, rgba(20, 18, 22, 0.86), rgba(38, 28, 22, 0.82));
-  border: 1.5px solid var(--border);
-  border-left: 4px solid var(--gold);
+/* Sleek 1-Line Objective Ribbon */
+.quest-ribbon {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  max-width: 290px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: var(--glass);
+  border: 1px solid var(--border);
   color: var(--ink-light);
   backdrop-filter: blur(8px);
-  transition: transform 0.14s ease;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-align: left;
+  transition: border-color 0.15s ease;
 }
 
-.quest-tracker:hover {
-  transform: translateX(2px);
+.quest-ribbon:hover {
+  border-color: var(--gold);
 }
 
-.quest-chapter {
-  font-size: 0.68rem;
-  font-weight: 800;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
+.quest-ribbon .quest-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.quest-ribbon .quest-dist {
+  margin-top: 0;
+  font-size: 0.7rem;
   color: var(--gold);
-  margin-bottom: 3px;
+  flex-shrink: 0;
 }
 
-.quest-title-row {
+.hud-bottom-right {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.hud-bottom-btns {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 0.88rem;
-  font-weight: 800;
-  line-height: 1.3;
 }
 
-.quest-diamond {
-  color: var(--gold);
-  font-size: 0.82rem;
+.help-circle {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  font-size: 0.85rem;
 }
 
-.quest-dist {
-  margin-top: 4px;
-  font-size: 0.74rem;
+.help-popover {
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: var(--glass-strong);
+  border: 1px solid var(--border);
   color: var(--muted);
-  font-weight: 600;
+  font-size: 0.76rem;
+  line-height: 1.55;
+  backdrop-filter: blur(10px);
+  max-width: 360px;
+}
+
+.help-popover strong {
+  color: var(--paper);
+}
+
+.forge-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.forge-card {
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-soft);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.forge-card h4 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  color: var(--paper);
+}
+
+.forge-card p {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.relic-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.relic-pill {
+  padding: 10px 11px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-soft);
+  font-size: 0.74rem;
+}
+
+.relic-pill.owned {
+  border-color: var(--gold);
+  background: rgba(217, 180, 102, 0.1);
+}
+
+.relic-pill strong {
+  display: block;
+  color: var(--paper);
+  margin-bottom: 2px;
+}
+
+.relic-pill span {
+  color: var(--muted);
+}
+
+.relic-pill.owned span {
+  color: var(--gold);
 }
 
 /* Top Right Minimap & Controls */
@@ -1960,12 +2101,17 @@ button {
 
 /* Responsive Mobile Polish */
 @media (max-width: 760px) {
-  .controls-hint {
+  .controls-hint,
+  .hud-bottom-right {
     display: none;
   }
 
   .touch-controls {
     display: flex;
+  }
+
+  .forge-grid {
+    grid-template-columns: 1fr;
   }
 
   .hud-top-left {

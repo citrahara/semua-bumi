@@ -3,10 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Atlas di Celah Kasur · Kronik Buku 1894 | RPG 3D Peta Dalam Buku</title>
-  <meta name="description" content="RPG 3D Peta Pop-Up di Dalam Buku Antologi Antik: 6 Bab dunia berbeda, POV geser kursor 360 derajat, Arsip Sastra Orwell & Jane Austen, Stasiun Korea, Radar Siber /berita-terkini, dan Salon Satir Stand-Up 1894!" />
-  <meta property="og:title" content="Atlas di Celah Kasur · Kronik Buku 1894 | RPG 3D Peta Dalam Buku" />
-  <meta property="og:description" content="Tersedot ke dalam peta pop-up 3D buku kulit antik malam Minggu: hadapi Kementerian Gema, pelajari sastra & bahasa dunia, dan pecahkan 5 Segel Matematika!" />
+  <title>Kronik Atlas | RPG 3D Peta Dalam Buku Tanpa Akhir</title>
+  <meta name="description" content="RPG 3D peta pop-up di dalam buku antologi: 6 Bab dunia pengetahuan, duel taktis berisiko tinggi, relik sastra dan bahasa, radar siber, serta eskalasi Jilid tanpa batas." />
   <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -14,79 +12,82 @@
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
-  <!-- Fullscreen 60FPS World Canvas -->
-  <canvas id="world-canvas" aria-label="Peta dunia Warkop Impact"></canvas>
+  <canvas id="world-canvas" aria-label="Peta 3D Kronik Atlas"></canvas>
 
-  <!-- Genshin-Style HUD Layer -->
+  <!-- Minimalist Breathable HUD -->
   <div id="hud-layer" class="hud-layer hidden">
-    <!-- Top Left: Player Profile + Active Quest Tracker -->
+    <!-- Top Left: Compact Status + 1-Line Objective Ribbon -->
     <div class="hud-top-left">
-      <div class="player-pill" id="btn-open-profile" role="button" tabindex="0" title="Buka Kartu Petualang">
+      <div class="player-pill" id="btn-open-profile" role="button" tabindex="0" title="Profil & Catatan Pembaca">
         <div class="player-avatar-mini" id="hud-avatar"></div>
         <div class="player-meta">
           <div class="player-name-row">
-            <span id="hud-player-name">Petualang</span>
-            <span class="ar-badge" id="hud-ar-badge">LV 1</span>
+            <span id="hud-player-name">Pembaca</span>
+            <span class="hud-badges">
+              <span class="vol-badge" id="hud-vol-badge">JILID 1</span>
+              <span class="ar-badge" id="hud-ar-badge">LV 1</span>
+            </span>
+          </div>
+          <div class="hp-mini-row">
+            <div class="hp-mini-track"><div class="hp-mini-fill" id="hud-hp-fill" style="width:100%"></div></div>
+            <span class="hp-mini-text" id="hud-hp-text">100/100</span>
           </div>
           <div class="xp-bar-track">
             <div class="xp-bar-fill" id="hud-xp-fill" style="width:0%"></div>
           </div>
           <div class="player-sub">
-            <span id="hud-zone-mini">Desa Warkop</span>
+            <span id="hud-zone-mini">Bab I</span>
             <span>·</span>
             <span id="hud-coins">0 Koin</span>
           </div>
         </div>
       </div>
 
-      <button class="quest-tracker" id="btn-quest-tracker" type="button">
-        <div class="quest-chapter" id="quest-chapter">MISI UTAMA I</div>
-        <div class="quest-title-row">
-          <span class="quest-diamond" aria-hidden="true">◆</span>
-          <span class="quest-title" id="quest-title">Temui Bang Jaja</span>
-        </div>
-        <div class="quest-dist" id="quest-dist">Jarak: 12m</div>
+      <button class="quest-ribbon" id="btn-quest-tracker" type="button" title="Klik untuk petunjuk misi">
+        <span class="quest-diamond" aria-hidden="true">◆</span>
+        <span class="quest-title" id="quest-title">Temui Penjaga Pos</span>
+        <span class="quest-dist" id="quest-dist">12m</span>
       </button>
     </div>
 
-    <!-- Top Right: Interactive Minimap + Action Buttons -->
+    <!-- Top Right: Pocket Atlas Minimap + Single Slim Action Row -->
     <div class="hud-top-right">
-      <button class="minimap-frame" id="btn-open-map" type="button" title="Buka Atlas Buku & Teleportasi Bab (M)">
-        <canvas id="minimap-canvas" width="168" height="112"></canvas>
+      <button class="minimap-frame" id="btn-open-map" type="button" title="Atlas Buku & Teleportasi Bab (M)">
+        <canvas id="minimap-canvas" width="144" height="96"></canvas>
         <span class="minimap-tag">ATLAS [M]</span>
       </button>
 
       <div class="hud-icon-row">
-        <button class="hud-btn" id="btn-open-daily" type="button" title="Komisi Harian & Era Buku (H)">
-          Harian <span id="hud-daily-count">0/4</span>
-        </button>
-        <button class="hud-btn" id="btn-open-codex" type="button" title="Buka Codex Wawasan, Siber & Sastra (C)">
-          Codex <span id="hud-codex-count">0/78</span>
-        </button>
-        <button class="hud-btn" id="btn-toggle-sound" type="button" title="Matikan atau nyalakan suara">
-          Suara
-        </button>
-      </div>
-      <div class="hud-icon-row">
-        <button class="hud-btn strike-btn" id="btn-hud-strike" type="button" title="Tebasan Strike 3D & Ambush Musuh Siber (F)">⚔ Strike [F]</button>
+        <button class="hud-btn" id="btn-open-forge" type="button" title="Tempa Atribut, Relik & Jilid (U)">Tempa</button>
+        <button class="hud-btn" id="btn-open-codex" type="button" title="Codex Pengetahuan (C)">Codex <span id="hud-codex-count">0/78</span></button>
+        <button class="hud-btn" id="btn-open-daily" type="button" title="Komisi Harian (H)">Harian <span id="hud-daily-count">0/4</span></button>
+        <button class="hud-btn" id="btn-toggle-sound" type="button" title="Suara">Suara</button>
       </div>
     </div>
 
-    <!-- Zone Entry Banner (muncul saat pindah wilayah) -->
+    <!-- Zone Entry Banner -->
     <div class="zone-banner" id="zone-banner" aria-live="polite">
-      <div class="zone-banner-sub" id="zone-banner-sub">WILAYAH BARU</div>
-      <div class="zone-banner-name" id="zone-banner-name">Desa Warkop</div>
+      <div class="zone-banner-sub" id="zone-banner-sub">BAB BARU</div>
+      <div class="zone-banner-name" id="zone-banner-name">Bab I</div>
     </div>
 
     <!-- Bottom Center: Contextual Interact Prompt -->
     <button class="interact-prompt hidden" id="btn-interact" type="button">
       <span class="key-cap">E</span>
-      <span id="interact-label">Bicara dengan Bang Jaja</span>
+      <span id="interact-label">Bicara</span>
     </button>
 
-    <!-- Desktop Controls Hint -->
-    <div class="controls-hint" id="controls-hint">
-      Gerak: WASD / Klik Tanah · Geser POV: Tarik Kursor / Scroll Zoom / [V] POV Bebas · Strike: F · Aksi: E · Peta: M · Codex: C
+    <!-- Bottom Right: Subtle Strike + On-Demand Controls Guide -->
+    <div class="hud-bottom-right">
+      <div class="help-popover hidden" id="help-popover">
+        <div><strong>Gerak:</strong> WASD / Panah / Klik Tanah · <strong>Lari:</strong> Shift</div>
+        <div><strong>POV:</strong> Tarik Kursor / Scroll Zoom / [V] POV Bebas</div>
+        <div><strong>Aksi:</strong> [E] Interaksi · [F] Strike Ambush · [U] Tempa · [M] Atlas · [C] Codex</div>
+      </div>
+      <div class="hud-bottom-btns">
+        <button class="hud-btn strike-btn" id="btn-hud-strike" type="button" title="Tebasan Strike & Ambush (F)">Strike [F]</button>
+        <button class="hud-btn help-circle" id="btn-toggle-help" type="button" title="Panduan Kontrol">?</button>
+      </div>
     </div>
 
     <!-- Mobile Touch D-Pad + Action Controls -->
@@ -105,15 +106,15 @@
     </div>
   </div>
 
-  <!-- Auth / Character Creation Overlay (transparan di atas dunia hidup 2D!) -->
+  <!-- Auth / Book Cover Overlay -->
   <div id="title-overlay" class="modal-backdrop">
     <div id="auth-card-root" class="title-card"></div>
   </div>
 
-  <!-- Dynamic Overlay Container (Dialogue, Battle, Math Seal, Stage Mic, World Map, Codex, Profile) -->
+  <!-- Dynamic Modal Container -->
   <div id="overlay-root"></div>
 
-  <!-- Toast Notification -->
+  <!-- Toast -->
   <div id="toast" class="toast" role="status" aria-live="assertive"></div>
 
   <script type="module" src="./js/main.js"></script>

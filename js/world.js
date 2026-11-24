@@ -1,5 +1,5 @@
-// Peta Dunia Terbuka 6 Wilayah Warkop Impact (3600 x 1760 px)
-// 6 Zona tematik, 5 Gerbang Segel Matematika, 12 NPC/Akademi/Terminal, 6 Waypoint, 12 Peti Harta, + 7 Musuh Patroli Siber!
+// Peta 3D Enam Bab di Dalam Buku (3600 x 1760 px) untuk Kronik Atlas.
+// Seluruh wilayah, quest, dan NPC terhubung dalam satu sistem progresi Jilid tanpa akhir.
 
 export const WORLD_W = 3600;
 export const WORLD_H = 1760;
@@ -7,61 +7,60 @@ export const WORLD_H = 1760;
 export const ZONES = [
   {
     id: 1,
-    name: 'Bab I · Halaman Rumput 1894',
-    subtitle: 'Kebun Bangsawan, Kabut Sore & Arsip Orwell',
+    name: 'Bab I · Taman Arsip',
+    subtitle: 'Halaman Rumput 1894, Sastra & Fakta',
     rect: { x: 0, y: 0, w: 1120, h: 800 },
-    ground: '#7FB069',
-    groundAlt: '#74A45E',
-    accent: '#E64A19'
+    ground: '#7EA668',
+    groundAlt: '#739A5E',
+    accent: '#C45131'
   },
   {
     id: 2,
-    name: 'Bab II · Stasiun Transit & Bahasa',
-    subtitle: 'Seoul-Chuncheon, Hangul, Poliglot & Diksi Rasa',
+    name: 'Bab II · Stasiun Bahasa',
+    subtitle: 'Korea, Jepang, Inggris & Diksi KBBI',
     rect: { x: 1240, y: 0, w: 1120, h: 800 },
-    ground: '#E7D8C0',
-    groundAlt: '#DECBA9',
-    accent: '#D85C7B'
+    ground: '#E2D4BC',
+    groundAlt: '#D8C7AA',
+    accent: '#C25972'
   },
   {
     id: 3,
-    name: 'Bab III · Distrik Kementerian Gema',
-    subtitle: 'Radar /berita-terkini, AI & Anti-Newspeak',
+    name: 'Bab III · Sektor Sinyal',
+    subtitle: 'Keamanan AI & Radar /berita-terkini',
     rect: { x: 2480, y: 0, w: 1120, h: 800 },
     ground: '#162436',
     groundAlt: '#1B2D44',
-    accent: '#48DBFB'
+    accent: '#57B4C9'
   },
   {
     id: 4,
-    name: 'Bab IV · Benteng IIV & Personil',
-    subtitle: 'SCADA Grid & Manusia Rantai Terlemah',
+    name: 'Bab IV · Gardu Vital',
+    subtitle: 'IIV/SCADA & Keamanan Personil',
     rect: { x: 2480, y: 920, w: 1120, h: 840 },
     ground: '#242933',
     groundAlt: '#2C323E',
-    accent: '#F59E0B'
+    accent: '#D49028'
   },
   {
     id: 5,
-    name: 'Bab V · Balai Deduksi & Entropi',
-    subtitle: 'Sherlock, Peluang 63%, Dunbar 150 & Retorika',
+    name: 'Bab V · Balai Deduksi',
+    subtitle: 'Logika, Retorika & Sesat Pikir',
     rect: { x: 1240, y: 920, w: 1120, h: 840 },
-    ground: '#CFA46B',
-    groundAlt: '#C4965C',
-    accent: '#D98A1A'
+    ground: '#C79F6A',
+    groundAlt: '#BC935E',
+    accent: '#C98A2B'
   },
   {
     id: 6,
-    name: 'Bab VI · Amfiteater Puncak Buku',
-    subtitle: 'Boss Deepfake & Orasi Penutup Bab',
+    name: 'Bab VI · Puncak Panggung',
+    subtitle: 'Penjaga Jilid & Orasi Akhir',
     rect: { x: 0, y: 920, w: 1120, h: 840 },
-    ground: '#2D2847',
-    groundAlt: '#26213D',
-    accent: '#FFD166'
+    ground: '#2B2642',
+    groundAlt: '#242038',
+    accent: '#D9B466'
   }
 ];
 
-// 5 Jembatan bersegel Matematika (rute searah jarum jam: 1 -> 2 -> 3 -> 4 -> 5 -> 6!)
 export const BRIDGES = [
   {
     id: 'gate-1',
@@ -69,7 +68,7 @@ export const BRIDGES = [
     orientation: 'horizontal',
     rect: { x: 1104, y: 340, w: 152, h: 120 },
     altar: { x: 1068, y: 400 },
-    label: 'Segel Matematika Lv. 2 (Distrik Bahasa)',
+    label: 'Segel Matematika · Bab II',
     targetZone: 2
   },
   {
@@ -78,7 +77,7 @@ export const BRIDGES = [
     orientation: 'horizontal',
     rect: { x: 2344, y: 340, w: 152, h: 120 },
     altar: { x: 2308, y: 400 },
-    label: 'Segel Matematika Lv. 3 (Distrik Siber AI)',
+    label: 'Segel Matematika · Bab III',
     targetZone: 3
   },
   {
@@ -87,7 +86,7 @@ export const BRIDGES = [
     orientation: 'vertical',
     rect: { x: 2980, y: 784, w: 120, h: 152 },
     altar: { x: 3040, y: 748 },
-    label: 'Segel Matematika Lv. 4 (Benteng IIV/SCADA)',
+    label: 'Segel Matematika · Bab IV',
     targetZone: 4
   },
   {
@@ -96,7 +95,7 @@ export const BRIDGES = [
     orientation: 'horizontal',
     rect: { x: 2344, y: 1280, w: 152, h: 120 },
     altar: { x: 2528, y: 1340 },
-    label: 'Segel Matematika Lv. 5 (Lembah Logika)',
+    label: 'Segel Matematika · Bab V',
     targetZone: 5
   },
   {
@@ -105,36 +104,35 @@ export const BRIDGES = [
     orientation: 'horizontal',
     rect: { x: 1104, y: 1280, w: 152, h: 120 },
     altar: { x: 1288, y: 1340 },
-    label: 'Segel Matematika Lv. 6 (Puncak Orator)',
+    label: 'Segel Matematika · Bab VI',
     targetZone: 6
   }
 ];
 
 export const WAYPOINTS = [
-  { id: 'wp-1', zone: 1, name: 'Penanda Bab I (Halaman Rumput)', x: 240, y: 420 },
-  { id: 'wp-2', zone: 2, name: 'Penanda Bab II (Stasiun Transit)', x: 1410, y: 400 },
-  { id: 'wp-3', zone: 3, name: 'Penanda Bab III (Menara SOC AI)', x: 2640, y: 400 },
-  { id: 'wp-4', zone: 4, name: 'Penanda Bab IV (Gardu IIV)', x: 3040, y: 1040 },
-  { id: 'wp-5', zone: 5, name: 'Penanda Bab V (Balai Deduksi)', x: 2180, y: 1340 },
-  { id: 'wp-6', zone: 6, name: 'Penanda Bab VI (Amfiteater)', x: 960, y: 1340 }
+  { id: 'wp-1', zone: 1, name: 'Penanda Bab I', x: 240, y: 420 },
+  { id: 'wp-2', zone: 2, name: 'Penanda Bab II', x: 1410, y: 400 },
+  { id: 'wp-3', zone: 3, name: 'Penanda Bab III', x: 2640, y: 400 },
+  { id: 'wp-4', zone: 4, name: 'Penanda Bab IV', x: 3040, y: 1040 },
+  { id: 'wp-5', zone: 5, name: 'Penanda Bab V', x: 2180, y: 1340 },
+  { id: 'wp-6', zone: 6, name: 'Penanda Bab VI', x: 960, y: 1340 }
 ];
 
 export const CHESTS = [
-  { id: 'chest-1', zone: 1, x: 160, y: 150, tier: 'common', rewardId: 'lit-austen', xp: 45, coins: 30, title: 'Laci Cangkang Kerang' },
-  { id: 'chest-2', zone: 1, x: 960, y: 660, tier: 'exquisite', rewardId: 'fact-18', xp: 60, coins: 45, title: 'Peti Cokelat Anti-5L' },
-  { id: 'chest-3', zone: 2, x: 1360, y: 145, tier: 'common', rewardId: 'dict-08', xp: 55, coins: 40, title: 'Peti Rak Diksi Rasa' },
-  { id: 'chest-4', zone: 2, x: 2230, y: 165, tier: 'exquisite', rewardId: 'dict-17', xp: 70, coins: 55, title: 'Loker Stasiun Chuncheon' },
-  { id: 'chest-5', zone: 3, x: 2620, y: 160, tier: 'exquisite', rewardId: 'cyber-pqc', xp: 85, coins: 65, title: 'Brankas Kuantum PQC' },
-  { id: 'chest-6', zone: 3, x: 3450, y: 190, tier: 'precious', rewardId: 'cyber-aisoc', xp: 95, coins: 75, title: 'Server Intel AI SOC' },
-  { id: 'chest-7', zone: 4, x: 2630, y: 1610, tier: 'exquisite', rewardId: 'cyber-sbom', xp: 90, coins: 70, title: 'Kontainer SBOM' },
-  { id: 'chest-8', zone: 4, x: 3450, y: 1120, tier: 'precious', rewardId: 'cyber-iiv', xp: 100, coins: 85, title: 'Brankas Gardu SCADA' },
-  { id: 'chest-9', zone: 5, x: 2220, y: 1600, tier: 'exquisite', rewardId: 'lit-sherlock', xp: 80, coins: 65, title: 'Arsip Kasus Sherlock' },
-  { id: 'chest-10', zone: 5, x: 1380, y: 1060, tier: 'common', rewardId: 'fact-24', xp: 65, coins: 50, title: 'Peti Entropi & Peluang' },
-  { id: 'chest-11', zone: 6, x: 190, y: 1080, tier: 'precious', rewardId: 'dict-20', xp: 110, coins: 95, title: 'Peti Bintang Orator' },
-  { id: 'chest-12', zone: 6, x: 940, y: 1600, tier: 'precious', rewardId: 'cyber-c2pa', xp: 110, coins: 95, title: 'Arsip Anti-Deepfake' }
+  { id: 'chest-1', zone: 1, x: 160, y: 150, tier: 'common', rewardId: 'lit-austen', xp: 45, coins: 40, title: 'Laci Kerang Pesisir' },
+  { id: 'chest-2', zone: 1, x: 960, y: 660, tier: 'exquisite', rewardId: 'fact-18', xp: 60, coins: 55, title: 'Peti Pinggir Taman' },
+  { id: 'chest-3', zone: 2, x: 1360, y: 145, tier: 'common', rewardId: 'dict-08', xp: 55, coins: 50, title: 'Kotak Naskah Lama' },
+  { id: 'chest-4', zone: 2, x: 2230, y: 165, tier: 'exquisite', rewardId: 'dict-17', xp: 70, coins: 65, title: 'Loker Peron Chuncheon' },
+  { id: 'chest-5', zone: 3, x: 2620, y: 160, tier: 'exquisite', rewardId: 'cyber-pqc', xp: 85, coins: 80, title: 'Brankas Kuantum PQC' },
+  { id: 'chest-6', zone: 3, x: 3450, y: 190, tier: 'precious', rewardId: 'cyber-aisoc', xp: 95, coins: 90, title: 'Server Intel SOC' },
+  { id: 'chest-7', zone: 4, x: 2630, y: 1610, tier: 'exquisite', rewardId: 'cyber-sbom', xp: 90, coins: 85, title: 'Kontainer SBOM' },
+  { id: 'chest-8', zone: 4, x: 3450, y: 1120, tier: 'precious', rewardId: 'cyber-iiv', xp: 100, coins: 95, title: 'Brankas Gardu SCADA' },
+  { id: 'chest-9', zone: 5, x: 2220, y: 1600, tier: 'exquisite', rewardId: 'lit-sherlock', xp: 80, coins: 75, title: 'Berkas Kasus 1890' },
+  { id: 'chest-10', zone: 5, x: 1380, y: 1060, tier: 'common', rewardId: 'fact-24', xp: 65, coins: 60, title: 'Peti Probabilitas' },
+  { id: 'chest-11', zone: 6, x: 190, y: 1080, tier: 'precious', rewardId: 'dict-20', xp: 110, coins: 110, title: 'Peti Puncak Atlas' },
+  { id: 'chest-12', zone: 6, x: 940, y: 1600, tier: 'precious', rewardId: 'cyber-c2pa', xp: 110, coins: 110, title: 'Arsip Verifikasi C2PA' }
 ];
 
-// 13 NPC (Cerita Buku, Duel Pengetahuan, Akademi Bahasa, Arsip Orwell & Laboratorium Siber!)
 export const NPCS = [
   {
     id: 'jaja',
@@ -142,14 +140,13 @@ export const NPCS = [
     x: 450,
     y: 310,
     challengeType: 'story',
-    questTitle: 'Bab I: Tamu Nyasar di Halaman Rumput 1894',
+    questTitle: 'Catatan Pembuka Bab I',
     introLines: [
-      'Eh, kamu juga tersedot masuk ke buku kulit antik ini? Aku sama Ciko tadi cuma lagi menyeduh kopi, tahu-tahu sudah mendarat di Halaman Rumput 1894!',
-      'Di sebelah timur ada Tuan George di Arsip Orwell (beliau lagi resah gara-gara Kementerian Gema), dan di barat ada Panggung Salon Satir 1894 buat pemanasan komedi kering!',
-      'Kamu juga bisa langsung tekan [F] buat menebas Slime Hoaks di selatan, atau naik Menara Bab Abadi yang halamannya tidak pernah habis.'
+      'Selamat datang di Bab I. Aku dan Ciko sekadar tamu yang terdampar di halaman ini, jadi anggap saja pos ini tempat istirahat.',
+      'Di timur ada Arsip Sastra milik George untuk meraih Relik Strike, dan di selatan ada Gema Hoaks. Gunakan tombol [F] sebelum duel agar musuh langsung kehilangan sebagian HP.'
     ],
     repeatLines: [
-      'Kopi tamu nyasar tetap hangat! Jangan lupa mampir ke Arsip Orwell di timur atau Salon Satir 1894 di barat, dan coba zoom out pakai scroll buat melihat bentuk buku raksasa di bawah kaki kita!'
+      'Kalau duel mulai berat, tempa atributmu lewat menu Tempa [U] atau istirahat di Penanda Bab terdekat untuk memulihkan HP penuh.'
     ]
   },
   {
@@ -158,7 +155,7 @@ export const NPCS = [
     x: 245,
     y: 282,
     challengeType: 'standup',
-    questTitle: 'Panggung Stand-Up Comedy Vintage 1894',
+    questTitle: 'Salon Satir 1894',
     introLines: [],
     doneLines: []
   },
@@ -168,7 +165,7 @@ export const NPCS = [
     x: 616,
     y: 472,
     challengeType: 'endless_tower',
-    questTitle: 'Menara Kronik Abadi (Lantai 1 sampai Tak Terbatas)',
+    questTitle: 'Menara Tanpa Akhir',
     introLines: [],
     doneLines: []
   },
@@ -178,7 +175,7 @@ export const NPCS = [
     x: 910,
     y: 520,
     challengeType: 'academy_lit',
-    questTitle: 'Taman Sastra Klasik & Arsip Orwell (1984 & Animal Farm)',
+    questTitle: 'Arsip Sastra Klasik (Relik +18% Strike)',
     introLines: [],
     doneLines: []
   },
@@ -189,12 +186,11 @@ export const NPCS = [
     y: 220,
     challengeType: 'fact',
     questionCount: 2,
-    questTitle: 'Bongkar Teori Kang Deden',
+    questTitle: 'Verifikasi Catatan Lapangan',
     introLines: [
-      'Ssst! Sini merapat! Aku punya dua rahasia alam semesta yang jarang diketahui orang warung.',
-      'Berani tebak mana fakta beneran dan mana karangan bebas sambil goreng tempe?'
+      'Ada dua klaim di catatan ini yang tampak meyakinkan, tapi belum tentu benar. Bantu aku menyaringnya.'
     ],
-    doneLines: ['Ampun deh! Nggak mempan digocekin ternyata. Wawasanmu gacor!']
+    doneLines: ['Cukup rapi. Fakta tersimpan, mitos disingkirkan.']
   },
   {
     id: 'budi',
@@ -203,27 +199,25 @@ export const NPCS = [
     y: 600,
     challengeType: 'fact',
     questionCount: 2,
-    questTitle: 'Audit Grup WA Pak Budi',
+    questTitle: 'Audit Pesan Masuk',
     introLines: [
-      'Baru saja masuk pesan berantai dari grup alumni! Katanya valid 100 persen.',
-      'Coba bantu Bapak pisahkan mana fakta sains asli dan mana mitos lawas!'
+      'Dua kabar ini beredar cepat di surat kabar bab ini. Periksa mana yang sahih sebelum diteruskan.'
     ],
-    doneLines: ['Untung belum Bapak teruskan ke grup RT! Terima kasih ya!']
+    doneLines: ['Terima kasih. Untung belum sempat dicetak ulang.']
   },
 
-  // ZONA 2: DISTRIK BAHASA & AKADEMI (BELAJAR KOREA, JEPANG, INGGRIS, KBBI!)
+  // BAB II: STASIUN BAHASA
   {
     id: 'sora',
     zone: 2,
     x: 2070,
     y: 255,
     challengeType: 'academy_korean',
-    questTitle: 'Akademi Korea: Belajar Hangul & Pesan Kopi Seoul',
+    questTitle: 'Stasiun Korea · Hangul (Relik +25 HP & Regen)',
     introLines: [
-      'Annyeonghaseyo! Selamat datang di Paviliun Bahasa Korea!',
-      'Di sini kamu bisa belajar dasar huruf Hangul, mendengarkan pelafalan asli bahasa Korea, lalu langsung praktik pesan kopi di kafe Seoul!'
+      'Annyeonghaseyo. Di sini kamu bisa berlatih dasar Hangul, mendengarkan pelafalan asli, dan meraih Relik Hangul.'
     ],
-    doneLines: ['Daebak! Pelafalan dan sopan santun Koreamu makin luwes. Mampir lagi kapan saja kalau mau dengar ulang Hangul!']
+    doneLines: ['Pelafalanmu makin jelas. Mampir lagi kapan saja untuk mengulang.']
   },
   {
     id: 'kenji',
@@ -231,12 +225,11 @@ export const NPCS = [
     x: 2070,
     y: 615,
     challengeType: 'academy_polyglot',
-    questTitle: 'Paviliun Poliglot: Konsep Jepang & Idiom Inggris',
+    questTitle: 'Paviliun Poliglot (Relik +1 Energi Awal)',
     introLines: [
-      'Otsukaresama! Di Paviliun Poliglot ini kita belajar konsep budaya Jepang seperti Ikigai dan Kaizen, plus idiom bahasa Inggris elegan buat presentasi!',
-      'Pelajari kartunya dan dengarkan suaranya dulu, baru coba latihan singkatnya!'
+      'Di ruang ini tersimpan konsep budaya Jepang dan idiom Inggris yang ringkas untuk diskusi.'
     ],
-    doneLines: ['Subarashii! Kosakata lintas bahasamu makin berkelas!']
+    doneLines: ['Relik Poliglot aktif. Setiap duel kini dimulai dengan tambahan energi.']
   },
   {
     id: 'rina',
@@ -245,12 +238,11 @@ export const NPCS = [
     y: 255,
     challengeType: 'diction',
     questionCount: 3,
-    questTitle: 'Balai Pustaka: Audit KBBI & EYD V',
+    questTitle: 'Audit Diksi & KBBI',
     introLines: [
-      'Selamat datang di Balai Pustaka! Di Distrik Bahasa ini, satu salah kaprah kata bisa membalik makna satu paragraf.',
-      'Tunjukkan ketajaman KBBI VI dan EYD V kamu di hadapanku!'
+      'Satu kata yang meleset bisa mengaburkan seluruh maksud kalimat. Mari uji ketepatan diksi dan EYD.'
     ],
-    doneLines: ['Lugas dan presisi! Sekarang lanjut pelajari bahasa Korea di timur atau langsung menuju Segel Gerbang Siber!']
+    doneLines: ['Presisi dan bersih. Lanjut ke peron timur atau Segel Bab III.']
   },
   {
     id: 'siska',
@@ -259,45 +251,42 @@ export const NPCS = [
     y: 615,
     challengeType: 'diction',
     questionCount: 2,
-    questTitle: 'Guild Startup: Terjemahkan Jargon Korporat',
+    questTitle: 'Penyederhanaan Jargon',
     introLines: [
-      'Hi Petualang! Bantu aku mengubah jargon korporat yang berbelit menjadi kalimat Indonesia yang tajam dan berkelas ya!'
+      'Ubah kalimat penuh jargon berbelit ini menjadi bahasa Indonesia yang lugas.'
     ],
-    doneLines: ['Kalimat presentasiku langsung bersih dan ngena! Terima kasih!']
+    doneLines: ['Jauh lebih mudah dibaca tanpa kehilangan bobotnya.']
   },
 
-  // ZONA 3: DISTRIK SIBER & AI LAB (/berita-terkini!)
+  // BAB III: SEKTOR SINYAL (/berita-terkini)
   {
     id: 'vega',
     zone: 3,
     x: 3040,
     y: 260,
     challengeType: 'academy_cyber',
-    questTitle: 'Pusat Komando SOC: Terobosan Siber AI & Radar /berita-terkini',
+    questTitle: 'Pusat SOC & Radar /berita-terkini (Relik +25% Perisai)',
     introLines: [
-      'Lapor, Petualang! Kamu memasuki Distrik Siber & AI Lab. Di layar ini tersimpan ringkasan terobosan baru keamanan siber (Post-Quantum, Passkeys, Keamanan AI, IIV/SCADA) sekaligus peta 21 sumber berita global /berita-terkini!',
-      'Pelajari intelijennya di Terminal Radar ini, lalu bersihkan Phishing Drone dan Prompt-Injection Wyrm yang berkeliaran di sektor ini dengan pertarungan Attack & Defense!'
+      'Terminal ini merangkum terobosan keamanan AI, IIV/SCADA, dan 21 sumber rujukan /berita-terkini. Selesaikan simulasinya untuk mengaktifkan Relik Perisai.'
     ],
-    doneLines: ['Radar /berita-terkini tetap menyala 24 jam! Buka kapan saja untuk membaca terobosan siber atau latihan briefing analis.']
+    doneLines: ['Radar aktif. Gunakan Overdrive untuk menembus armor Drone dan Wyrm di sektor ini.']
   },
 
-  // ZONA 4: BENTENG IIV / SCADA GRID
+  // BAB IV: GARDU VITAL (IIV / SCADA)
   {
     id: 'bima',
     zone: 4,
     x: 3040,
     y: 1340,
     challengeType: 'story_iiv',
-    questTitle: 'Misi IIV/CII: Lindungi Gardu Listrik & Sistem SCADA',
+    questTitle: 'Pengamanan Gardu IIV/SCADA',
     introLines: [
-      'Siaga penuh di Benteng IIV! Sistem energi, air, rumah sakit, dan transportasi bergantung pada perlindungan jaringan OT/SCADA di sini.',
-      'Ransomware Titan di barat laut dan SCADA Worm di tenggara sedang mencoba menembus gardu kita! Hadapi keduanya dengan strategi SERANG, BERTAHAN (Zero-Trust Shield), dan COUNTER SIBER!',
-      'Setelah gardu aman, pecahkan Segel Matematika di Jembatan Barat menuju Lembah Logika!'
+      'Di gardu ini, ancaman siber menyentuh infrastruktur fisik. Titan Ransomware dan Sentinel SCADA punya armor tebal; pakai Overdrive untuk menembusnya.'
     ],
-    repeatLines: ['Gardu listrik aman terkendali! Kalau mau uji ulang refleks Attack & Defense, musuh siber siap dilatih lagi.']
+    repeatLines: ['Gardu stabil. Tingkatkan DEF di menu Tempa bila bersiap naik ke Jilid berikutnya.']
   },
 
-  // ZONA 5: LEMBAH LOGIKA & DEBAT
+  // BAB V: BALAI DEDUKSI
   {
     id: 'fikri',
     zone: 5,
@@ -305,11 +294,11 @@ export const NPCS = [
     y: 1170,
     challengeType: 'fallacy',
     questionCount: 3,
-    questTitle: 'Duel Sesat Pikir & Ruang Retorika',
+    questTitle: 'Uji Anomali & Sesat Pikir',
     introLines: [
-      'Selamat datang di Lembah Logika! Sebelum menantang Puncak Orator, patahkan tiga jurus sesat pikirku dengan tenang dan elegan!'
+      'Tiga argumen ini terdengar rapi di permukaan, tetapi menyimpan cacat logika. Tunjukkan letak celahnya.'
     ],
-    doneLines: ['Perisai sesat pikirku runtuh! Kamu juga bisa mampir ke Hakim Nalar dan buka Paviliun Retorika untuk belajar kerangka PREP!']
+    doneLines: ['Cukup tajam. Sekarang kunjungi Hakim untuk Relik Retorika sebelum menghadapi Puncak.']
   },
   {
     id: 'hakim',
@@ -317,14 +306,14 @@ export const NPCS = [
     x: 1520,
     y: 1170,
     challengeType: 'academy_rhetoric',
-    questTitle: 'Paviliun Retorika: Belajar Kerangka Ngomong Tajam (PREP)',
+    questTitle: 'Balai Retorika · PREP (Relik +35% Counter)',
     introLines: [
-      'Bicara cerdas itu ada rumusnya! Masuk ke Ruang Belajar Retorika ini untuk mempelajari kerangka PREP, teknik jeda 2 detik, dan cara tetap tenang saat diserang debat.'
+      'Berbicara tenang dan runtut butuh struktur. Pelajari empat kerangka ini untuk mengaktifkan Relik Retorika.'
     ],
-    doneLines: ['Kerangka retorikamu sudah kokoh! Kalahkan Golem Sesat Pikir di selatan lalu pecahkan Obelisk Matematika menuju Puncak Orator!']
+    doneLines: ['Relik Retorika aktif. Counter dan Overdrive kamu kini jauh lebih mematikan.']
   },
 
-  // ZONA 6: PUNCAK AMFITEATER ORATOR
+  // BAB VI: PUNCAK PANGGUNG
   {
     id: 'maestro',
     zone: 6,
@@ -332,217 +321,194 @@ export const NPCS = [
     y: 1240,
     challengeType: 'stage',
     questionCount: 1,
-    questTitle: 'Misi Puncak: Ujian Orasi 30 Detik Archon Lidah Emas',
+    questTitle: 'Orasi Penutup Bab VI',
     introLines: [
-      'Luar biasa! Kamu telah menjelajahi 6 wilayah, memecahkan 5 Segel Matematika, belajar lintas bahasa, hingga membungkam ancaman siber!',
-      'Saatnya ujian puncak: naik ke panggung, nyalakan mikrofon lokal (atau ketik kilat), dan sampaikan orasi 30 detik yang tajam memakai fakta pemantik dan dua kata sakti!'
+      'Semua bab pada Jilid ini telah kamu lintasi. Sampaikan satu orasi 30 detik yang padat menggunakan dua kata kunci.'
     ],
-    doneLines: ['Gelar Archon Lidah Emas resmi milikmu! Naik ke panggung kapan saja untuk melatih topik orasi baru!']
+    doneLines: ['Bab VI selesai. Buka menu Tempa [U] kapan saja untuk membalik Atlas ke Jilid berikutnya.']
   }
 ];
 
 export const LANDMARKS = [
-  // Bab I: Halaman Rumput 1894 + Salon Satir Vintage + Menara Bab Abadi + Arsip Orwell
-  { type: 'warkop', x: 350, y: 170, w: 200, h: 95, solid: true, label: 'KEDAI TAMU NYASAR 1894' },
+  // Bab I
+  { type: 'warkop', x: 350, y: 170, w: 200, h: 95, solid: true, label: 'POS BAB I' },
   { type: 'standup_stage', x: 185, y: 190, w: 120, h: 70, solid: true, label: 'SALON SATIR 1894' },
-  { type: 'endless_tower', x: 585, y: 390, w: 62, h: 62, solid: true, label: 'MENARA BAB ABADI' },
-  { type: 'library', x: 840, y: 425, w: 150, h: 72, solid: true, label: 'ARSIP ORWELL' },
+  { type: 'endless_tower', x: 585, y: 390, w: 62, h: 62, solid: true, label: 'MENARA TANPA AKHIR' },
+  { type: 'library', x: 840, y: 425, w: 150, h: 72, solid: true, label: 'ARSIP SASTRA' },
   { type: 'posronda', x: 765, y: 105, w: 115, h: 72, solid: true, label: 'POS PENGAMAT' },
   { type: 'pond', x: 140, y: 560, w: 185, h: 110, solid: true },
 
-  // Bab II: Stasiun Transit Korea & Balai Bahasa
-  { type: 'library', x: 1500, y: 100, w: 235, h: 105, solid: true, label: 'BALAI DIKSI & PUSTAKA' },
-  { type: 'hanok', x: 1950, y: 100, w: 240, h: 105, solid: true, label: 'STASIUN CHUNCHEON · 한글' },
+  // Bab II
+  { type: 'library', x: 1500, y: 100, w: 235, h: 105, solid: true, label: 'BALAI DIKSI' },
+  { type: 'hanok', x: 1950, y: 100, w: 240, h: 105, solid: true, label: 'STASIUN CHUNCHEON' },
   { type: 'fountain', x: 1790, y: 365, w: 115, h: 115, solid: true },
-  { type: 'guild', x: 1520, y: 485, w: 190, h: 85, solid: true, label: 'GUILD JARGON' },
+  { type: 'guild', x: 1520, y: 485, w: 190, h: 85, solid: true, label: 'RUANG REDAKSI' },
   { type: 'polyglot', x: 1960, y: 485, w: 225, h: 85, solid: true, label: 'PAVILIUN POLIGLOT' },
 
-  // Zona 3: Distrik Siber & AI Lab
-  { type: 'cyber_hub', x: 2900, y: 95, w: 280, h: 115, solid: true, label: 'SOC AI · /BERITA-TERKINI' },
+  // Bab III
+  { type: 'cyber_hub', x: 2900, y: 95, w: 280, h: 115, solid: true, label: 'SOC · /BERITA-TERKINI' },
   { type: 'server', x: 2630, y: 240, w: 58, h: 86, solid: true },
   { type: 'server', x: 3390, y: 260, w: 58, h: 86, solid: true },
 
-  // Zona 4: Benteng IIV / SCADA Grid
+  // Bab IV
   { type: 'scada_station', x: 2905, y: 1175, w: 270, h: 110, solid: true, label: 'GARDU IIV / SCADA' },
   { type: 'turbine', x: 2640, y: 1040, w: 72, h: 72, solid: true },
   { type: 'turbine', x: 3370, y: 1260, w: 72, h: 72, solid: true },
 
-  // Zona 5: Lembah Logika
+  // Bab V
   { type: 'pillar', x: 1850, y: 1090, w: 38, h: 38, solid: true },
   { type: 'pillar', x: 2070, y: 1090, w: 38, h: 38, solid: true },
-  { type: 'library', x: 1410, y: 1020, w: 220, h: 98, solid: true, label: 'RUANG RETORIKA' },
+  { type: 'library', x: 1410, y: 1020, w: 220, h: 98, solid: true, label: 'BALAI RETORIKA' },
 
-  // Zona 6: Puncak Amfiteater Orator
+  // Bab VI
   { type: 'amphitheater', x: 360, y: 1110, w: 360, h: 280, solid: false },
   { type: 'stage_mic', x: 516, y: 1165, w: 48, h: 32, solid: true }
 ];
 
 export const TREES = [
-  // Zona 1
   { x: 95, y: 115, style: 'pine' }, { x: 250, y: 115, style: 'oak' },
   { x: 635, y: 115, style: 'oak' }, { x: 990, y: 130, style: 'pine' },
   { x: 1005, y: 240, style: 'oak' }, { x: 110, y: 340, style: 'oak' },
   { x: 110, y: 720, style: 'pine' }, { x: 600, y: 710, style: 'oak' },
   { x: 1015, y: 550, style: 'oak' },
-  // Zona 2
   { x: 1310, y: 245, style: 'sakura' }, { x: 1820, y: 125, style: 'sakura' },
   { x: 2295, y: 245, style: 'sakura' }, { x: 1330, y: 695, style: 'sakura' },
   { x: 1835, y: 710, style: 'sakura' }, { x: 2290, y: 690, style: 'sakura' },
-  // Zona 3 (Cyber neon pylons)
   { x: 2560, y: 140, style: 'cyber_pylon' }, { x: 2770, y: 140, style: 'cyber_pylon' },
   { x: 3280, y: 140, style: 'cyber_pylon' }, { x: 3500, y: 680, style: 'cyber_pylon' },
   { x: 2580, y: 680, style: 'cyber_pylon' },
-  // Zona 4 (SCADA energy pylons)
   { x: 2570, y: 1010, style: 'energy_pylon' }, { x: 3490, y: 1010, style: 'energy_pylon' },
   { x: 2570, y: 1500, style: 'energy_pylon' }, { x: 3490, y: 1640, style: 'energy_pylon' },
-  // Zona 5 (Torches & Cypress)
   { x: 1330, y: 1010, style: 'torch' }, { x: 1710, y: 1010, style: 'torch' },
   { x: 2240, y: 1040, style: 'cypress' }, { x: 2240, y: 1480, style: 'cypress' },
   { x: 1480, y: 1640, style: 'torch' }, { x: 2040, y: 1640, style: 'torch' },
-  // Zona 6 (Star lanterns)
   { x: 150, y: 1000, style: 'star_lantern' }, { x: 340, y: 1020, style: 'star_lantern' },
   { x: 780, y: 1020, style: 'star_lantern' }, { x: 980, y: 1020, style: 'star_lantern' },
   { x: 210, y: 1560, style: 'star_lantern' }, { x: 860, y: 1560, style: 'star_lantern' }
 ];
 
-// Alur Quest Utama bergaya Genshin Impact lintas 6 Wilayah (Quest Cerita + Akademi Belajar + Attack-Defense Siber + Segel Matematika!)
 export function getActiveMainQuest(save) {
   const defeated = save.defeatedEnemies || [];
   const badges = save.academyBadges || [];
+  const vol = save.volume || 1;
 
-  if (!save.talkedNpcs.includes('jaja')) {
+  if (!badges.includes('academy-lit')) {
     return {
-      chapter: 'Bab I · Halaman Rumput 1894',
-      title: 'Temui Bang Jaja (Tamu Nyasar) atau Arsip Orwell',
-      hint: 'Jalan ke Kedai Tamu Nyasar dan tekan [E], atau geser kursor untuk melihat peta buku 3D.',
-      target: { x: 450, y: 310, label: 'Bang Jaja' }
-    };
-  }
-  if (!save.completedNpcs.includes('deden')) {
-    return {
-      chapter: 'Bab I · Halaman Rumput 1894',
-      title: 'Bongkar Teori Kang Deden',
-      hint: 'Hampiri Kang Deden di Pos Pengamat utara Bab I, atau mampir ke Arsip Orwell di timur.',
-      target: { x: 820, y: 220, label: 'Kang Deden' }
+      chapter: `Jilid ${vol} · Bab I`,
+      title: 'Raih Relik Sastra di Arsip George',
+      hint: 'Temui George di timur Bab I untuk membuka Relik +18% Strike sebelum duel berat.',
+      target: { x: 910, y: 520, label: 'George (Arsip Sastra)' }
     };
   }
   if (!defeated.includes('slime_hoaks')) {
     return {
-      chapter: 'Latihan Strike [F] & Attack-Defense',
-      title: 'Kalahkan Slime Hoaks Berantai',
-      hint: 'Dekati Slime Hoaks di selatan Bab I lalu tekan [F] untuk Ambush Strike -22 HP!',
-      target: { x: 420, y: 590, label: 'Slime Hoaks' }
+      chapter: `Jilid ${vol} · Bab I`,
+      title: 'Lumpuhkan Gema Hoaks (Strike [F])',
+      hint: 'Dekati Gema Hoaks di selatan Bab I lalu tekan [F] untuk Ambush pembuka.',
+      target: { x: 420, y: 590, label: 'Gema Hoaks' }
     };
   }
   if (!save.solvedGates.includes('gate-1')) {
     return {
-      chapter: 'Segel Matematika #1 (Balik ke Bab II)',
-      title: 'Buka Jembatan ke Stasiun Transit & Bahasa',
-      hint: 'Dekati Jembatan Timur Bab I dan pecahkan 3 Rune Matematika.',
-      target: { x: 1068, y: 400, label: 'Segel Matematika #1' }
+      chapter: `Jilid ${vol} · Segel #1`,
+      title: 'Pecahkan Segel menuju Bab II',
+      hint: 'Selesaikan 3 rune matematika berwaktu di Jembatan Timur Bab I.',
+      target: { x: 1068, y: 400, label: 'Segel Bab II' }
     };
   }
   if (!badges.includes('academy-korean')) {
     return {
-      chapter: 'Misi Utama II · Akademi Bahasa',
-      title: 'Belajar Bahasa Korea di Paviliun Sora-ssi',
-      hint: 'Kunjungi Paviliun Akademi Korea di timur laut Distrik Bahasa untuk belajar Hangul, dengar suara, dan praktik kafe Seoul!',
-      target: { x: 2070, y: 255, label: 'Sora-ssi (Akademi Korea)' }
+      chapter: `Jilid ${vol} · Bab II`,
+      title: 'Raih Relik Hangul di Stasiun Sora',
+      hint: 'Belajar Hangul di timur laut Bab II untuk bonus +25 Max HP & regenerasi.',
+      target: { x: 2070, y: 255, label: 'Sora (Stasiun Korea)' }
     };
   }
   if (!save.completedNpcs.includes('rina')) {
     return {
-      chapter: 'Misi Utama II · Distrik Bahasa',
-      title: 'Lulus Audit KBBI dari Teh Rina',
-      hint: 'Temui Teh Rina di depan Balai Pustaka Distrik Bahasa.',
-      target: { x: 1620, y: 255, label: 'Teh Rina' }
+      chapter: `Jilid ${vol} · Bab II`,
+      title: 'Selesaikan Audit Diksi Rina',
+      hint: 'Temui Rina di Balai Diksi sebelah barat laut Bab II.',
+      target: { x: 1620, y: 255, label: 'Rina (Balai Diksi)' }
     };
   }
   if (!save.solvedGates.includes('gate-2')) {
     return {
-      chapter: 'Segel Matematika #2',
-      title: 'Buka Gerbang Distrik Siber & AI Lab (Lv. 3)',
-      hint: 'Dekati Jembatan Timur Distrik Bahasa dan pecahkan 3 Rune Aljabar & Biner!',
-      target: { x: 2308, y: 400, label: 'Segel Matematika #2' }
+      chapter: `Jilid ${vol} · Segel #2`,
+      title: 'Pecahkan Segel menuju Bab III',
+      hint: 'Dekati Jembatan Timur Bab II untuk membuka Sektor Sinyal.',
+      target: { x: 2308, y: 400, label: 'Segel Bab III' }
     };
   }
   if (!badges.includes('academy-cyber')) {
     return {
-      chapter: 'Misi Utama III · Radar /berita-terkini',
-      title: 'Pelajari Terobosan Siber di SOC Komandan Vega',
-      hint: 'Masuki Pusat Komando SOC AI di Distrik Siber untuk membaca terobosan siber & 21 sumber /berita-terkini.',
-      target: { x: 3040, y: 260, label: 'Komandan Vega' }
+      chapter: `Jilid ${vol} · Bab III`,
+      title: 'Raih Relik Siber di SOC Vega',
+      hint: 'Pelajari terobosan siber & /berita-terkini di SOC Vega untuk +25% Perisai.',
+      target: { x: 3040, y: 260, label: 'Vega (SOC Siber)' }
     };
   }
   if (!defeated.includes('prompt_wyrm')) {
     return {
-      chapter: 'Misi Tempur Siber · AI Security',
-      title: 'Tumbangkan Prompt-Injection Wyrm',
-      hint: 'Lawan Prompt-Injection Wyrm di Distrik Siber memakai serangan & Counter AI!',
-      target: { x: 3320, y: 520, label: 'Prompt-Injection Wyrm' }
+      chapter: `Jilid ${vol} · Bab III`,
+      title: 'Tumbangkan Wyrm Injeksi',
+      hint: 'Gunakan Overdrive (2 Energi) untuk menembus armor Wyrm Injeksi.',
+      target: { x: 3320, y: 520, label: 'Wyrm Injeksi' }
     };
   }
   if (!save.solvedGates.includes('gate-3')) {
     return {
-      chapter: 'Segel Matematika #3',
-      title: 'Buka Gardu Benteng IIV/SCADA (Lv. 4)',
-      hint: 'Dekati Jembatan Selatan Distrik Siber dan pecahkan 3 Rune Rasio & Bit Kriptografi!',
-      target: { x: 3040, y: 748, label: 'Segel Matematika #3' }
+      chapter: `Jilid ${vol} · Segel #3`,
+      title: 'Pecahkan Segel menuju Bab IV',
+      hint: 'Dekati Jembatan Selatan Bab III untuk memasuki Gardu Vital.',
+      target: { x: 3040, y: 748, label: 'Segel Bab IV' }
     };
   }
   if (!defeated.includes('ransomware_titan')) {
     return {
-      chapter: 'Misi Utama IV · Pertahanan IIV/CII',
-      title: 'Hancurkan Ransomware Titan di Benteng IIV',
-      hint: 'Gunakan Zero-Trust Shield (BERTAHAN) dan Counter untuk melumpuhkan Ransomware Titan!',
-      target: { x: 2790, y: 1210, label: 'Ransomware Titan' }
+      chapter: `Jilid ${vol} · Bab IV`,
+      title: 'Lumpuhkan Titan Ransomware',
+      hint: 'Tempa ATK/DEF dulu bila perlu, lalu hadapi Titan di barat laut Bab IV.',
+      target: { x: 2790, y: 1210, label: 'Titan Ransomware' }
     };
   }
   if (!save.solvedGates.includes('gate-4')) {
     return {
-      chapter: 'Segel Matematika #4',
-      title: 'Buka Jalan ke Lembah Logika (Lv. 5)',
-      hint: 'Dekati Jembatan Barat Benteng IIV dan pecahkan 3 Rune Persamaan & Modulo!',
-      target: { x: 2528, y: 1340, label: 'Segel Matematika #4' }
+      chapter: `Jilid ${vol} · Segel #4`,
+      title: 'Pecahkan Segel menuju Bab V',
+      hint: 'Dekati Jembatan Barat Bab IV menuju Balai Deduksi.',
+      target: { x: 2528, y: 1340, label: 'Segel Bab V' }
     };
   }
-  if (!save.completedNpcs.includes('fikri')) {
+  if (!badges.includes('academy-rhetoric')) {
     return {
-      chapter: 'Misi Utama V · Lembah Logika',
-      title: 'Duel Sesat Pikir Lawan Mas Fikri',
-      hint: 'Masuki Lembah Logika dan patahkan 3 jurus sesat pikir Mas Fikri!',
-      target: { x: 1960, y: 1170, label: 'Mas Fikri' }
+      chapter: `Jilid ${vol} · Bab V`,
+      title: 'Raih Relik Retorika dari Hakim',
+      hint: 'Temui Hakim di Balai Retorika untuk bonus +35% Counter & Overdrive.',
+      target: { x: 1520, y: 1170, label: 'Hakim (Balai Retorika)' }
     };
   }
   if (!save.solvedGates.includes('gate-5')) {
     return {
-      chapter: 'Segel Matematika #5 (Final)',
-      title: 'Buka Puncak Amfiteater Orator (Lv. 6)',
-      hint: 'Dekati Obelisk Barat Lembah Logika dan pecahkan 3 Rune Matematika Puncak!',
-      target: { x: 1288, y: 1340, label: 'Segel Matematika #5' }
+      chapter: `Jilid ${vol} · Segel #5`,
+      title: 'Pecahkan Segel Puncak Bab VI',
+      hint: 'Dekati Obelisk Barat Bab V untuk membuka Puncak Panggung.',
+      target: { x: 1288, y: 1340, label: 'Segel Bab VI' }
     };
   }
   if (!defeated.includes('deepfake_boss')) {
     return {
-      chapter: 'Boss Tempur Siber Final',
-      title: 'Kalahkan Overlord Deepfake di Puncak!',
-      hint: 'Bungkam Overlord Deepfake di Amfiteater Langit dengan Attack, Defense, dan Counter C2PA!',
-      target: { x: 780, y: 1350, label: 'Overlord Deepfake' }
-    };
-  }
-  if (!save.completedNpcs.includes('maestro')) {
-    return {
-      chapter: 'Misi Puncak VI · Archon Lidah Emas',
-      title: 'Ujian Orasi 30 Detik Maestro Lidah Emas',
-      hint: 'Naik ke Panggung Amfiteater dan sampaikan orasi 30 detik memakai 2 Kata Sakti!',
-      target: { x: 540, y: 1240, label: 'Maestro Lidah Emas' }
+      chapter: `Jilid ${vol} · Penjaga Jilid`,
+      title: `Kalahkan Dalang Deepfake (Jilid ${vol})`,
+      hint: 'Tumbangkan Dalang Deepfake di Bab VI untuk membuka Jilid berikutnya.',
+      target: { x: 780, y: 1350, label: 'Dalang Deepfake' }
     };
   }
   return {
-    chapter: 'Archon Siber & Lidah Emas',
-    title: 'Jelajah Bebas, Lengkapi Codex & Lencana!',
-    hint: 'Semua 6 wilayah terbuka! Kunjungi Paviliun Poliglot, kumpulkan 12 peti harta, atau latih ulang duel siber.',
-    target: null
+    chapter: `Jilid ${vol} Takluk`,
+    title: `Buka Jilid ${vol + 1} di Menu Tempa [U]`,
+    hint: `Dalang Deepfake Jilid ${vol} tumbang. Buka menu Tempa [U] untuk naik ke Jilid ${vol + 1} atau tantang Menara Tanpa Akhir.`,
+    target: { x: 616, y: 472, label: 'Menara Tanpa Akhir' }
   };
 }
 
@@ -580,7 +546,6 @@ export function isPointBlocked(x, y, radius, solvedGates) {
     }
   }
 
-  // Dua sungai vertikal (1120..1240 dan 2360..2480) dan satu sungai horizontal (800..920)
   if ((x + radius > 1120 && x - radius < 1240) || (x + radius > 2360 && x - radius < 2480)) {
     return { blocked: true, reason: 'river' };
   }

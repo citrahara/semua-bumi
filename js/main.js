@@ -3,7 +3,7 @@ import { DICTION_BANK } from './data/diction.js';
 import { FALLACIES_BANK } from './data/fallacies.js';
 import { STAGE_PROMPTS } from './data/stage.js';
 import { generateMathQuestion, GATE_META } from './data/math.js';
-import { ENEMIES } from './data/enemies.js';
+import { ENEMIES, scaleEnemyForVolume } from './data/enemies.js';
 import { CYBER_LAB, CLASSIC_LIT_ACADEMY } from './data/academy.js';
 import { launchCyberCombat } from './combat.js';
 import {
@@ -52,7 +52,10 @@ import {
   persistSave,
   resetCurrentAccount,
   xpNeededForLevel,
-  grantRewards
+  grantRewards,
+  getPlayerStats,
+  getUpgradeCost,
+  RELIC_EFFECTS
 } from './storage.js';
 
 const TOTAL_CODEX =
@@ -82,15 +85,18 @@ const toastEl = document.getElementById('toast');
 
 const hudAvatar = document.getElementById('hud-avatar');
 const hudPlayerName = document.getElementById('hud-player-name');
+const hudVolBadge = document.getElementById('hud-vol-badge');
 const hudArBadge = document.getElementById('hud-ar-badge');
+const hudHpFill = document.getElementById('hud-hp-fill');
+const hudHpText = document.getElementById('hud-hp-text');
 const hudXpFill = document.getElementById('hud-xp-fill');
 const hudZoneMini = document.getElementById('hud-zone-mini');
 const hudCoins = document.getElementById('hud-coins');
 const hudCodexCount = document.getElementById('hud-codex-count');
 const hudDailyCount = document.getElementById('hud-daily-count');
 const btnToggleSound = document.getElementById('btn-toggle-sound');
+const helpPopover = document.getElementById('help-popover');
 
-const questChapterEl = document.getElementById('quest-chapter');
 const questTitleEl = document.getElementById('quest-title');
 const questDistEl = document.getElementById('quest-dist');
 const zoneBanner = document.getElementById('zone-banner');
@@ -147,6 +153,7 @@ let dustCooldown = 0;
 let saveCooldown = 0;
 let gateBumpCooldown = 0;
 let stageTimerId = null;
+let sealTimerId = null;
 
 // ==========================================
 // HELPERS
@@ -240,28 +247,35 @@ function markDailyCommission(commId) {
 function refreshHud() {
   ensureTodayDaily();
   const cls = getCharacterClass(save.characterClass);
+  const stats = getPlayerStats(save);
+  const curHp = Math.max(1, Math.min(stats.maxHp, save.currentHp || stats.maxHp));
+
   hudAvatar.innerHTML = renderCharacterSVG(cls.portraitKey, 'idle');
-  hudPlayerName.textContent = `@${save.username || save.playerName || 'Petualang'}`;
+  hudPlayerName.textContent = `@${save.username || save.playerName || 'Pembaca'}`;
+  if (hudVolBadge) hudVolBadge.textContent = `JILID ${save.volume || 1}`;
   hudArBadge.textContent = `LV ${save.level}`;
+
+  if (hudHpFill) hudHpFill.style.width = `${Math.round((curHp / stats.maxHp) * 100)}%`;
+  if (hudHpText) hudHpText.textContent = `${curHp}/${stats.maxHp}`;
+
   const need = xpNeededForLevel(save.level);
   const pct = Math.min(100, Math.round((save.xp / need) * 100));
   hudXpFill.style.width = `${pct}%`;
 
   const zone = getZoneAt(player.x, player.y);
-  hudZoneMini.textContent = zone.name;
+  hudZoneMini.textContent = zone.name.split('·')[0].trim();
   hudCoins.textContent = `${save.coins} Koin`;
   hudCodexCount.textContent = `${save.codexIds.length}/${TOTAL_CODEX}`;
   if (hudDailyCount) hudDailyCount.textContent = `${save.dailyState.completed.length}/4`;
   btnToggleSound.textContent = save.muted ? 'Mati' : 'Suara';
 
   const q = getActiveMainQuest(save);
-  questChapterEl.textContent = q.chapter;
   questTitleEl.textContent = q.title;
   if (q.target) {
     const meters = Math.max(1, Math.round(Math.hypot(q.target.x - player.x, q.target.y - player.y) / 14));
-    questDistEl.textContent = `Arahkan ke ${q.target.label} · ${meters}m`;
+    questDistEl.textContent = `${meters}m`;
   } else {
-    questDistEl.textContent = 'Semua Misi Utama Selesai!';
+    questDistEl.textContent = 'Bebas';
   }
 }
 
@@ -269,6 +283,10 @@ function closeOverlay() {
   if (stageTimerId) {
     clearInterval(stageTimerId);
     stageTimerId = null;
+  }
+  if (sealTimerId) {
+    clearInterval(sealTimerId);
+    sealTimerId = null;
   }
   if (mic.isRecording) {
     mic.stop().catch(() => {});
@@ -476,42 +494,51 @@ function startEnemyCombat(enemy, { ambushDamage = 0 } = {}) {
   modalOpen = true;
   player.walkTarget = null;
   audio.playDialogueOpen();
+  const scaledEnemy = scaleEnemyForVolume(enemy, save.volume || 1);
   launchCyberCombat({
     overlayRoot,
     save,
-    enemy,
+    enemy: scaledEnemy,
     ambushDamage,
     onVictory: () => {
       if (!save.defeatedEnemies) save.defeatedEnemies = [];
       const firstKill = !save.defeatedEnemies.includes(enemy.id);
       if (firstKill) save.defeatedEnemies.push(enemy.id);
+      save.totalWins = (save.totalWins || 0) + 1;
       awardAndNotify({
-        xp: firstKill ? enemy.xpReward : Math.round(enemy.xpReward * 0.5),
-        coins: firstKill ? enemy.coinReward : Math.round(enemy.coinReward * 0.5),
+        xp: firstKill ? scaledEnemy.xpReward : Math.round(scaledEnemy.xpReward * 0.55),
+        coins: firstKill ? scaledEnemy.coinReward : Math.round(scaledEnemy.coinReward * 0.6),
         codexId: enemy.intelId,
         category: 'logic'
       });
-      renderer.spawnBurst(enemy.curX, enemy.curY, '#48DBFB', 36);
+      renderer.spawnBurst(enemy.curX, enemy.curY, '#57B4C9', 32);
       enemyBumpCooldown = 4.0;
       markDailyCommission('comm-combat');
       closeOverlay();
-      showZoneBanner('DUEL SIBER MENANG!', `${enemy.name} Berhasil Dilumpuhkan!`);
-      sayCiko('Gacor! Pertahanan & seranganmu makin tajam!', 4);
+      if (enemy.id === 'deepfake_boss') {
+        showZoneBanner(`JILID ${save.volume || 1} TAKLUK`, `Buka Tempa [U] untuk lanjut ke Jilid ${(save.volume || 1) + 1}`);
+        sayCiko(`Penjaga Jilid ${save.volume || 1} tumbang. Jilid berikutnya siap dibuka di Tempa.`, 5);
+      } else {
+        showZoneBanner('DUEL MENANG', `${enemy.name} dilumpuhkan`);
+        sayCiko('Rapi. Periksa sisa HP atau istirahat di Penanda Bab bila perlu.', 3.6);
+      }
     },
     onDefeat: () => {
-      // Tarik mundur ke Waypoint terdekat di zona saat ini
       const z = getZoneAt(player.x, player.y);
       const wp = WAYPOINTS.find((w) => w.zone === z.id) || WAYPOINTS[0];
+      const stats = getPlayerStats(save);
+      save.currentHp = stats.maxHp;
+      persistSave(save);
       player.x = wp.x;
       player.y = wp.y + 34;
       enemyBumpCooldown = 4.0;
       closeOverlay();
-      showToast(`Ciko menarikmu kembali ke ${wp.name} dengan HP penuh!`);
+      showToast(`HP pulih di ${wp.name}. Perkuat atribut lewat Tempa [U] sebelum mencoba lagi.`);
     },
     onFlee: () => {
       enemyBumpCooldown = 4.0;
       closeOverlay();
-      showToast('Kamu mundur strategis dari duel siber.');
+      showToast('Mundur dari duel. Sisa HP tetap tercatat.');
     }
   });
 }
@@ -521,32 +548,43 @@ function handleAcademyComplete({ academyId, badgeName, npcId, xp, coins }) {
   const firstTime = !save.academyBadges.includes(academyId);
   if (firstTime) save.academyBadges.push(academyId);
   if (npcId && !save.completedNpcs.includes(npcId)) save.completedNpcs.push(npcId);
+  const relic = RELIC_EFFECTS[academyId];
+  const stats = getPlayerStats(save);
+  if (firstTime) save.currentHp = stats.maxHp;
   awardAndNotify({
     xp: firstTime ? xp : Math.round(xp * 0.4),
     coins: firstTime ? coins : Math.round(coins * 0.4),
     category: academyId === 'academy-cyber' ? 'math' : 'diction'
   });
   audio.playVictory();
-  renderer.spawnBurst(player.x, player.y, '#FFD166', 32);
+  renderer.spawnBurst(player.x, player.y, '#D9B466', 28);
   markDailyCommission('comm-study');
   closeOverlay();
-  showZoneBanner(firstTime ? `LENCANA DIRAIH: ${badgeName.toUpperCase()}` : 'LATIHAN SELESAI!', `Ilmu baru berhasil dikuasai (+${firstTime ? xp : Math.round(xp * 0.4)} XP)`);
-  sayCiko(`Keren! ${badgeName} sekarang terpajang di profilmu!`, 4.4);
+  showZoneBanner(
+    firstTime && relic ? `RELIK AKTIF · ${relic.name.toUpperCase()}` : 'SESI SELESAI',
+    relic ? relic.statLabel : badgeName
+  );
+  sayCiko(relic ? `${relic.name} aktif (${relic.statLabel}).` : 'Ilmu baru tercatat di Codex.', 4.2);
 }
 
-// ==========================================
-// WAYPOINT & CHEST INTERACTIONS
-// ==========================================
-
 function handleWaypoint(wp) {
+  const stats = getPlayerStats(save);
+  const neededHeal = (save.currentHp || stats.maxHp) < stats.maxHp;
+  save.currentHp = stats.maxHp;
   if (!save.unlockedWaypoints.includes(wp.id)) {
     save.unlockedWaypoints.push(wp.id);
     audio.playWaypoint();
-    renderer.spawnBurst(wp.x, wp.y - 12, '#48DBFB', 28);
-    awardAndNotify({ xp: 50, coins: 20 });
-    showZoneBanner('WAYPOINT AKTIF (+50 XP)', wp.name);
-    sayCiko('Mantap! Sekarang bisa teleportasi ke sini lewat Peta [M]!', 4.2);
+    renderer.spawnBurst(wp.x, wp.y - 12, '#57B4C9', 26);
+    awardAndNotify({ xp: 50, coins: 25 });
+    showZoneBanner('PENANDA BAB AKTIF · HP PULIH', wp.name);
+    sayCiko('Penanda Bab aktif dan HP kembali penuh.', 3.6);
   } else {
+    persistSave(save);
+    refreshHud();
+    if (neededHeal) {
+      audio.playWaypoint();
+      showToast(`HP pulih penuh (${stats.maxHp}/${stats.maxHp}) di ${wp.name}.`);
+    }
     openWorldMapModal();
   }
 }
@@ -596,13 +634,52 @@ function handleOpenChest(ch) {
 
 function openMathSealModal(bridge) {
   const meta = GATE_META[bridge.gateLevel];
+  const vol = save.volume || 1;
+  const effectiveLvl = Math.min(5, bridge.gateLevel + (vol > 1 ? 1 : 0));
+  const timePerRune = Math.max(16, 26 - (vol - 1) * 2);
   modalOpen = true;
   audio.playDialogueOpen();
 
   let solvedCount = 0;
+  let mistakes = 0;
+  const maxMistakes = 2;
   let slotIndex = 0;
-  let currentQ = generateMathQuestion(bridge.gateLevel, slotIndex);
+  let currentQ = generateMathQuestion(effectiveLvl, slotIndex);
   let lockedChoice = false;
+  let sealBrokenFail = false;
+  let timeLeft = timePerRune;
+
+  function stopSealTimer() {
+    if (sealTimerId) {
+      clearInterval(sealTimerId);
+      sealTimerId = null;
+    }
+  }
+
+  function startSealTimer() {
+    stopSealTimer();
+    timeLeft = timePerRune;
+    sealTimerId = setInterval(() => {
+      timeLeft = Math.max(0, timeLeft - 1);
+      const fill = document.getElementById('seal-timer-fill');
+      const txt = document.getElementById('seal-timer-txt');
+      if (fill) {
+        fill.style.width = `${Math.round((timeLeft / timePerRune) * 100)}%`;
+        fill.classList.toggle('urgent', timeLeft <= 6);
+      }
+      if (txt) txt.textContent = `${timeLeft} dtk`;
+      if (timeLeft <= 0) {
+        stopSealTimer();
+        lockedChoice = true;
+        mistakes += 1;
+        audio.playWrong();
+        if (mistakes > maxMistakes) {
+          sealBrokenFail = true;
+        }
+        renderAltar({ ok: false, picked: -1, timeout: true });
+      }
+    }, 1000);
+  }
 
   function renderAltar(feedback = null) {
     const runesHtml = [0, 1, 2]
@@ -611,20 +688,33 @@ function openMathSealModal(bridge) {
         return `<div class="rune-gem ${cls}">${i < solvedCount ? '✓' : 'Σ'}</div>`;
       })
       .join('');
+    const triesLeft = Math.max(0, maxMistakes + 1 - mistakes);
+    const tPct = Math.round((timeLeft / timePerRune) * 100);
 
     overlayRoot.innerHTML = `
       <div class="modal-backdrop">
         <div class="altar-card">
           <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
             <div>
-              <div class="title-kicker">SEGEL MATEMATIKA · BUKA LEVEL ${meta.unlocksLevel}</div>
-              <h2 style="margin:0; font-family:var(--font-display); font-size:1.55rem; color:var(--gold);">${escapeHtml(meta.name)}</h2>
+              <div class="title-kicker">SEGEL MATEMATIKA · JILID ${vol} · KESEMPATAN ${triesLeft}/${maxMistakes + 1}</div>
+              <h2 style="margin:0; font-family:var(--font-display); font-size:1.45rem; color:var(--gold);">${escapeHtml(meta.name)}</h2>
             </div>
             <button class="rpg-btn ghost" id="btn-altar-exit" type="button" style="padding:7px 14px; font-size:0.8rem;">Mundur</button>
           </div>
-          <p style="margin:8px 0 0; font-size:0.88rem; color:var(--muted);">${escapeHtml(meta.flavor)}</p>
 
           <div class="rune-row">${runesHtml}</div>
+
+          ${
+            !feedback
+              ? `
+            <div style="display:flex; justify-content:space-between; font-size:0.78rem; color:var(--muted); margin-bottom:4px;">
+              <span>Batas waktu rune</span>
+              <span id="seal-timer-txt" style="color:var(--gold); font-weight:800;">${timeLeft} dtk</span>
+            </div>
+            <div class="exam-timer-track"><div class="exam-timer-fill ${timeLeft <= 6 ? 'urgent' : ''}" id="seal-timer-fill" style="width:${tPct}%"></div></div>
+          `
+              : ''
+          }
 
           <div class="math-q-box">
             <span class="math-tag">Rune ${feedback && feedback.ok ? solvedCount : Math.min(meta.requiredRunes, solvedCount + 1)} dari ${meta.requiredRunes} · ${escapeHtml(currentQ.tag)}</span>
@@ -661,12 +751,20 @@ function openMathSealModal(bridge) {
             feedback
               ? `
             <div class="insight-box" style="margin-top:14px;">
-              <p><strong>${feedback.ok ? 'RUNE PECAH!' : 'Segel menolak jawabanmu!'}</strong> ${escapeHtml(currentQ.explain)}</p>
-              <p>${feedback.ok ? 'Energi matematika mengalir ke jembatan!' : 'Pelajari rumusnya, lalu coba 1 rune pengganti untuk lanjut.'}</p>
+              <p><strong>${feedback.ok ? 'Rune terbuka.' : sealBrokenFail ? 'Segel mengunci ulang.' : feedback.timeout ? 'Waktu habis.' : 'Jawaban keliru.'}</strong> ${escapeHtml(currentQ.explain)}</p>
+              <p>${sealBrokenFail ? 'Kesempatan habis. Tenangkan napas dan ulangi dari Rune 1.' : feedback.ok ? 'Lanjutkan ke rune berikutnya.' : `Sisa kesempatan salah: ${triesLeft}.`}</p>
             </div>
             <div style="margin-top:14px; text-align:right;">
               <button class="rpg-btn gold" id="btn-math-next" type="button">
-                ${solvedCount >= meta.requiredRunes ? `Hancurkan Segel & Buka ${meta.unlocksZone}!` : feedback.ok ? 'Lanjut Rune Berikutnya' : 'Coba Rune Pengganti'}
+                ${
+                  sealBrokenFail
+                    ? 'Tutup & Coba Lagi Nanti'
+                    : solvedCount >= meta.requiredRunes
+                    ? `Buka Gerbang Bab ${meta.unlocksLevel}`
+                    : feedback.ok
+                    ? 'Rune Berikutnya'
+                    : 'Coba Rune Pengganti'
+                }
               </button>
             </div>
           `
@@ -677,6 +775,7 @@ function openMathSealModal(bridge) {
     `;
 
     document.getElementById('btn-altar-exit')?.addEventListener('click', () => {
+      stopSealTimer();
       audio.playClick();
       closeOverlay();
     });
@@ -684,6 +783,7 @@ function openMathSealModal(bridge) {
     document.querySelectorAll('[data-math-idx]').forEach((btn) => {
       btn.addEventListener('click', () => {
         if (lockedChoice) return;
+        stopSealTimer();
         const idx = Number(btn.dataset.mathIdx);
         const chosen = currentQ.choices[idx];
         lockedChoice = true;
@@ -695,6 +795,8 @@ function openMathSealModal(bridge) {
           audio.playRuneBreak();
           renderAltar({ ok: true, picked: idx });
         } else {
+          mistakes += 1;
+          if (mistakes > maxMistakes) sealBrokenFail = true;
           audio.playWrong();
           renderAltar({ ok: false, picked: idx });
         }
@@ -702,29 +804,37 @@ function openMathSealModal(bridge) {
     });
 
     document.getElementById('btn-math-next')?.addEventListener('click', () => {
+      stopSealTimer();
+      if (sealBrokenFail) {
+        closeOverlay();
+        return;
+      }
       if (solvedCount >= meta.requiredRunes) {
         if (!save.solvedGates.includes(bridge.id)) {
           save.solvedGates.push(bridge.id);
         }
         closeOverlay();
         audio.playGateUnlock();
-        renderer.triggerShake(14);
-        renderer.spawnBurst(bridge.rect.x + bridge.rect.w / 2, bridge.rect.y + bridge.rect.h / 2, '#FFD166', 44);
-        awardAndNotify({ xp: 120, coins: 80, category: 'math' });
-        showZoneBanner(`SEGEL HANCUR! LEVEL ${meta.unlocksLevel} TERBUKA`, `Jembatan ke ${meta.unlocksZone} kini bisa dilalui!`);
-        sayCiko(`Gacor! Ayo seberangi jembatan ke ${meta.unlocksZone}!`, 5);
+        renderer.triggerShake(12);
+        renderer.spawnBurst(bridge.rect.x + bridge.rect.w / 2, bridge.rect.y + bridge.rect.h / 2, '#D9B466', 40);
+        const bonusMult = 1 + (vol - 1) * 0.35;
+        awardAndNotify({ xp: Math.round(125 * bonusMult), coins: Math.round(90 * bonusMult), category: 'math' });
+        showZoneBanner(`SEGEL TERBUKA · BAB ${meta.unlocksLevel}`, `Jembatan menuju ${meta.unlocksZone} kini terbuka`);
+        sayCiko(`Segel terbuka. Persiapkan atribut sebelum masuk ${meta.unlocksZone}.`, 4.2);
         return;
       }
 
       if (feedback && feedback.ok) {
         slotIndex += 1;
       }
-      currentQ = generateMathQuestion(bridge.gateLevel, slotIndex);
+      currentQ = generateMathQuestion(effectiveLvl, slotIndex);
       lockedChoice = false;
+      startSealTimer();
       renderAltar(null);
     });
   }
 
+  startSealTimer();
   renderAltar(null);
 }
 
@@ -1386,8 +1496,8 @@ function openWorldMapModal() {
       <div class="panel-modal">
         <div class="panel-head">
           <div>
-            <div class="title-kicker">DAFTAR ISI & TELEPORTASI PENANDA BAB</div>
-            <h2>Atlas di Celah Kasur (6 Bab Buku)</h2>
+            <div class="title-kicker">DAFTAR ISI & PENANDA BAB · JILID ${save.volume || 1}</div>
+            <h2>Kronik Atlas (Enam Bab)</h2>
           </div>
           <button class="rpg-btn ghost" id="btn-close-map" type="button" style="padding:8px 14px;">Tutup [Esc]</button>
         </div>
@@ -1576,6 +1686,173 @@ function openCodexModal() {
   renderCodex();
 }
 
+// ==========================================
+// TEMPA ATRIBUT, RELIK ILMU & ESKALASI JILID (ENDLESS RPG!)
+// ==========================================
+
+function openForgeModal() {
+  exitPointerLockSafe();
+  modalOpen = true;
+  audio.playClick();
+
+  function renderForge() {
+    const stats = getPlayerStats(save);
+    const up = save.upgrades || { atk: 0, def: 0, hp: 0, crit: 0 };
+    const badges = save.academyBadges || [];
+    const vol = save.volume || 1;
+    const bossDown = (save.defeatedEnemies || []).includes('deepfake_boss');
+
+    const upgradeDefs = [
+      { key: 'atk', name: 'Ketajaman Strike (ATK)', desc: `Saat ini ${stats.atk} · +5 ATK permanen`, rank: up.atk || 0 },
+      { key: 'def', name: 'Lapis Pertahanan (DEF)', desc: `DEF ${stats.def} · Perisai ${stats.shieldPower} · +3 DEF / +6 Perisai`, rank: up.def || 0 },
+      { key: 'hp', name: 'Ketahanan (Max HP)', desc: `HP ${save.currentHp}/${stats.maxHp} · +20 Max HP & pulih`, rank: up.hp || 0 },
+      { key: 'crit', name: 'Fokus Kritis (CRIT)', desc: `Peluang ${Math.round(stats.critChance * 100)}% · +6% Kritikal`, rank: up.crit || 0 }
+    ];
+
+    const relicList = [
+      ['academy-lit', 'Arsip Sastra (Bab I)'],
+      ['academy-korean', 'Stasiun Korea (Bab II)'],
+      ['academy-polyglot', 'Poliglot (Bab II)'],
+      ['academy-cyber', 'SOC Siber (Bab III)'],
+      ['academy-rhetoric', 'Retorika (Bab V)']
+    ];
+
+    overlayRoot.innerHTML = `
+      <div class="modal-backdrop">
+        <div class="panel-modal" style="max-width:740px;">
+          <div class="panel-head">
+            <div>
+              <div class="title-kicker">TEMPA ATRIBUT & RELIK · JILID ${vol}</div>
+              <h2>Penguatan Pembaca</h2>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span style="font-weight:800; color:var(--gold); font-size:0.9rem;">${save.coins} Koin</span>
+              <button class="rpg-btn ghost" id="btn-close-forge" type="button" style="padding:7px 14px; font-size:0.8rem;">Tutup</button>
+            </div>
+          </div>
+
+          <div class="forge-grid">
+            ${upgradeDefs
+              .map((u) => {
+                const cost = getUpgradeCost(u.key, u.rank);
+                const canAfford = save.coins >= cost;
+                return `
+                  <div class="forge-card">
+                    <div>
+                      <div class="title-kicker" style="margin-bottom:2px;">TINGKAT ${u.rank}</div>
+                      <h4>${u.name}</h4>
+                      <p>${u.desc}</p>
+                    </div>
+                    <button class="rpg-btn ${canAfford ? 'gold' : 'ghost'}" data-up-key="${u.key}" type="button" style="padding:8px 14px; font-size:0.8rem;" ${canAfford ? '' : 'disabled'}>
+                      Tempa · ${cost} Koin
+                    </button>
+                  </div>
+                `;
+              })
+              .join('')}
+          </div>
+
+          <div class="forge-card" style="flex-direction:row; align-items:center; margin-bottom:16px;">
+            <div>
+              <h4>Tinta Pemulih (Stok: ${save.potions || 0})</h4>
+              <p>Memulihkan +45% Max HP di tengah duel tanpa menghabiskan giliran.</p>
+            </div>
+            <button class="rpg-btn ${save.coins >= 35 ? 'primary' : 'ghost'}" id="btn-buy-potion" type="button" style="padding:8px 14px; font-size:0.8rem; flex-shrink:0;" ${save.coins >= 35 ? '' : 'disabled'}>
+              Beli · 35 Koin
+            </button>
+          </div>
+
+          <div class="title-kicker" style="margin-bottom:6px;">RELIK ILMU (${badges.length}/5 AKTIF)</div>
+          <div class="relic-strip">
+            ${relicList
+              .map(([id, loc]) => {
+                const owned = badges.includes(id);
+                const r = RELIC_EFFECTS[id];
+                return `
+                  <div class="relic-pill ${owned ? 'owned' : ''}">
+                    <strong>${escapeHtml(r.name)}</strong>
+                    <span>${owned ? escapeHtml(r.statLabel) : `Terkunci · ${loc}`}</span>
+                  </div>
+                `;
+              })
+              .join('')}
+          </div>
+
+          <div class="insight-box" style="margin-top:0; display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:12px;">
+            <div style="flex:1; min-width:220px;">
+              <p style="margin:0 0 3px;"><strong>Jilid Berikutnya: Jilid ${vol + 1}</strong></p>
+              <p style="margin:0; font-size:0.82rem; color:var(--muted);">
+                ${
+                  bossDown
+                    ? `Dalang Deepfake Jilid ${vol} telah tumbang. Buka Jilid ${vol + 1} agar seluruh 6 Bab, Segel Matematika, dan musuh bangkit dengan armor serta kerusakan lebih tinggi.`
+                    : `Kalahkan Dalang Deepfake di Bab VI pada Jilid ${vol} untuk membuka Jilid ${vol + 1}.`
+                }
+              </p>
+            </div>
+            <button class="rpg-btn ${bossDown ? 'gold' : 'ghost'}" id="btn-next-volume" type="button" style="padding:9px 16px; font-size:0.82rem;" ${bossDown ? '' : 'disabled'}>
+              Buka Jilid ${vol + 1}
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('btn-close-forge')?.addEventListener('click', closeOverlay);
+
+    document.querySelectorAll('[data-up-key]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const key = btn.dataset.upKey;
+        if (!save.upgrades) save.upgrades = { atk: 0, def: 0, hp: 0, crit: 0 };
+        const cost = getUpgradeCost(key, save.upgrades[key] || 0);
+        if (save.coins < cost) return;
+        save.coins -= cost;
+        save.upgrades[key] = (save.upgrades[key] || 0) + 1;
+        if (key === 'hp') {
+          const st = getPlayerStats(save);
+          save.currentHp = Math.min(st.maxHp, (save.currentHp || st.maxHp) + 20);
+        }
+        persistSave(save);
+        audio.playRuneBreak();
+        refreshHud();
+        renderForge();
+      });
+    });
+
+    document.getElementById('btn-buy-potion')?.addEventListener('click', () => {
+      if (save.coins < 35) return;
+      save.coins -= 35;
+      save.potions = (save.potions || 0) + 1;
+      persistSave(save);
+      audio.playClick();
+      refreshHud();
+      renderForge();
+    });
+
+    document.getElementById('btn-next-volume')?.addEventListener('click', () => {
+      if (!bossDown) return;
+      save.volume = (save.volume || 1) + 1;
+      save.worldTier = save.volume;
+      save.highestVolume = Math.max(save.highestVolume || 1, save.volume);
+      save.solvedGates = [];
+      save.defeatedEnemies = [];
+      save.openedChests = [];
+      save.x = 340;
+      save.y = 410;
+      const st = getPlayerStats(save);
+      save.currentHp = st.maxHp;
+      persistSave(save);
+      syncPlayerFromSave();
+      audio.playGateUnlock();
+      renderer.spawnBurst(player.x, player.y, '#D9B466', 44);
+      closeOverlay();
+      showZoneBanner(`JILID ${save.volume} DIMULAI`, 'Enam Bab bangkit dengan armor & tantangan lebih tinggi');
+      sayCiko(`Jilid ${save.volume}. Seluruh Relik dan tempaanmu tetap aktif.`, 4.5);
+    });
+  }
+
+  renderForge();
+}
+
 function openTowerEntry() {
   modalOpen = true;
   openEndlessTowerModal({
@@ -1649,24 +1926,27 @@ function openProfileModal() {
   modalOpen = true;
   audio.playClick();
   const cls = getCharacterClass(save.characterClass);
-  const titleRank = save.completedNpcs.includes('maestro')
-    ? 'Archon Lidah Emas'
+  const stats = getPlayerStats(save);
+  const titleRank = (save.volume || 1) >= 2
+    ? `Penakluk Jilid ${save.volume}`
+    : save.completedNpcs.includes('maestro')
+    ? 'Kurator Puncak'
     : save.solvedGates.length >= 2
-    ? 'Ksatria Logika'
+    ? 'Penjelajah Sektor'
     : save.solvedGates.length >= 1
-    ? 'Pujangga Kota Bahasa'
-    : 'Petualang Desa Warkop';
+    ? 'Pembaca Bab II'
+    : 'Pembaca Bab I';
 
   overlayRoot.innerHTML = `
     <div class="modal-backdrop">
       <div class="altar-card" style="max-width:540px;">
         <div class="panel-head" style="margin-bottom:14px;">
           <div style="display:flex; align-items:center; gap:14px;">
-            <div class="portrait-box" style="width:68px; height:68px;">${renderCharacterSVG(cls.portraitKey, 'happy')}</div>
+            <div class="portrait-box" style="width:68px; height:68px;">${renderCharacterSVG(cls.portraitKey, 'idle')}</div>
             <div>
-              <div class="title-kicker">KARTU PETUALANG · LV ${save.level} · ${escapeHtml(cls.name)}</div>
-              <h2 style="margin:0; font-size:1.4rem;">@${escapeHtml(save.username || save.playerName)}</h2>
-              <div style="font-size:0.82rem; color:var(--gold); font-weight:700;">Gelar: ${titleRank}</div>
+              <div class="title-kicker">KARTU PEMBACA · JILID ${save.volume || 1} · LV ${save.level} · ${escapeHtml(cls.name)}</div>
+              <h2 style="margin:0; font-size:1.38rem;">@${escapeHtml(save.username || save.playerName)}</h2>
+              <div style="font-size:0.8rem; color:var(--gold); font-weight:700;">${titleRank} · ATK ${stats.atk} · DEF ${stats.def} · Relik ${stats.relicCount}/5</div>
               <div style="font-size:0.74rem; color:#8ce9b5; margin-top:2px;">${escapeHtml(cls.bonusLabel)}</div>
             </div>
           </div>
@@ -1674,10 +1954,10 @@ function openProfileModal() {
         </div>
 
         <div class="zone-map-grid" style="margin-bottom:16px;">
-          <div class="zone-card unlocked"><h3>${save.solvedGates.length + 1}/6</h3><p>Wilayah · Era ${save.worldTier || 1}</p></div>
-          <div class="zone-card unlocked"><h3>Lt. ${save.towerFloor || 0}</h3><p>Rekor Menara Abadi (∞)</p></div>
-          <div class="zone-card unlocked"><h3>${save.comedyFame || 0}</h3><p>Reputasi Stand-Up 1894</p></div>
-          <div class="zone-card unlocked"><h3>${save.codexIds.length}/${TOTAL_CODEX}</h3><p>Codex & Intel Siber</p></div>
+          <div class="zone-card unlocked"><h3>Jilid ${save.volume || 1}</h3><p>Bab terbuka ${save.solvedGates.length + 1}/6 · Menang ${save.totalWins || 0}x</p></div>
+          <div class="zone-card unlocked"><h3>Lt. ${save.towerFloor || 0}</h3><p>Rekor Menara Tanpa Akhir</p></div>
+          <div class="zone-card unlocked"><h3>${stats.relicCount}/5</h3><p>Relik Ilmu Aktif</p></div>
+          <div class="zone-card unlocked"><h3>${save.codexIds.length}/${TOTAL_CODEX}</h3><p>Codex Tersimpan</p></div>
         </div>
 
         <div style="display:flex; flex-wrap:wrap; gap:8px; justify-content:space-between;">
@@ -1764,6 +2044,8 @@ window.addEventListener('keydown', (e) => {
   } else if (k === 'm') {
     exitPointerLockSafe();
     openWorldMapModal();
+  } else if (k === 'u') {
+    openForgeModal();
   } else if (k === 'c') {
     exitPointerLockSafe();
     openCodexModal();
@@ -1909,9 +2191,13 @@ document.getElementById('btn-touch-strike')?.addEventListener('click', performWo
 btnInteract.addEventListener('click', triggerNearestInteraction);
 document.getElementById('btn-hud-strike')?.addEventListener('click', performWorldStrike);
 document.getElementById('btn-open-map')?.addEventListener('click', openWorldMapModal);
+document.getElementById('btn-open-forge')?.addEventListener('click', openForgeModal);
 document.getElementById('btn-open-daily')?.addEventListener('click', openDailyModal);
 document.getElementById('btn-open-codex')?.addEventListener('click', openCodexModal);
 document.getElementById('btn-open-profile')?.addEventListener('click', openProfileModal);
+document.getElementById('btn-toggle-help')?.addEventListener('click', () => {
+  helpPopover?.classList.toggle('hidden');
+});
 document.getElementById('btn-quest-tracker')?.addEventListener('click', () => {
   const q = getActiveMainQuest(save);
   showToast(q.hint);
@@ -1983,14 +2269,14 @@ function enterWorldWithAccount(account, isBrandNew = false) {
 
   const showArrival = () => {
     showZoneBanner(
-      isBrandNew ? `PEMBACA RESMI · ${cls.name.toUpperCase()}` : z.subtitle,
-      isBrandNew ? `@${save.username} · Bab I Atlas Buku` : z.name
+      isBrandNew ? `JILID ${save.volume || 1} · ${cls.name.toUpperCase()}` : z.subtitle,
+      isBrandNew ? `@${save.username} · Bab I` : z.name
     );
     sayCiko(
       isBrandNew
-        ? `Selamat datang di dalam buku, @${save.username}! Geser kursor buat putar POV, scroll buat lihat sampul buku, atau tekan [F] buat Strike!`
-        : `Halo lagi @${save.username}! Ayo balik halaman berikutnya di Atlas Buku 3D!`,
-      5.6
+        ? `Tarik kursor untuk memutar POV, tekan [F] untuk Strike, atau buka Tempa [U].`
+        : `Kembali ke ${z.name}.`,
+      4.5
     );
   };
 
@@ -2043,10 +2329,10 @@ function renderAuthCard() {
     const savedList = listSavedAccounts();
     authCardRoot.innerHTML = `
       ${renderStepper(1)}
-      <div class="title-kicker">KARTU PEMBACA · PETA POP-UP DALAM BUKU</div>
-      <h1 class="title-logo">ATLAS DI CELAH KASUR</h1>
+      <div class="title-kicker">ATLAS ENAM BAB · KARTU PEMBACA</div>
+      <h1 class="title-logo">KRONIK ATLAS</h1>
       <p class="title-desc">
-        Sebuah buku antologi kulit antik tahun <strong>1894</strong> terbuka di hadapanmu. Tulis <strong>username</strong> pembaca, lulus <strong>3 ujian kelayakan sampul</strong> (salah 1 langsung ditolak), lalu masuk ke peta 3D enam bab di dalam halamannya!
+        Buat <strong>username</strong>, lulus <strong>3 uji seleksi singkat</strong> (salah satu langsung terkunci 5 detik), lalu pilih kelas karakter untuk memasuki peta buku 3D tanpa akhir.
       </p>
 
       <div class="title-form" style="max-width:400px;">

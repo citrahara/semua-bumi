@@ -4,11 +4,11 @@ export const CHARACTER_CLASSES = [
   {
     id: 'orator',
     portraitKey: 'hero_orator',
-    name: 'Orator Api',
-    vibe: 'Ekspresif, kocak, dan hobi pegang panggung',
-    bonusLabel: 'Lari +12% lebih cepat · +15% XP Panggung Orasi',
-    cloakColor: '#E64A19',
-    trimColor: '#FFD166',
+    name: 'Orator',
+    vibe: 'Gerak cepat dan bonus panggung orasi',
+    bonusLabel: 'Lari +12% · +15% XP Panggung & Salon',
+    cloakColor: '#B84A2C',
+    trimColor: '#D9B466',
     hatStyle: 'scarf',
     speedMult: 1.12,
     xpBonusType: 'stage',
@@ -17,11 +17,11 @@ export const CHARACTER_CLASSES = [
   {
     id: 'pujangga',
     portraitKey: 'hero_pujangga',
-    name: 'Pujangga Senja',
-    vibe: 'Diksi tajam, elegan, dan jago menyindir halus',
-    bonusLabel: '+20% XP & Koin dari Quest Bahasa dan Diksi',
+    name: 'Pujangga',
+    vibe: 'Presisi diksi dan bonus bahasa',
+    bonusLabel: '+20% XP & Koin Quest Bahasa dan Sastra',
     cloakColor: '#7A2E4B',
-    trimColor: '#F5C451',
+    trimColor: '#E2C382',
     hatStyle: 'beret',
     speedMult: 1.0,
     xpBonusType: 'diction',
@@ -30,11 +30,11 @@ export const CHARACTER_CLASSES = [
   {
     id: 'detektif',
     portraitKey: 'hero_detektif',
-    name: 'Detektif Logika',
-    vibe: 'Kritis, anti-hoaks, dan jago bedah sesat pikir',
-    bonusLabel: '+20% XP & Koin dari Duel Fakta dan Sesat Pikir',
+    name: 'Detektif',
+    vibe: 'Peluang kritikal tinggi dan deduksi tajam',
+    bonusLabel: '+14% Kritikal · +20% XP & Koin Duel',
     cloakColor: '#6B4E31',
-    trimColor: '#48DBFB',
+    trimColor: '#57B4C9',
     hatStyle: 'fedora',
     speedMult: 1.04,
     xpBonusType: 'logic',
@@ -43,11 +43,11 @@ export const CHARACTER_CLASSES = [
   {
     id: 'alkemis',
     portraitKey: 'hero_alkemis',
-    name: 'Alkemis Angka',
-    vibe: 'Otak encer, penakluk rumus dan rahasia peti harta',
-    bonusLabel: '+25% XP & Koin saat pecahkan Segel Matematika & Peti',
+    name: 'Alkemis',
+    vibe: 'Perisai tebal dan bonus Segel Matematika',
+    bonusLabel: '+18% Perisai · +25% XP & Koin Segel & Peti',
     cloakColor: '#1E6B5C',
-    trimColor: '#FFD166',
+    trimColor: '#D9B466',
     hatStyle: 'goggles',
     speedMult: 1.04,
     xpBonusType: 'math',
@@ -282,7 +282,7 @@ export function buildRegistrationExam() {
 }
 
 export const REJECT_ROASTS = [
-  'Tuan George langsung menutup sampul buku keras-keras! Baca catatannya sebentar lalu coba buka lagi ya.',
-  'Ciko si cangkir nyasar sampai keselek lihat jawaban barusan! Kartu Pembaca belum bisa diterbitkan.',
-  'Maaf, segel sampul buku belum mau terbuka. Pelajari penjelasannya dulu, lalu coba 3 uji kelayakan baru!'
+  'Sampul buku menolak terbuka. Periksa catatan singkat di bawah, lalu coba ulang.',
+  'Belum lolos seleksi pembaca. Satu kesalahan saja mengunci kartu ini selama 5 detik.',
+  'Ciko menghela napas pelan: hampir tepat, tapi segel sampul tidak menerima kompromi.'
 ];

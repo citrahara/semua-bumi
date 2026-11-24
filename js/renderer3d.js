@@ -28,31 +28,33 @@ const BIOME_SKY = {
   6: { sky: 0x1c1736, fog: 0x231d42, sun: 0xffe082 }  // Langit Bintang Amfiteater
 };
 
-function makeLabelSprite(text, bg = 'rgba(24, 18, 14, 0.84)', color = '#FBF6EC', border = '#FFD166') {
+function makeLabelSprite(text, bg = 'rgba(20, 18, 16, 0.82)', color = '#F4EFE6', border = '#C9A45C') {
   const c = document.createElement('canvas');
   const ctx = c.getContext('2d');
-  c.width = 360;
-  c.height = 68;
-  ctx.font = '800 24px "Plus Jakarta Sans", sans-serif';
-  const tw = Math.min(330, ctx.measureText(text).width + 36);
+  c.width = 340;
+  c.height = 60;
+  ctx.font = '700 22px "Plus Jakarta Sans", sans-serif';
+  const tw = Math.min(312, ctx.measureText(text).width + 32);
   const x = (c.width - tw) / 2;
   ctx.fillStyle = bg;
   ctx.beginPath();
-  ctx.roundRect(x, 12, tw, 44, 22);
+  ctx.roundRect(x, 10, tw, 40, 20);
   ctx.fill();
   ctx.strokeStyle = border;
-  ctx.lineWidth = 3;
+  ctx.lineWidth = 2;
   ctx.stroke();
   ctx.fillStyle = color;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(text, c.width / 2, 35, 316);
+  ctx.fillText(text, c.width / 2, 31, 296);
 
   const tex = new THREE.CanvasTexture(c);
   tex.needsUpdate = true;
-  const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false });
+  const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, opacity: 0, depthTest: false });
   const sp = new THREE.Sprite(mat);
-  sp.scale.set(5.4, 1.02, 1);
+  sp.scale.set(4.3, 0.76, 1);
+  sp.visible = false;
+  sp.userData.isProximityLabel = true;
   return sp;
 }
 
@@ -95,6 +97,8 @@ export class WorldRenderer3D {
     this.clouds = [];
     this.fireflies = [];
     this.floatingPages = [];
+    this.proximityLabels = [];
+    this._labelPos = new THREE.Vector3();
     this.gateBarriers = new Map();
     this.chestMeshes = new Map();
     this.waypointMeshes = new Map();
@@ -107,7 +111,17 @@ export class WorldRenderer3D {
     this.buildEnvironment();
     this.buildHeroAndCiko();
     this.buildClickAndInteractRings();
+    this.collectProximityLabels();
     this.resize();
+  }
+
+  collectProximityLabels() {
+    this.proximityLabels = [];
+    this.scene.traverse((obj) => {
+      if (obj.isSprite && obj.userData && obj.userData.isProximityLabel) {
+        this.proximityLabels.push(obj);
+      }
+    });
   }
 
   setupLighting() {
@@ -233,10 +247,10 @@ export class WorldRenderer3D {
     ribbonTop.rotation.y = -0.18;
     this.scene.add(ribbonTop);
 
-    // Prasasti Tinta di Pinggir Kertas Buku (terlihat keren saat kamera ditarik zoom-out!)
-    const leftTitle = this.makeParchmentBanner('ATLAS DI CELAH KASUR', 'BAB I · BAB II · BAB VI', 560, 124);
+    // Prasasti Tinta di Pinggir Kertas Buku
+    const leftTitle = this.makeParchmentBanner('KRONIK ATLAS', 'BAB I · BAB II · BAB VI', 560, 124);
     leftTitle.position.set(cx - 48, -0.35, cz - bookD / 2 + 5.8);
-    const rightTitle = this.makeParchmentBanner('KRONIK BUKU 1894', 'BAB III · BAB IV · BAB V', 560, 124);
+    const rightTitle = this.makeParchmentBanner('ENAM BAB · TANPA AKHIR', 'BAB III · BAB IV · BAB V', 560, 124);
     rightTitle.position.set(cx + 48, -0.35, cz - bookD / 2 + 5.8);
     this.scene.add(leftTitle, rightTitle);
 
@@ -1302,10 +1316,11 @@ export class WorldRenderer3D {
     );
     aura.rotation.x = -Math.PI / 2;
     aura.position.y = 0.08;
-    const lbl = makeLabelSprite(`⚔ ${en.name}`, 'rgba(38,14,18,0.9)', '#FF9E9E', '#FF5252');
+    const lbl = makeLabelSprite(en.name, 'rgba(32,14,16,0.88)', '#F2A3A3', '#C94A4A');
     lbl.position.y = 2.68;
     g.add(body, orbitRing, aura, lbl);
     this.scene.add(g);
+    this.proximityLabels.push(lbl);
     const entry = { group: g, body, orbitRing, aura };
     this.enemyMeshes.set(en.id, entry);
     return entry;
@@ -1741,6 +1756,19 @@ export class WorldRenderer3D {
       }
       const def = (save.defeatedEnemies || []).includes(en.id);
       em.aura.material.color.setHex(def ? 0x48c78e : 0xff5252);
+    }
+
+    // 5b. Tampilkan label 3D hanya saat Hero mendekat (bebas tumpukan teks!)
+    for (const sp of this.proximityLabels) {
+      sp.getWorldPosition(this._labelPos);
+      const d = Math.hypot(this._labelPos.x - hx, this._labelPos.z - hz);
+      const maxR = 11.5;
+      if (d < maxR) {
+        sp.visible = true;
+        sp.material.opacity = Math.min(0.95, Math.max(0.15, (maxR - d) / 3.2));
+      } else {
+        sp.visible = false;
+      }
     }
 
     // 6. Third-Person Spherical Orbit Follow Camera + Shadow Sun follow

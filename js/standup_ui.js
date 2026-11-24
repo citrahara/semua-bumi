@@ -158,7 +158,7 @@ export function openStandUpStage({ overlayRoot, save, mic, onComplete, onClose }
           beatIdx = 0;
           laughScore = 0;
           locked = false;
-          crowdBubble = 'Bang Jaja mengetuk mikrofon kuningan: "Hadirin 1894, sambut komika kebanggaan kita!"';
+          crowdBubble = 'Lampu salon meredup. Hadirin menanti kalimat pembukamu.';
           mode = 'bit';
           render();
         });
@@ -190,7 +190,7 @@ export function openStandUpStage({ overlayRoot, save, mic, onComplete, onClose }
 
             <div class="laugh-meter-wrap">
               <div style="display:flex; justify-content:space-between; font-size:0.8rem; font-weight:800; color:#3b2314; margin-bottom:4px;">
-                <span>LAUGH-O-METER PENONTON 1894</span>
+                <span>RESPONS SALON 1894</span>
                 <span>${laughPct}%</span>
               </div>
               <div class="laugh-track"><div class="laugh-fill" style="width:${laughPct}%"></div></div>
