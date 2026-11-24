@@ -2,39 +2,39 @@
 
 export const VINTAGE_PROLOGUE = [
   {
-    year: 'BABAK I · TAHUN 1894 · KEDAI KOPI LEMBAH SENJA',
-    speaker: 'jaja',
-    title: 'Sebelum Ada Wi-Fi, Ada Panggung Kayu & Koran Kertas',
-    text: 'Selamat malam, hadirin abad ke-19 yang budiman! Di zaman ini belum ada media sosial. Kalau orang mau pamer wawasan, membedah buku sastra, atau meledek aturan konyol, mereka naik ke panggung kayu Kedai Bang Jaja sambil pegang kopi tubruk.',
-    aside: 'Fakta Sejarah: Kedai kopi Eropa abad ke-17 dijuluki "Penny Universities" karena cukup bayar segelas kopi untuk berdiskusi sains, filsafat, dan sastra.'
-  },
-  {
-    year: 'BABAK II · MALAM HUJAN · PETIR SINYAL LINTAS ZAMAN',
-    speaker: 'ciko',
-    title: 'Biji Kopi Tersambar Sinyal Abad ke-21',
-    text: 'Suatu malam gerimis, sebiji kopi luwak tersambar petir sinyal dari masa depan! Seketika aku, Ciko si Cangkir Porselen Antik, hidup dan mulai ngoceh. Tapi masalah besarnya: Retakan Waktu Siber ikut menganga di atas lembah kita!',
-    aside: 'Ciko nyengir: "Baru melek semenit, aku langsung lihat drone phishing menyamar jadi tukang pos!"'
-  },
-  {
-    year: 'BABAK III · ANCAMAN BAYANGAN · "KEMENTERIAN GEMA" ALA ORWELL',
+    year: 'HALAMAN PEMBUKA · MALAM MINGGU · CELAH TEMBOK DAN KASUR',
     speaker: 'orwell',
-    title: 'Bayangan Newspeak, Doublethink & Memory Hole',
-    text: 'Dari balik retakan muncul sindikat parodi bernama "Kementerian Gema", terinspirasi dari novel klasik George Orwell (1984). Mereka menyebar bahasa sempit (Newspeak), membuang fakta asli ke Memory Hole, dan memasang Telescreen palsu lewat Deepfake dan Prompt Injection!',
-    aside: 'Pesan Kurator Sastra: "George Orwell takut kebenaran disembunyikan dengan larangan; Aldous Huxley takut kebenaran tenggelam dalam lautan konten receh. Di sini kita melawan keduanya sekaligus!"'
+    title: 'Saat Bukan Bukunya yang Jatuh, Melainkan Kamu yang Masuk',
+    text: 'Seperti biasa di malam Minggu yang sepi, kamu kabur ke pelarian paling nyaman: membaca buku antologi kulit antik di kasur, berduaan saja dengan pikiran sendiri (kadang senyum sendiri, kadang kesal sendiri). Tentu saja kamu ketiduran. Bedanya, kali ini bukan bukunya yang terselip ke celah antara tembok dan kasur, melainkan kamu yang terbangun di atas peta pop-up 3D di dalam halamannya!',
+    aside: 'Catatan Tinta di Pinggir Halaman: "Atlas ini memetakan 6 Bab: halaman rumput bangsawan 1894, stasiun kereta Seoul-Chuncheon, distrik siber, hingga balai deduksi."'
   },
   {
-    year: 'BABAK IV · ENAM WILAYAH ALAM & SEGEL MATEMATIKA',
+    year: 'BAB I · HALAMAN RUMPUT PUKUL 4 SORE · TAMU NYASAR',
+    speaker: 'ciko',
+    title: 'Ciko si Cangkir Nyasar & Kabut Sore Halaman Buku',
+    text: 'Di tengah halaman rumput bangsawan berkabut sore dan kunang-kunang emas, muncul aku: Ciko, cangkir porselen antik yang entah bagaimana ikut tersedot bareng Bang Jaja ke dalam buku ini! Aku tahu kamu lebih suka menikmati sunyi sendirian, tapi anggap saja aku tamu nyasar yang tugasnya memecah keheningan (dengan komentar yang kadang tidak lucu sama sekali).',
+    aside: 'Ciko berbisik keras: "Di sebelah sana ada laci cangkang kerang berdebu sama peti cokelat darurat anti-5L (lemas, letih, lesu, lapar, lunglai)!"'
+  },
+  {
+    year: 'BABAK III · ANCAMAN TINTA · "KEMENTERIAN GEMA" ALA ORWELL',
+    speaker: 'orwell',
+    title: 'Newspeak, Doublethink & Anomali Bukti Terlalu Sempurna',
+    text: 'Tuan George, Kurator Arsip Sastra, menunjuk retakan tinta hitam di punggung buku. Sindikat "Kementerian Gema" (parodi dari 1984 karya George Orwell) sedang membajak keenam bab buku ini! Mereka menyusutkan diksi rasa seperti pilu, sayu, dan nelangsa menjadi Newspeak seragam, menyembunyikan anomali bukti bak kasus rekayasa, serta melancarkan serangan siber yang mengincar manusia sebagai rantai terlemah.',
+    aside: 'Catatan Kurator: "Orwell takut kita dilarang membaca; Aldous Huxley takut kita dibius hiburan sampai lupa membaca. Kementerian Gema memadukan keduanya."'
+  },
+  {
+    year: 'BABAK IV · ENAM BAB PETA POP-UP & SEGEL MATEMATIKA',
     speaker: 'vega',
-    title: 'Dari Akademi Bahasa Dunia sampai Benteng Siber AI/IIV',
-    text: 'Untuk memulihkan akal sehat lembah, kamu akan menjelajahi 6 wilayah alam 3D: belajar bahasa Korea, Jepang, Inggris, Indonesia baku, dan sastra klasik, memantau 21 sumber /berita-terkini, menumbangkan monster siber dengan Strike serta Attack-Defense, lalu memecahkan 5 Segel Matematika kuno!',
-    aside: 'Tips Tempur: Di alam 3D kamu bisa menekan [F] atau tombol STRIKE untuk melancarkan tebasan energi langsung ke musuh!'
+    title: 'Dari Halaman Rumput 1894 sampai Benteng Siber & Deduksi',
+    text: 'Untuk membalik halaman demi halaman buku ini, kamu akan melintasi 6 Bab: Halaman Rumput & Arsip Orwell, Stasiun Transit Korea & Balai Diksi, Distrik Siber /berita-terkini, Benteng IIV & Keamanan Personil, Balai Deduksi Sherlock & Entropi, hingga Amfiteater Puncak Buku. Setiap gerbang bab dijaga Segel Matematika, dan monster tinta bisa kamu tebas langsung dengan Strike [F]!',
+    aside: 'Tips Atlas 3D: "Geser kursor langsung di layar untuk memutar POV 360 derajat, scroll untuk zoom jauh sampai melihat tepi buku, atau tekan [V] untuk POV bebas."'
   },
   {
-    year: 'BABAK V · PANGGILAN PANGGUNG · KRONIK TANPA TAMAT',
+    year: 'BABAK V · SALON SATIR 1894 · BUKU TANPA HALAMAN TERAKHIR',
     speaker: 'jaja',
-    title: 'Pegang Mikrofon Kuningan Ini, Komika!',
-    text: 'Senjata paling ditakuti Kementerian Gema bukanlah pidato kaku, melainkan orang yang wawasannya gacor, bahasanya keren, logikanya tajam, dan sanggup menjadikan propaganda mereka bahan tawa di Panggung Stand-Up Comedy 1894! Siap memulai kisah tanpa akhirmu?',
-    aside: 'Tanpa Ending: Komisi Harian reset tiap hari, Menara Abadi naik tanpa batas lantai, dan Open-Mic Stand-Up selalu punya premis baru!'
+    title: 'Buka Halaman Pertama, Pengamat yang Tenang!',
+    text: 'Cara paling elegan merobohkan Kementerian Gema adalah menjadi pembaca yang jernih: kaya diksi, tajam melihat anomali logika, melek dunia siber, dan sanggup mengubah kekonyolan zaman jadi satir kering di Panggung Salon Stand-Up. Lagi pula, tidak ada manusia yang pernah siap 100 persen (tapi peluang 1 persen yang dicoba 100 kali tetap memberi 63 persen peluang berhasil!).',
+    aside: 'Kronik Tanpa Tamat: Komisi Harian reset tiap hari, Menara Bab Abadi terus naik tanpa batas lantai, dan Salon Satir selalu mencetak premis baru.'
   }
 ];
 
@@ -434,29 +434,108 @@ export const STANDUP_SETS = [
         ]
       }
     ]
+  },
+  {
+    id: 'su-06',
+    title: 'Malam Minggu INTJ di Dalam Buku: Dunbar 150, Sherlock & Cokelat Anti-5L',
+    eraTag: 'Ironi Kering × Psikologi × Deduksi',
+    steps: [
+      {
+        beat: '1. SETUP (Observasi Kering dalam Tanda Kurung)',
+        prompt: 'Buka bit satir tentang paradoks makhluk sosial ala pembaca buku malam Minggu:',
+        options: [
+          {
+            line: '"Antropolog Robin Dunbar bilang batas kognitif manusia itu 150 teman bermakna. Sementara aku? Teman dekat bisa dihitung jari, dan malam Minggu paling bahagia adalah berduaan dengan pikiran sendiri (kadang sambil kesal sendiri, tapi tetap sendiri!)."',
+            laugh: 35,
+            crowd: '"HAHAHA! KENA BANGET! TAPI TETAP SENDIRI!"',
+            best: true
+          },
+          {
+            line: '"Dunbar\'s Number adalah teori tahun 1990 tentang jumlah 150 hubungan sosial manusia."',
+            laugh: 10,
+            crowd: '"Suara jangkrik... ini salon satir atau sidang skripsi, Tuan?"',
+            best: false
+          },
+          {
+            line: '"Malam Minggu biasanya orang-orang keluar rumah mencari hiburan."',
+            laugh: 13,
+            crowd: '"Penonton menunggu bagian lucunya."',
+            best: false
+          }
+        ]
+      },
+      {
+        beat: '2. TWIST (Deduksi Sherlock & Keamanan Personil)',
+        prompt: 'Sambungkan dengan logika detektif dan ironi "integritas" di kelas Keamanan Personil:',
+        options: [
+          {
+            line: '"Di keamanan siber, manusia itu rantai terlemah. Lucunya, kalau integritas artinya konsisten dengan nilai diri, berarti koruptor yang rajin korupsi tiap hari itu secara teknis... punya integritas tinggi dong?! Sherlock saja bakal curiga kalau buktinya terlalu rapi dan sempurna!"',
+            laugh: 35,
+            crowd: '"WKWKWK! LOGIKA KERING TAPI TELAK BANGET!!"',
+            best: true
+          },
+          {
+            line: '"Manusia memang sering menjadi celah keamanan dalam sebuah organisasi."',
+            laugh: 12,
+            crowd: '"Benar, tapi terlalu serius untuk panggung malam ini."',
+            best: false
+          },
+          {
+            line: '"Sherlock Holmes adalah tokoh fiksi yang pandai memecahkan misteri."',
+            laugh: 11,
+            crowd: '"Penonton mengaduk kopi pelan."',
+            best: false
+          }
+        ]
+      },
+      {
+        beat: '3. PUNCHLINE (Tutup Tajam + Cokelat Anti-5L)',
+        prompt: 'Jatuhkan punchline pamungkas tentang diksi emosi & cokelat darurat:',
+        options: [
+          {
+            line: '"Untung buku ini masih menyelamatkan diksi kita biar nggak cuma mentok di kata \'galau\': ada pilu, sayu, sampai nelangsa. Dan kalau semua sudah terasa berat plus 5L (lemas, letih, lesu, lapar, lunglai)... sudahlah, aku sebenarnya nggak suka cokelat, tapi minta satu ya buat darurat! (oke not funny at all, terima kasih!)"',
+            laugh: 35,
+            crowd: '"BRAVO!! IRONI KERING TERBAIK ABAD KE-19! BA-DUM-TSS!"',
+            best: true
+          },
+          {
+            line: '"Jadi mari kita perbanyak kosakata bahasa Indonesia dan makan makanan bergizi."',
+            laugh: 14,
+            crowd: '"Tepuk tangan sopan ala seminar."',
+            best: false
+          },
+          {
+            line: '"Sekian cerita malam Minggu saya, selamat malam."',
+            laugh: 10,
+            crowd: '"Lho, penonton belum sempat ketawa penutup!"',
+            best: false
+          }
+        ]
+      }
+    ]
   }
 ];
 
 // Generator Premis Open-Mic Stand-Up TANPA BATAS (200+ kombinasi acak!)
 const OPENMIC_ERAS = [
-  'Seorang bangsawan tahun 1894',
-  'Penjual kopi keliling zaman dulu',
-  'Filsuf berkumis tebal abad ke-18',
-  'Kapten kapal penjelajah rempah',
-  'Detektif bertopi fedora dari koran lama',
-  'Pustakawan galak abad lampau'
+  'Seorang pembaca INTJ yang tersesat di buku tahun 1894',
+  'Penghuni rumah bangsawan berhalaman rumput luas ala Jane Austen',
+  'Detektif bertopi fedora pengagum Sherlock Holmes',
+  'Penumpang kereta Seoul-Chuncheon yang salah turun stasiun',
+  'Kurator arsip buku yang lelah melihat Newspeak',
+  'Mahasiswa pengamat manusia sebagai rantai terlemah keamanan'
 ];
 
 const OPENMIC_TOPICS = [
-  'pertama kali melihat orang rapat online tapi lupa matikan mikrofon',
-  'mencoba menjelaskan apa itu Deepfake dan C2PA ke warga kampung',
-  'panik karena keretanya kena Ransomware dan minta tebusan koin emas',
-  'belajar bahasa Korea ("Aiseu Amerikano hana juseyo") buat pesan kopi tubruk',
-  'mendebat gurita yang punya 3 jantung dan darah biru',
-  'melarang orang bilang "tak bergeming" saat maksudnya diam tenang',
+  'mencoba menjelaskan kenapa Dunbar\'s Number 150 terlalu ramai buat dirinya',
+  'curiga karena semua bukti di kasus kedua terlalu sempurna mengarah ke orang yang sama',
+  'membela perbedaan antara pilu, sayu, dan nelangsa daripada cuma bilang "galau"',
+  'mencoba menjelaskan apa itu Deepfake dan C2PA ke bangsawan abad ke-19',
+  'belajar bahasa Korea ("Aiseu Amerikano hana juseyo") biar tidak kesasar di stasiun kereta',
+  'mengaku tidak suka cokelat tapi langsung mencarinya saat kena sindrom 5L',
   'kaget tahu gardu listrik kota (SCADA/IIV) ternyata butuh Zero-Trust',
-  'mengomentari paradoks orang kebanyakan pilihan film malah ketiduran',
-  'membandingkan Telescreen George Orwell (1984) dengan ponsel pintar yang kita cas tiap malam'
+  'membandingkan Telescreen George Orwell (1984) dengan ponsel pintar yang kita cas tiap malam',
+  'menghitung peluang 1 persen yang dicoba 100 kali ternyata jadi 63 persen peluang berhasil'
 ];
 
 const OPENMIC_WORDS = [

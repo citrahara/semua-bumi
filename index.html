@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Warkop Impact: Kronik 1894 | RPG 3D Sastra Orwell, Bahasa, Siber & Stand-Up</title>
-  <meta name="description" content="Game RPG 3D dunia terbuka bernuansa vintage 1894: bertarung siber dengan efek Strike, pelajari bahasa Korea dan sastra klasik George Orwell, pecahkan Segel Matematika, dan tampil di panggung Stand-Up Comedy!" />
-  <meta property="og:title" content="Warkop Impact: Kronik 1894 | RPG 3D Sastra, Bahasa & Siber" />
-  <meta property="og:description" content="Jelajahi 6 wilayah alam 3D, lawan Kementerian Gema, pelajari Orwell dan bahasa dunia, lalu taklukkan Menara Abadi tanpa tamat!" />
+  <title>Atlas di Celah Kasur · Kronik Buku 1894 | RPG 3D Peta Dalam Buku</title>
+  <meta name="description" content="RPG 3D Peta Pop-Up di Dalam Buku Antologi Antik: 6 Bab dunia berbeda, POV geser kursor 360 derajat, Arsip Sastra Orwell & Jane Austen, Stasiun Korea, Radar Siber /berita-terkini, dan Salon Satir Stand-Up 1894!" />
+  <meta property="og:title" content="Atlas di Celah Kasur · Kronik Buku 1894 | RPG 3D Peta Dalam Buku" />
+  <meta property="og:description" content="Tersedot ke dalam peta pop-up 3D buku kulit antik malam Minggu: hadapi Kementerian Gema, pelajari sastra & bahasa dunia, dan pecahkan 5 Segel Matematika!" />
   <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -51,17 +51,17 @@
 
     <!-- Top Right: Interactive Minimap + Action Buttons -->
     <div class="hud-top-right">
-      <button class="minimap-frame" id="btn-open-map" type="button" title="Buka Peta Dunia & Teleportasi (M)">
+      <button class="minimap-frame" id="btn-open-map" type="button" title="Buka Atlas Buku & Teleportasi Bab (M)">
         <canvas id="minimap-canvas" width="168" height="112"></canvas>
-        <span class="minimap-tag">PETA [M]</span>
+        <span class="minimap-tag">ATLAS [M]</span>
       </button>
 
       <div class="hud-icon-row">
-        <button class="hud-btn" id="btn-open-daily" type="button" title="Komisi Harian & Era Dunia (H)">
+        <button class="hud-btn" id="btn-open-daily" type="button" title="Komisi Harian & Era Buku (H)">
           Harian <span id="hud-daily-count">0/4</span>
         </button>
         <button class="hud-btn" id="btn-open-codex" type="button" title="Buka Codex Wawasan, Siber & Sastra (C)">
-          Codex <span id="hud-codex-count">0/76</span>
+          Codex <span id="hud-codex-count">0/78</span>
         </button>
         <button class="hud-btn" id="btn-toggle-sound" type="button" title="Matikan atau nyalakan suara">
           Suara
@@ -69,8 +69,6 @@
       </div>
       <div class="hud-icon-row">
         <button class="hud-btn strike-btn" id="btn-hud-strike" type="button" title="Tebasan Strike 3D & Ambush Musuh Siber (F)">⚔ Strike [F]</button>
-        <button class="hud-btn" id="btn-cam-left" type="button" title="Putar kamera 3D ke kiri (Q)">↺ Cam</button>
-        <button class="hud-btn" id="btn-cam-right" type="button" title="Putar kamera 3D ke kanan (R)">Cam ↻</button>
       </div>
     </div>
 
@@ -88,7 +86,7 @@
 
     <!-- Desktop Controls Hint -->
     <div class="controls-hint" id="controls-hint">
-      Gerak: WASD / Panah / Klik Tanah · Strike 3D: F · Putar Kamera: Q / R · Lari: Shift · Aksi: E · Peta: M · Codex: C
+      Gerak: WASD / Klik Tanah · Geser POV: Tarik Kursor / Scroll Zoom / [V] POV Bebas · Strike: F · Aksi: E · Peta: M · Codex: C
     </div>
 
     <!-- Mobile Touch D-Pad + Action Controls -->

@@ -649,7 +649,7 @@ export function openClassicLitAcademy({ overlayRoot, save, onUnlockLit, onComple
                     .join('')}
                 </div>
                 <div class="vintage-footer" style="margin-top:14px;">
-                  <span style="font-size:0.8rem; color:#6d4c30; font-weight:700;">Seluruh 8 gagasan sastra otomatis tersimpan ke Codex!</span>
+                  <span style="font-size:0.8rem; color:#6d4c30; font-weight:700;">Seluruh ${CLASSIC_LIT_ACADEMY.concepts.length} gagasan sastra otomatis tersimpan ke Codex!</span>
                   <button class="rpg-btn primary" id="btn-lit-go-prac" type="button">Lanjut Praktik (Raih Lencana Sastra!)</button>
                 </div>
               `

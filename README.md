@@ -1,6 +1,22 @@
-# Warkop Impact: Kronik 1894 (3D Open-World RPG)
+# Atlas di Celah Kasur · Kronik Buku 1894 (3D Pop-Up Book RPG)
 
-Game RPG **3D dunia terbuka** (Three.js WebGL dengan *fallback* 2D otomatis) yang memadukan **storyline vintage tahun 1894 bernuansa satir George Orwell ("Kementerian Gema")**, **karakter 3D ekspresif dengan senjata khas kelas dan efek Strike 3D**, **Panggung Open-Mic Stand-Up Comedy**, **Taman Sastra Klasik & Arsip Orwell**, **sistem tanpa tamat (Endless RPG)**, loket pendaftaran akun ber-ujian masuk, 6 wilayah alam 3D, duel **Attack & Defense** dunia siber dengan efek tebasan sinematik, **Ruang Belajar Bahasa** (Korea, Jepang, Inggris, Indonesia, Retorika) lengkap dengan suara pelafalan, **Pusat Komando Siber & Radar `/berita-terkini`**, serta **5 Segel Matematika** untuk membuka tiap level wilayah baru.
+Game RPG **3D Peta Pop-Up di Dalam Buku Antologi Kulit Antik** (Three.js WebGL dengan *fallback* 2D otomatis). Seluruh 6 Bab wilayah berdiri di atas bentangan halaman kertas perkamen lengkap dengan sampul kulit, 4 sudut kuningan, lipatan punggung buku, pita pembatas merah marun, lembar halaman melayang, dan kunang-kunang emas.
+
+## Kontrol POV Kursor Langsung
+
+- **Geser POV 360° & Naik-Turun**: cukup klik-tahan dan geser kursor di mana saja pada kanvas 3D (tanpa perlu tombol Cam).
+- **Zoom In / Zoom Out**: pakai *scroll wheel* mouse (tarik menjauh untuk melihat keseluruhan peta 6 Bab berdiri di atas buku terbuka!).
+- **Mode POV Bebas (`V`)**: tekan `V` agar kamera langsung mengikuti arah gerakan kursor tanpa perlu menahan klik (tekan `Esc` atau `V` untuk keluar).
+- **Klik-Jalan, Strike & Aksi**: klik singkat tanah untuk berjalan (atau pakai `WASD`/panah), `Shift` untuk lari, `F` untuk **Strike 3D & Ambush Musuh (-22 HP)**, `E` untuk berinteraksi, `M` untuk Atlas Buku & Teleportasi Bab, `C` untuk Codex (`78` kartu), dan `H` untuk Komisi Harian.
+
+## Enam Bab di Dalam Buku & Sastra Klasik
+
+1. **Bab I · Halaman Rumput 1894**: kebun bangsawan berkabut sore, kunang-kunang emas, **Arsip Orwell & Sastra Klasik** (10 gagasan: George Orwell *1984* & *Animal Farm*, Aldous Huxley, Ray Bradbury, Pramoedya Ananta Toer, Jane Austen & diksi rasa, hingga deduksi anomali Sherlock Holmes), **Salon Satir & Stand-Up 1894** (6 set bit termasuk bit *Malam Minggu INTJ* + Open-Mic acak tanpa batas), **Menara Bab Abadi**, Bang Jaja & Ciko si tamu nyasar, serta peti **Laci Cangkang Kerang** & **Peti Cokelat Anti-5L**.
+2. **Bab II · Stasiun Transit & Bahasa**: **Stasiun Chuncheon (한글)** dengan suara pelafalan Korea (`ko-KR`), **Paviliun Poliglot** (`ja-JP` & `en-US`), dan **Balai Diksi & Pustaka** (KBBI VI & EYD V).
+3. **Bab III · Distrik Kementerian Gema**: **Pusat Komando SOC & Radar `/berita-terkini`** (8 terobosan siber + 21 domain acuan global) dan duel siber AI.
+4. **Bab IV · Benteng IIV & Keamanan Personil**: perlindungan gardu ICS/OT/SCADA dan duel melawan Ransomware Titan serta SCADA Worm.
+5. **Bab V · Balai Deduksi & Lembah Entropi**: kerangka retorika PREP (Hakim Nalar), penjinakan sesat pikir, dan arsip Sherlock.
+6. **Bab VI · Amfiteater Puncak Buku**: Boss Overlord Deepfake dan ujian orasi 30 detik bersama Maestro Lidah Emas.
 
 ## Karakter 3D Hidup, Efek Strike & Sastra Klasik Orwell
 

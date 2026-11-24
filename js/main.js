@@ -278,6 +278,23 @@ function closeOverlay() {
   refreshHud();
 }
 
+let freeLookMode = false;
+let freeLookLastX = null;
+let freeLookLastY = null;
+
+function exitPointerLockSafe() {
+  freeLookMode = false;
+  freeLookLastX = null;
+  freeLookLastY = null;
+  try {
+    if (document.pointerLockElement === worldCanvas && document.exitPointerLock) {
+      document.exitPointerLock();
+    }
+  } catch {
+    // Abaikan jika browser membatasi pointer lock
+  }
+}
+
 // ==========================================
 // INTERACTION DETECTION
 // ==========================================
@@ -384,6 +401,7 @@ function findNearestInteractable() {
 function triggerNearestInteraction() {
   if (modalOpen || !titleOverlay.classList.contains('hidden')) return;
   if (!nearestInteract) return;
+  exitPointerLockSafe();
   const item = nearestInteract;
   player.walkTarget = null;
 
@@ -454,6 +472,7 @@ function performWorldStrike() {
 
 function startEnemyCombat(enemy, { ambushDamage = 0 } = {}) {
   if (modalOpen) return;
+  exitPointerLockSafe();
   modalOpen = true;
   player.walkTarget = null;
   audio.playDialogueOpen();
@@ -1367,8 +1386,8 @@ function openWorldMapModal() {
       <div class="panel-modal">
         <div class="panel-head">
           <div>
-            <div class="title-kicker">PETA DUNIA & WAYPOINT TELEPORTASI</div>
-            <h2>Dunia Warkop Impact</h2>
+            <div class="title-kicker">DAFTAR ISI & TELEPORTASI PENANDA BAB</div>
+            <h2>Atlas di Celah Kasur (6 Bab Buku)</h2>
           </div>
           <button class="rpg-btn ghost" id="btn-close-map" type="button" style="padding:8px 14px;">Tutup [Esc]</button>
         </div>
@@ -1716,8 +1735,14 @@ window.addEventListener('keydown', (e) => {
   if (tag === 'INPUT' || tag === 'TEXTAREA') return;
 
   const k = e.key.toLowerCase();
-  if (k === 'escape' && modalOpen) {
-    closeOverlay();
+  if (k === 'escape') {
+    if (freeLookMode) {
+      exitPointerLockSafe();
+      showToast('Mode POV Bebas dimatikan.');
+    }
+    if (modalOpen) {
+      closeOverlay();
+    }
     return;
   }
   if (!titleOverlay.classList.contains('hidden')) return;
@@ -1737,11 +1762,30 @@ window.addEventListener('keydown', (e) => {
     e.preventDefault();
     performWorldStrike();
   } else if (k === 'm') {
+    exitPointerLockSafe();
     openWorldMapModal();
   } else if (k === 'c') {
+    exitPointerLockSafe();
     openCodexModal();
   } else if (k === 'h') {
+    exitPointerLockSafe();
     openDailyModal();
+  } else if (k === 'v' && is3D) {
+    if (freeLookMode || document.pointerLockElement === worldCanvas) {
+      exitPointerLockSafe();
+      showToast('Mode POV Bebas dimatikan (tetap bisa tarik kursor kapan saja).');
+    } else {
+      freeLookMode = true;
+      freeLookLastX = null;
+      freeLookLastY = null;
+      try {
+        const res = worldCanvas.requestPointerLock?.();
+        if (res && typeof res.catch === 'function') res.catch(() => {});
+      } catch {
+        // Fallback otomatis memakai pelacakan kursor bebas tanpa pointer lock
+      }
+      showToast('Mode POV Bebas aktif! Gerakkan kursor langsung tanpa klik (Esc / V keluar).');
+    }
   }
 });
 
@@ -1749,38 +1793,91 @@ window.addEventListener('keyup', (e) => {
   keys.delete(e.key.toLowerCase());
 });
 
-let dragOrbit = false;
-let dragLastX = 0;
+let ptrDown = false;
+let ptrDragged = false;
+let ptrButton = 0;
+let ptrStartX = 0;
+let ptrStartY = 0;
+let ptrLastX = 0;
+let ptrLastY = 0;
 
+worldCanvas.style.cursor = 'grab';
 worldCanvas.addEventListener('contextmenu', (e) => e.preventDefault());
+
 worldCanvas.addEventListener('pointerdown', (e) => {
   if (modalOpen || !titleOverlay.classList.contains('hidden')) return;
-  if (e.button === 2 && is3D) {
-    dragOrbit = true;
-    dragLastX = e.clientX;
-    return;
-  }
-  const rect = worldCanvas.getBoundingClientRect();
-  const pos = is3D
-    ? renderer.screenToWorld(e.clientX, e.clientY)
-    : renderer.screenToWorld(e.clientX - rect.left, e.clientY - rect.top);
-  if (!pos) return;
-  player.walkTarget = pos;
-  player.autoInteractAfterWalk = true;
-  renderer.setClickTarget(pos.x, pos.y);
-  audio.playClick();
+  if (document.pointerLockElement === worldCanvas) return;
+  ptrDown = true;
+  ptrDragged = false;
+  ptrButton = e.button;
+  ptrStartX = e.clientX;
+  ptrStartY = e.clientY;
+  ptrLastX = e.clientX;
+  ptrLastY = e.clientY;
+  worldCanvas.style.cursor = 'grabbing';
 });
 
 window.addEventListener('pointermove', (e) => {
-  if (!dragOrbit || !is3D) return;
-  const dx = e.clientX - dragLastX;
-  dragLastX = e.clientX;
-  renderer.rotateCamera(-dx * 0.008);
+  if (!is3D || modalOpen || !titleOverlay.classList.contains('hidden')) return;
+  // Mode POV Bebas: langsung ikut gerakan kursor (baik via Pointer Lock maupun fallback!)
+  if (document.pointerLockElement === worldCanvas) {
+    renderer.rotateCamera(-e.movementX * 0.0042, e.movementY * 0.0032);
+    return;
+  }
+  if (freeLookMode) {
+    if (freeLookLastX !== null) {
+      const fdx = e.clientX - freeLookLastX;
+      const fdy = e.clientY - freeLookLastY;
+      renderer.rotateCamera(-fdx * 0.0055, fdy * 0.0038);
+    }
+    freeLookLastX = e.clientX;
+    freeLookLastY = e.clientY;
+    return;
+  }
+  if (!ptrDown) return;
+  const dx = e.clientX - ptrLastX;
+  const dy = e.clientY - ptrLastY;
+  ptrLastX = e.clientX;
+  ptrLastY = e.clientY;
+  if (!ptrDragged && Math.hypot(e.clientX - ptrStartX, e.clientY - ptrStartY) > 6) {
+    ptrDragged = true;
+  }
+  if (ptrDragged) {
+    renderer.rotateCamera(-dx * 0.0068, dy * 0.0046);
+  }
 });
 
-window.addEventListener('pointerup', () => {
-  dragOrbit = false;
+window.addEventListener('pointerup', (e) => {
+  if (!ptrDown) return;
+  const wasDrag = ptrDragged;
+  const btn = ptrButton;
+  ptrDown = false;
+  ptrDragged = false;
+  worldCanvas.style.cursor = 'grab';
+
+  // Klik singkat (bukan geser POV) tetap berfungsi untuk klik-jalan di tanah!
+  if (!wasDrag && btn === 0 && !modalOpen && titleOverlay.classList.contains('hidden')) {
+    const rect = worldCanvas.getBoundingClientRect();
+    const pos = is3D
+      ? renderer.screenToWorld(e.clientX, e.clientY)
+      : renderer.screenToWorld(e.clientX - rect.left, e.clientY - rect.top);
+    if (!pos) return;
+    player.walkTarget = pos;
+    player.autoInteractAfterWalk = true;
+    renderer.setClickTarget(pos.x, pos.y);
+    audio.playClick();
+  }
 });
+
+worldCanvas.addEventListener(
+  'wheel',
+  (e) => {
+    if (!is3D || modalOpen || !titleOverlay.classList.contains('hidden')) return;
+    e.preventDefault();
+    renderer.zoomCamera(e.deltaY * 0.014);
+  },
+  { passive: false }
+);
 
 // Touch D-Pad
 document.querySelectorAll('.dpad-btn').forEach((btn) => {
@@ -1815,12 +1912,6 @@ document.getElementById('btn-open-map')?.addEventListener('click', openWorldMapM
 document.getElementById('btn-open-daily')?.addEventListener('click', openDailyModal);
 document.getElementById('btn-open-codex')?.addEventListener('click', openCodexModal);
 document.getElementById('btn-open-profile')?.addEventListener('click', openProfileModal);
-document.getElementById('btn-cam-left')?.addEventListener('click', () => {
-  if (is3D) renderer.rotateCamera(0.45);
-});
-document.getElementById('btn-cam-right')?.addEventListener('click', () => {
-  if (is3D) renderer.rotateCamera(-0.45);
-});
 document.getElementById('btn-quest-tracker')?.addEventListener('click', () => {
   const q = getActiveMainQuest(save);
   showToast(q.hint);
@@ -1892,14 +1983,14 @@ function enterWorldWithAccount(account, isBrandNew = false) {
 
   const showArrival = () => {
     showZoneBanner(
-      isBrandNew ? `AKUN RESMI · ${cls.name.toUpperCase()}` : z.subtitle,
-      isBrandNew ? `@${save.username} · Kedai 1894` : z.name
+      isBrandNew ? `PEMBACA RESMI · ${cls.name.toUpperCase()}` : z.subtitle,
+      isBrandNew ? `@${save.username} · Bab I Atlas Buku` : z.name
     );
     sayCiko(
       isBrandNew
-        ? `Selamat datang @${save.username}! Tekan [F] buat Strike 3D, mampir ke Arsip Orwell, atau naik Panggung Stand-Up!`
-        : `Halo lagi @${save.username}! Lanjutkan petualangan 3D kita!`,
-      5.2
+        ? `Selamat datang di dalam buku, @${save.username}! Geser kursor buat putar POV, scroll buat lihat sampul buku, atau tekan [F] buat Strike!`
+        : `Halo lagi @${save.username}! Ayo balik halaman berikutnya di Atlas Buku 3D!`,
+      5.6
     );
   };
 
@@ -1952,10 +2043,10 @@ function renderAuthCard() {
     const savedList = listSavedAccounts();
     authCardRoot.innerHTML = `
       ${renderStepper(1)}
-      <div class="title-kicker">LOKET PENDAFTARAN WARGA WARKOP</div>
-      <h1 class="title-logo">WARKOP IMPACT</h1>
+      <div class="title-kicker">KARTU PEMBACA · PETA POP-UP DALAM BUKU</div>
+      <h1 class="title-logo">ATLAS DI CELAH KASUR</h1>
       <p class="title-desc">
-        Buat <strong>username</strong> dulu, lalu taklukkan <strong>3 tantangan ujian masuk</strong> dari Bang Jaja untuk bisa memilih karakter dan masuk ke dunia RPG. Gagal satu soal saja, akunmu langsung ditolak!
+        Sebuah buku antologi kulit antik tahun <strong>1894</strong> terbuka di hadapanmu. Tulis <strong>username</strong> pembaca, lulus <strong>3 ujian kelayakan sampul</strong> (salah 1 langsung ditolak), lalu masuk ke peta 3D enam bab di dalam halamannya!
       </p>
 
       <div class="title-form" style="max-width:400px;">

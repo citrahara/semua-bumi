@@ -51,9 +51,9 @@ export function openVintagePrologue({ overlayRoot, playerName, onDone }) {
             </div>
           </div>
           <div class="vintage-footer">
-            <span style="font-size:0.8rem; color:#6d4c30; font-weight:700;">Halaman Kronik ${idx + 1} / ${VINTAGE_PROLOGUE.length} · Petualang: @${escapeHtml(playerName)}</span>
+            <span style="font-size:0.8rem; color:#6d4c30; font-weight:700;">Halaman Prolog ${idx + 1} / ${VINTAGE_PROLOGUE.length} · Pembaca: @${escapeHtml(playerName)}</span>
             <button class="rpg-btn primary" id="btn-pro-next" type="button">
-              ${isLast ? 'Pegang Mikrofon & Masuk Alam 3D!' : 'Buka Halaman Berikutnya'}
+              ${isLast ? 'Buka Sampul & Masuk Peta Buku 3D!' : 'Balik Halaman Berikutnya'}
             </button>
           </div>
         </div>
@@ -117,14 +117,14 @@ export function openStandUpStage({ overlayRoot, save, mic, onComplete, onClose }
         <div class="modal-backdrop">
           <div class="vintage-book" style="max-width:740px;">
             <div class="vintage-top-row">
-              <span class="vintage-year">PANGGUNG OPEN-MIC KEDAI 1894 · REPUTASI KOMIKA: ${save.comedyFame || 0}</span>
+              <span class="vintage-year">SALON SATIR & OPEN-MIC 1894 · REPUTASI KOMIKA: ${save.comedyFame || 0}</span>
               <button class="vintage-skip" id="btn-su-close" type="button">Turun Panggung</button>
             </div>
             <h2 style="margin:0 0 6px; font-family:var(--font-display); font-size:1.7rem; color:#2b1b12;">
-              Panggung Stand-Up Comedy Vintage
+              Salon Satir & Stand-Up Comedy 1894
             </h2>
             <p style="margin:0 0 16px; font-size:0.9rem; color:#5a3e28;">
-              Latih keluwesan ngomong, *timing* komedi, dan selipkan wawasan keren di depan penonton abad ke-19! Pilih rakit bit Stand-Up (Setup -> Twist -> Punchline) atau coba Generator Open-Mic tanpa batas.
+              Latih keluwesan ngomong, ironi kering, <em>timing</em> komedi, dan selipkan wawasan keren di depan hadirin abad ke-19! Pilih rakit bit Stand-Up (Setup, Twist, Punchline) atau coba Generator Open-Mic tanpa batas.
             </p>
 
             <div class="standup-grid">

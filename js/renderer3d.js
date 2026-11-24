@@ -77,8 +77,11 @@ export class WorldRenderer3D {
 
     this.camera = new THREE.PerspectiveCamera(48, window.innerWidth / window.innerHeight, 0.5, 260);
     this.cameraYaw = 0; // 0 = menghadap Utara (-Z)
-    this.cameraPitch = 0.54;
-    this.cameraDist = 17.5;
+    this.cameraPitch = 0.48;
+    this.cameraDist = 16.5;
+    this.targetYaw = 0;
+    this.targetPitch = 0.48;
+    this.targetDist = 16.5;
 
     this.raycaster = new THREE.Raycaster();
     this.groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
@@ -90,6 +93,8 @@ export class WorldRenderer3D {
     this.swayTrees = [];
     this.spinners = [];
     this.clouds = [];
+    this.fireflies = [];
+    this.floatingPages = [];
     this.gateBarriers = new Map();
     this.chestMeshes = new Map();
     this.waypointMeshes = new Map();
@@ -124,50 +129,183 @@ export class WorldRenderer3D {
     this.scene.add(this.sun.target);
   }
 
+  makeParchmentBanner(text, subtext = '', width = 512, height = 128) {
+    const c = document.createElement('canvas');
+    const ctx = c.getContext('2d');
+    c.width = width;
+    c.height = height;
+    ctx.strokeStyle = 'rgba(124, 77, 37, 0.72)';
+    ctx.lineWidth = 4;
+    ctx.strokeRect(8, 8, width - 16, height - 16);
+    ctx.strokeStyle = 'rgba(180, 128, 52, 0.55)';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(16, 16, width - 32, height - 32);
+    ctx.fillStyle = '#4a2b14';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = '800 38px "Bricolage Grotesque", Georgia, serif';
+    ctx.fillText(text, width / 2, subtext ? height * 0.42 : height * 0.52);
+    if (subtext) {
+      ctx.fillStyle = '#7c4d25';
+      ctx.font = '700 22px "Plus Jakarta Sans", Georgia, serif';
+      ctx.fillText(subtext, width / 2, height * 0.74);
+    }
+    const tex = new THREE.CanvasTexture(c);
+    tex.needsUpdate = true;
+    const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false });
+    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(width * 0.04, height * 0.04), mat);
+    mesh.rotation.x = -Math.PI / 2;
+    return mesh;
+  }
+
   buildEnvironment() {
-    // 1. Samudra & Sungai 3D luas berkilau
-    const waterGeo = new THREE.PlaneGeometry(420, 320, 1, 1);
+    const cx = (WORLD_W * S) / 2; // 90
+    const cz = (WORLD_H * S) / 2; // 44
+    const bookW = WORLD_W * S + 24; // 204
+    const bookD = WORLD_H * S + 20; // 108
+
+    // 0. Meja Kayu Malam Minggu (latar luas di bawah buku raksasa!)
+    const deskGeo = new THREE.PlaneGeometry(560, 440, 1, 1);
+    deskGeo.rotateX(-Math.PI / 2);
+    const desk = new THREE.Mesh(
+      deskGeo,
+      new THREE.MeshStandardMaterial({ color: 0x221712, roughness: 0.94 })
+    );
+    desk.position.set(cx, -5.2, cz);
+    desk.receiveShadow = true;
+    this.scene.add(desk);
+
+    // 1. Sampul Kulit Antik + 4 Sudut Kuningan + Tumpukan Lembar Kertas Buku Pop-Up!
+    const coverMat = new THREE.MeshStandardMaterial({ color: 0x3f2117, roughness: 0.82 });
+    const cover = new THREE.Mesh(new THREE.BoxGeometry(bookW + 14, 1.8, bookD + 12), coverMat);
+    cover.position.set(cx, -3.2, cz);
+    cover.receiveShadow = true;
+    this.scene.add(cover);
+
+    // Empat sudut kuningan antik di sampul buku
+    const brassMat = new THREE.MeshStandardMaterial({ color: 0xd4a84f, metalness: 0.65, roughness: 0.3 });
+    for (const sx of [-1, 1]) {
+      for (const sz of [-1, 1]) {
+        const clasp = new THREE.Mesh(new THREE.BoxGeometry(9.5, 2.05, 9.5), brassMat);
+        clasp.position.set(cx + sx * (bookW / 2 + 2.8), -3.1, cz + sz * (bookD / 2 + 1.8));
+        this.scene.add(clasp);
+      }
+    }
+
+    // Tumpukan halaman kertas krem tebal di kiri & kanan
+    const stackMat = new THREE.MeshStandardMaterial({ color: 0xe3d2ad, roughness: 0.9 });
+    const pageBlock = new THREE.Mesh(new THREE.BoxGeometry(bookW + 4, 2.1, bookD + 4), stackMat);
+    pageBlock.position.set(cx, -1.65, cz);
+    pageBlock.receiveShadow = true;
+    this.scene.add(pageBlock);
+
+    // Permukaan kertas perkamen terbuka tempat 6 Bab Pop-Up berdiri!
+    const parchmentMat = new THREE.MeshStandardMaterial({ color: 0xf1e3c4, roughness: 0.92 });
+    const parchment = new THREE.Mesh(new THREE.BoxGeometry(bookW, 0.35, bookD), parchmentMat);
+    parchment.position.set(cx, -0.58, cz);
+    parchment.receiveShadow = true;
+    this.scene.add(parchment);
+
+    // Lipatan Punggung Buku (Spine Gutter) tepat di tengah bentangan halaman
+    const gutter = new THREE.Mesh(
+      new THREE.BoxGeometry(1.6, 0.42, bookD + 0.4),
+      new THREE.MeshStandardMaterial({ color: 0x6b4728, roughness: 0.95 })
+    );
+    gutter.position.set(cx, -0.5, cz);
+    this.scene.add(gutter);
+
+    // Garis Bingkai Tinta Emas di sekeliling tepi halaman buku
+    const borderMat = new THREE.MeshBasicMaterial({ color: 0x9b6b32 });
+    const topLine = new THREE.Mesh(new THREE.BoxGeometry(bookW - 5, 0.06, 0.35), borderMat);
+    topLine.position.set(cx, -0.37, cz - bookD / 2 + 2.4);
+    const botLine = topLine.clone();
+    botLine.position.z = cz + bookD / 2 - 2.4;
+    const leftLine = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.06, bookD - 5), borderMat);
+    leftLine.position.set(cx - bookW / 2 + 2.4, -0.37, cz);
+    const rightLine = leftLine.clone();
+    rightLine.position.x = cx + bookW / 2 - 2.4;
+    this.scene.add(topLine, botLine, leftLine, rightLine);
+
+    // Pita Pembatas Buku Merah Marun menjuntai di sudut kanan bawah!
+    const ribbonMat = new THREE.MeshStandardMaterial({ color: 0x99262e, roughness: 0.65 });
+    const ribbonTop = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.14, 16), ribbonMat);
+    ribbonTop.position.set(cx + bookW / 2 - 14, -0.34, cz + bookD / 2 + 3.5);
+    ribbonTop.rotation.y = -0.18;
+    this.scene.add(ribbonTop);
+
+    // Prasasti Tinta di Pinggir Kertas Buku (terlihat keren saat kamera ditarik zoom-out!)
+    const leftTitle = this.makeParchmentBanner('ATLAS DI CELAH KASUR', 'BAB I · BAB II · BAB VI', 560, 124);
+    leftTitle.position.set(cx - 48, -0.35, cz - bookD / 2 + 5.8);
+    const rightTitle = this.makeParchmentBanner('KRONIK BUKU 1894', 'BAB III · BAB IV · BAB V', 560, 124);
+    rightTitle.position.set(cx + 48, -0.35, cz - bookD / 2 + 5.8);
+    this.scene.add(leftTitle, rightTitle);
+
+    // Perairan Tinta Kartografi Biru di dalam bingkai halaman buku (mengelilingi 6 Pulau Bab!)
+    const waterGeo = new THREE.PlaneGeometry(WORLD_W * S + 4, WORLD_H * S + 4, 1, 1);
     waterGeo.rotateX(-Math.PI / 2);
     this.waterMat = new THREE.MeshStandardMaterial({
-      color: 0x2a7d9e,
-      roughness: 0.28,
-      metalness: 0.18
+      color: 0x2a7694,
+      roughness: 0.3,
+      metalness: 0.16
     });
     this.waterMesh = new THREE.Mesh(waterGeo, this.waterMat);
-    this.waterMesh.position.set((WORLD_W * S) / 2, -0.45, (WORLD_H * S) / 2);
+    this.waterMesh.position.set(cx, -0.36, cz);
     this.waterMesh.receiveShadow = true;
     this.scene.add(this.waterMesh);
 
-    // 2. Pegunungan alam 3D jauh di cakrawala (biar terasa berada di lembah alam luas!)
-    const mtnMat1 = new THREE.MeshStandardMaterial({ color: 0x4c6b53, roughness: 0.95, flatShading: true });
-    const mtnMat2 = new THREE.MeshStandardMaterial({ color: 0x3b4d5e, roughness: 0.95, flatShading: true });
-    const cx = (WORLD_W * S) / 2;
-    const cz = (WORLD_H * S) / 2;
-    for (let i = 0; i < 34; i++) {
-      const ang = (i / 34) * Math.PI * 2;
-      const rx = 115 + (i % 3) * 14;
-      const rz = 76 + (i % 4) * 12;
-      const h = 14 + (i % 5) * 6;
-      const rad = 11 + (i % 4) * 4;
-      const peak = new THREE.Mesh(new THREE.ConeGeometry(rad, h, 6), i % 2 === 0 ? mtnMat1 : mtnMat2);
-      peak.position.set(cx + Math.cos(ang) * rx, h / 2 - 2, cz + Math.sin(ang) * rz);
+    // 2. Pegunungan Pop-Up Kertas & Bukit Kabut di Tepian Buku
+    const mtnMat1 = new THREE.MeshStandardMaterial({ color: 0x4b6e56, roughness: 0.92, flatShading: true });
+    const mtnMat2 = new THREE.MeshStandardMaterial({ color: 0x5c4f42, roughness: 0.92, flatShading: true });
+    for (let i = 0; i < 28; i++) {
+      const ang = (i / 28) * Math.PI * 2;
+      const rx = 112 + (i % 3) * 10;
+      const rz = 68 + (i % 4) * 8;
+      const h = 11 + (i % 4) * 5;
+      const rad = 9 + (i % 3) * 3.5;
+      const peak = new THREE.Mesh(new THREE.ConeGeometry(rad, h, 5), i % 2 === 0 ? mtnMat1 : mtnMat2);
+      peak.position.set(cx + Math.cos(ang) * rx, h / 2 - 2.6, cz + Math.sin(ang) * rz);
       this.scene.add(peak);
     }
 
-    // 3. Awan 3D lembut melayang di langit
+    // 3. Awan Lembut + Lembar Kertas Melayang + 36 Kunang-Kunang Emas (Hotarubi!)
     const cloudMat = new THREE.MeshStandardMaterial({ color: 0xfff8eb, roughness: 0.95, flatShading: true });
-    for (let i = 0; i < 24; i++) {
+    for (let i = 0; i < 20; i++) {
       const cg = new THREE.Group();
-      const s1 = new THREE.Mesh(new THREE.DodecahedronGeometry(2.8, 0), cloudMat);
-      const s2 = new THREE.Mesh(new THREE.DodecahedronGeometry(2.1, 0), cloudMat);
-      const s3 = new THREE.Mesh(new THREE.DodecahedronGeometry(1.9, 0), cloudMat);
-      s2.position.set(2.2, -0.3, 0.4);
-      s3.position.set(-2.1, -0.4, -0.3);
+      const s1 = new THREE.Mesh(new THREE.DodecahedronGeometry(2.6, 0), cloudMat);
+      const s2 = new THREE.Mesh(new THREE.DodecahedronGeometry(1.9, 0), cloudMat);
+      const s3 = new THREE.Mesh(new THREE.DodecahedronGeometry(1.7, 0), cloudMat);
+      s2.position.set(2.1, -0.3, 0.4);
+      s3.position.set(-2.0, -0.4, -0.3);
       cg.add(s1, s2, s3);
-      cg.position.set(Math.random() * WORLD_W * S, 18 + (i % 4) * 2.5, Math.random() * WORLD_H * S);
-      cg.scale.set(1.4, 0.65, 1.0);
+      cg.position.set(Math.random() * WORLD_W * S, 19 + (i % 4) * 2.5, Math.random() * WORLD_H * S);
+      cg.scale.set(1.4, 0.62, 1.0);
       this.scene.add(cg);
-      this.clouds.push({ mesh: cg, speed: 0.4 + (i % 3) * 0.25 });
+      this.clouds.push({ mesh: cg, speed: 0.35 + (i % 3) * 0.22 });
+    }
+
+    // Lembar halaman kertas melayang di tepi buku pop-up
+    const floatPageMat = new THREE.MeshStandardMaterial({ color: 0xf9efd8, roughness: 0.85, side: THREE.DoubleSide });
+    for (let i = 0; i < 10; i++) {
+      const pg = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 3.0), floatPageMat);
+      const ang = (i / 10) * Math.PI * 2;
+      pg.position.set(cx + Math.cos(ang) * 96, 6 + (i % 4) * 2.5, cz + Math.sin(ang) * 52);
+      pg.rotation.set(0.35, ang, 0.25);
+      this.scene.add(pg);
+      this.floatingPages.push({ mesh: pg, baseY: pg.position.y, phase: i * 0.9 });
+    }
+
+    // 36 Kunang-kunang emas berkilau di atas Bab I (Halaman Rumput Kabut Sore) & sekeliling buku!
+    const ffGeo = new THREE.SphereGeometry(0.11, 6, 6);
+    const ffMat = new THREE.MeshBasicMaterial({ color: 0xffe484 });
+    for (let i = 0; i < 36; i++) {
+      const m = new THREE.Mesh(ffGeo, ffMat);
+      const inZone1 = i < 22;
+      const fx = inZone1 ? 6 + Math.random() * 48 : Math.random() * WORLD_W * S;
+      const fz = inZone1 ? 6 + Math.random() * 34 : Math.random() * WORLD_H * S;
+      const fy = 1.4 + Math.random() * 3.8;
+      m.position.set(fx, fy, fz);
+      this.scene.add(m);
+      this.fireflies.push({ mesh: m, bx: fx, by: fy, bz: fz, phase: i * 1.13 });
     }
 
     // 4. 6 Pulau Daratan 3D dengan tebing batu/tanah + detail alam rumput & bunga!
@@ -540,7 +678,7 @@ export class WorldRenderer3D {
         new THREE.MeshStandardMaterial({ color: 0xffd166, emissive: 0xffb703, emissiveIntensity: 0.45 })
       );
       micHead.position.set(0, 2.2, 0.4);
-      const sign = makeLabelSprite('OPEN-MIC STAND-UP 1894', 'rgba(60,18,24,0.92)', '#FFD166', '#FFD166');
+      const sign = makeLabelSprite(lm.label || 'SALON SATIR 1894', 'rgba(60,18,24,0.92)', '#FFD166', '#FFD166');
       sign.position.y = 3.9;
       g.add(deck, backdrop, micPole, micHead, sign);
       g.position.set(cx, 0, cz);
@@ -568,7 +706,7 @@ export class WorldRenderer3D {
       );
       ring.position.y = 5.2;
       ring.rotation.x = Math.PI / 3;
-      const sign = makeLabelSprite('MENARA ABADI (∞)', 'rgba(18,26,44,0.92)', '#48DBFB', '#FFD166');
+      const sign = makeLabelSprite(lm.label || 'MENARA BAB ABADI (∞)', 'rgba(18,26,44,0.92)', '#48DBFB', '#FFD166');
       sign.position.y = 8.7;
       g.add(spire, orb, ring, sign);
       g.position.set(cx, 0, cz);
@@ -1302,8 +1440,15 @@ export class WorldRenderer3D {
     this.clickRingLife = 0.65;
   }
 
-  rotateCamera(deltaYaw) {
-    this.cameraYaw += deltaYaw;
+  rotateCamera(deltaYaw, deltaPitch = 0) {
+    this.targetYaw += deltaYaw;
+    if (deltaPitch) {
+      this.targetPitch = Math.max(0.18, Math.min(1.18, this.targetPitch + deltaPitch));
+    }
+  }
+
+  zoomCamera(deltaDist) {
+    this.targetDist = Math.max(8.5, Math.min(40, this.targetDist + deltaDist));
   }
 
   getCameraYaw() {
@@ -1406,6 +1551,12 @@ export class WorldRenderer3D {
     this.sun.color.lerp(new THREE.Color(palette.sun), Math.min(1, dt * 2.5));
 
     if (this.shake > 0) this.shake = Math.max(0, this.shake - dt * 1.4);
+
+    // 5. Smooth spherical POV camera damping
+    const damp = Math.min(1, dt * 14);
+    this.cameraYaw += (this.targetYaw - this.cameraYaw) * damp;
+    this.cameraPitch += (this.targetPitch - this.cameraPitch) * damp;
+    this.cameraDist += (this.targetDist - this.cameraDist) * damp;
   }
 
   render(nowSec, state) {
@@ -1516,7 +1667,19 @@ export class WorldRenderer3D {
       this.interactRingMesh.visible = false;
     }
 
-    // 5. Animate trees, spinners, waypoints, gates, chests, NPCs & roaming enemies
+    // 5. Animate trees, spinners, fireflies, floating pages, waypoints, gates, chests, NPCs & roaming enemies
+    for (const ff of this.fireflies) {
+      ff.mesh.position.x = ff.bx + Math.sin(nowSec * 1.1 + ff.phase) * 1.2;
+      ff.mesh.position.y = ff.by + Math.sin(nowSec * 2.1 + ff.phase) * 0.55;
+      ff.mesh.position.z = ff.bz + Math.cos(nowSec * 0.9 + ff.phase) * 1.2;
+      const sc = 0.75 + Math.sin(nowSec * 4.5 + ff.phase) * 0.35;
+      ff.mesh.scale.setScalar(sc);
+    }
+    for (const fp of this.floatingPages) {
+      fp.mesh.position.y = fp.baseY + Math.sin(nowSec * 0.9 + fp.phase) * 1.1;
+      fp.mesh.rotation.y = nowSec * 0.28 + fp.phase;
+      fp.mesh.rotation.z = Math.sin(nowSec * 0.7 + fp.phase) * 0.28;
+    }
     for (const st of this.swayTrees) {
       st.crown.rotation.z = Math.sin(nowSec * 1.5 + st.phase) * 0.045;
     }
@@ -1580,15 +1743,16 @@ export class WorldRenderer3D {
       em.aura.material.color.setHex(def ? 0x48c78e : 0xff5252);
     }
 
-    // 6. Third-Person Follow Camera + Shadow Sun follow
-    const camOffX = Math.sin(this.cameraYaw) * this.cameraDist;
-    const camOffZ = Math.cos(this.cameraYaw) * this.cameraDist;
-    const camHeight = this.cameraDist * Math.sin(this.cameraPitch) + 2.4;
+    // 6. Third-Person Spherical Orbit Follow Camera + Shadow Sun follow
+    const horizDist = this.cameraDist * Math.cos(this.cameraPitch);
+    const camOffX = Math.sin(this.cameraYaw) * horizDist;
+    const camOffZ = Math.cos(this.cameraYaw) * horizDist;
+    const camHeight = this.cameraDist * Math.sin(this.cameraPitch) + 1.9;
     const shkX = this.shake ? (Math.random() - 0.5) * this.shake : 0;
     const shkY = this.shake ? (Math.random() - 0.5) * this.shake : 0;
 
     this.camera.position.set(hx + camOffX + shkX, camHeight + shkY, hz + camOffZ);
-    this.camera.lookAt(hx, 1.25, hz);
+    this.camera.lookAt(hx, 1.35, hz);
 
     this.sun.position.set(hx + 18, 28, hz + 14);
     this.sun.target.position.set(hx, 0, hz);
@@ -1609,13 +1773,21 @@ export class WorldRenderer3D {
     const sy = mh / WORLD_H;
 
     ctx.clearRect(0, 0, mw, mh);
-    ctx.fillStyle = '#1E526E';
+    // Tampilan Atlas Buku Terbuka di Minimap
+    ctx.fillStyle = '#3b2016';
     ctx.fillRect(0, 0, mw, mh);
+    ctx.fillStyle = '#e9d8b4';
+    ctx.fillRect(3, 3, mw - 6, mh - 6);
+    ctx.fillStyle = '#255e78';
+    ctx.fillRect(6, 6, mw - 12, mh - 12);
 
     for (const z of ZONES) {
       ctx.fillStyle = z.ground;
       ctx.fillRect(z.rect.x * sx, z.rect.y * sy, z.rect.w * sx, z.rect.h * sy);
     }
+    // Lipatan punggung buku di tengah peta
+    ctx.fillStyle = 'rgba(59, 32, 22, 0.32)';
+    ctx.fillRect(mw / 2 - 1.5, 3, 3, mh - 6);
     for (const br of BRIDGES) {
       const open = save.solvedGates.includes(br.id);
       ctx.fillStyle = open ? '#8CE9B5' : '#E64A19';

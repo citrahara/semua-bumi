@@ -429,6 +429,22 @@ export const CLASSIC_LIT_ACADEMY = {
       summary: 'Dari tetralogi Pulau Buru lahir dua kalimat abadi: "Orang boleh pandai setinggi langit, tapi selama ia tidak menulis, ia akan hilang di dalam masyarakat dan dari sejarah" serta ajakan "bersikap adil sejak dalam pikiran."',
       modernLink: 'Relevan hari ini: mengasah bahasa dan menulis gagasan secara jernih adalah cara meninggalkan jejak nyata sekaligus melatih keadilan cara pandang sebelum menghakimi.',
       speakHook: 'Bahan ngobrol: "Seperti kata Pram, keadilan itu dimulai sejak dalam pikiran, bahkan sebelum kita membuka mulut untuk berkomentar."'
+    },
+    {
+      id: 'lit-austen',
+      author: 'Jane Austen · Pride and Prejudice (1813) & Diksi Rasa',
+      title: 'Ironi Halus Abad ke-19, Halaman Rumput & Nuansa Emosi',
+      summary: 'Jane Austen membedah gengsi sosial bangsawan lewat ironi lembut tanpa perlu berteriak. Mulai dari simbol status "halaman rumput luas" di depan kastel aristokrat hingga ketajaman memilih kata untuk melukiskan isi hati.',
+      modernLink: 'Relevan hari ini: melawan kemiskinan diksi agar kesedihan tidak selalu mentok di kata "galau"; bahasa Indonesia punya tingkatan emosi yang jauh lebih kaya seperti terpukul, pilu, sayu, dan nelangsa.',
+      speakHook: 'Bahan ngobrol: "Kalau kosakata emosi kita cuma mentok di \'galau\', kita kehilangan separuh kedalaman rasa yang dulu dilukis novel klasik."'
+    },
+    {
+      id: 'lit-sherlock',
+      author: 'Arthur Conan Doyle · Sherlock Holmes (1890)',
+      title: 'Eliminasi Mustahil & Curiga pada Bukti yang Terlalu Sempurna',
+      summary: '"When you have eliminated the impossible, whatever remains, however improbable, must be the truth." Detektif sejati tidak langsung menelan kambing hitam paling murah, melainkan mencari anomali tersembunyi.',
+      modernLink: 'Relevan hari ini: sangat tajam untuk investigasi forensik siber dan berpikir kritis; ketika semua bukti tampak terlalu rapi mengarah ke satu pelaku lama, justru patut curiga ada rekayasa di balik layar.',
+      speakHook: 'Bahan ngobrol: "Ala Sherlock Holmes: kalau rangkaian buktinya terlalu rapi dan terlalu kebetulan, justru di situlah anomali rekayasa sering bersembunyi."'
     }
   ],
   practice: [

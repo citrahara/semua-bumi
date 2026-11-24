@@ -60,14 +60,14 @@ export function getCharacterClass(id) {
 }
 
 export const FUNNY_USERNAMES = [
-  'orator_gorengan',
-  'filsuf_esteh',
-  'ksatria_kbbi',
-  'sultan_logika',
-  'pemburu_fakta',
-  'jagoan_diksi',
-  'pujangga_kopi',
-  'master_ngeles'
+  'pembaca_malam',
+  'kurator_diksi',
+  'detektif_1894',
+  'penumpang_seoul',
+  'penjaga_kerang',
+  'pengamat_kabut',
+  'komika_intj',
+  'orwell_santai'
 ];
 
 export function validateUsername(raw, existingUsernames = []) {
@@ -282,7 +282,7 @@ export function buildRegistrationExam() {
 }
 
 export const REJECT_ROASTS = [
-  'Waduh, loket Bang Jaja langsung tutup gerbang! Belajar dulu sebentar baru daftar ulang ya.',
-  'Ciko sampai keselek kopi lihat jawaban barusan! Akun belum bisa diterbitkan.',
-  'Maaf, KTP Warga Warkop belum bisa dicetak. Baca penjelasannya dulu lalu coba tantangan baru!'
+  'Tuan George langsung menutup sampul buku keras-keras! Baca catatannya sebentar lalu coba buka lagi ya.',
+  'Ciko si cangkir nyasar sampai keselek lihat jawaban barusan! Kartu Pembaca belum bisa diterbitkan.',
+  'Maaf, segel sampul buku belum mau terbuka. Pelajari penjelasannya dulu, lalu coba 3 uji kelayakan baru!'
 ];

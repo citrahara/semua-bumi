@@ -7,8 +7,8 @@ export const WORLD_H = 1760;
 export const ZONES = [
   {
     id: 1,
-    name: 'Desa Warkop',
-    subtitle: 'Lv. 1 · Lembah Fakta & Latihan Tempur',
+    name: 'Bab I · Halaman Rumput 1894',
+    subtitle: 'Kebun Bangsawan, Kabut Sore & Arsip Orwell',
     rect: { x: 0, y: 0, w: 1120, h: 800 },
     ground: '#7FB069',
     groundAlt: '#74A45E',
@@ -16,8 +16,8 @@ export const ZONES = [
   },
   {
     id: 2,
-    name: 'Distrik Bahasa & Akademi',
-    subtitle: 'Lv. 2 · Belajar Korea, Jepang, Inggris & KBBI',
+    name: 'Bab II · Stasiun Transit & Bahasa',
+    subtitle: 'Seoul-Chuncheon, Hangul, Poliglot & Diksi Rasa',
     rect: { x: 1240, y: 0, w: 1120, h: 800 },
     ground: '#E7D8C0',
     groundAlt: '#DECBA9',
@@ -25,8 +25,8 @@ export const ZONES = [
   },
   {
     id: 3,
-    name: 'Distrik Siber & AI Lab',
-    subtitle: 'Lv. 3 · Radar /berita-terkini & Pertahanan AI',
+    name: 'Bab III · Distrik Kementerian Gema',
+    subtitle: 'Radar /berita-terkini, AI & Anti-Newspeak',
     rect: { x: 2480, y: 0, w: 1120, h: 800 },
     ground: '#162436',
     groundAlt: '#1B2D44',
@@ -34,8 +34,8 @@ export const ZONES = [
   },
   {
     id: 4,
-    name: 'Benteng IIV / SCADA Grid',
-    subtitle: 'Lv. 4 · Infrastruktur Vital & Duel Ransomware',
+    name: 'Bab IV · Benteng IIV & Personil',
+    subtitle: 'SCADA Grid & Manusia Rantai Terlemah',
     rect: { x: 2480, y: 920, w: 1120, h: 840 },
     ground: '#242933',
     groundAlt: '#2C323E',
@@ -43,8 +43,8 @@ export const ZONES = [
   },
   {
     id: 5,
-    name: 'Lembah Logika & Debat',
-    subtitle: 'Lv. 5 · Retorika & Penjinak Sesat Pikir',
+    name: 'Bab V · Balai Deduksi & Entropi',
+    subtitle: 'Sherlock, Peluang 63%, Dunbar 150 & Retorika',
     rect: { x: 1240, y: 920, w: 1120, h: 840 },
     ground: '#CFA46B',
     groundAlt: '#C4965C',
@@ -52,8 +52,8 @@ export const ZONES = [
   },
   {
     id: 6,
-    name: 'Puncak Amfiteater Orator',
-    subtitle: 'Lv. 6 · Boss Deepfake & Panggung 30 Detik',
+    name: 'Bab VI · Amfiteater Puncak Buku',
+    subtitle: 'Boss Deepfake & Orasi Penutup Bab',
     rect: { x: 0, y: 920, w: 1120, h: 840 },
     ground: '#2D2847',
     groundAlt: '#26213D',
@@ -111,30 +111,30 @@ export const BRIDGES = [
 ];
 
 export const WAYPOINTS = [
-  { id: 'wp-1', zone: 1, name: 'Waypoint Alun-Alun Warkop', x: 240, y: 420 },
-  { id: 'wp-2', zone: 2, name: 'Waypoint Akademi Bahasa', x: 1410, y: 400 },
-  { id: 'wp-3', zone: 3, name: 'Waypoint Menara SOC AI', x: 2640, y: 400 },
-  { id: 'wp-4', zone: 4, name: 'Waypoint Gardu IIV/SCADA', x: 3040, y: 1040 },
-  { id: 'wp-5', zone: 5, name: 'Waypoint Gerbang Pilar', x: 2180, y: 1340 },
-  { id: 'wp-6', zone: 6, name: 'Waypoint Amfiteater Langit', x: 960, y: 1340 }
+  { id: 'wp-1', zone: 1, name: 'Penanda Bab I (Halaman Rumput)', x: 240, y: 420 },
+  { id: 'wp-2', zone: 2, name: 'Penanda Bab II (Stasiun Transit)', x: 1410, y: 400 },
+  { id: 'wp-3', zone: 3, name: 'Penanda Bab III (Menara SOC AI)', x: 2640, y: 400 },
+  { id: 'wp-4', zone: 4, name: 'Penanda Bab IV (Gardu IIV)', x: 3040, y: 1040 },
+  { id: 'wp-5', zone: 5, name: 'Penanda Bab V (Balai Deduksi)', x: 2180, y: 1340 },
+  { id: 'wp-6', zone: 6, name: 'Penanda Bab VI (Amfiteater)', x: 960, y: 1340 }
 ];
 
 export const CHESTS = [
-  { id: 'chest-1', zone: 1, x: 160, y: 150, tier: 'common', rewardId: 'fact-01', xp: 45, coins: 30, title: 'Peti Kebun Kopi' },
-  { id: 'chest-2', zone: 1, x: 960, y: 660, tier: 'exquisite', rewardId: 'fact-18', xp: 60, coins: 45, title: 'Peti Pinggir Sungai' },
-  { id: 'chest-3', zone: 2, x: 1360, y: 145, tier: 'common', rewardId: 'dict-08', xp: 55, coins: 40, title: 'Peti Rak Pustaka' },
-  { id: 'chest-4', zone: 2, x: 2230, y: 165, tier: 'exquisite', rewardId: 'dict-17', xp: 70, coins: 55, title: 'Peti Taman Hangul' },
+  { id: 'chest-1', zone: 1, x: 160, y: 150, tier: 'common', rewardId: 'lit-austen', xp: 45, coins: 30, title: 'Laci Cangkang Kerang' },
+  { id: 'chest-2', zone: 1, x: 960, y: 660, tier: 'exquisite', rewardId: 'fact-18', xp: 60, coins: 45, title: 'Peti Cokelat Anti-5L' },
+  { id: 'chest-3', zone: 2, x: 1360, y: 145, tier: 'common', rewardId: 'dict-08', xp: 55, coins: 40, title: 'Peti Rak Diksi Rasa' },
+  { id: 'chest-4', zone: 2, x: 2230, y: 165, tier: 'exquisite', rewardId: 'dict-17', xp: 70, coins: 55, title: 'Loker Stasiun Chuncheon' },
   { id: 'chest-5', zone: 3, x: 2620, y: 160, tier: 'exquisite', rewardId: 'cyber-pqc', xp: 85, coins: 65, title: 'Brankas Kuantum PQC' },
   { id: 'chest-6', zone: 3, x: 3450, y: 190, tier: 'precious', rewardId: 'cyber-aisoc', xp: 95, coins: 75, title: 'Server Intel AI SOC' },
   { id: 'chest-7', zone: 4, x: 2630, y: 1610, tier: 'exquisite', rewardId: 'cyber-sbom', xp: 90, coins: 70, title: 'Kontainer SBOM' },
   { id: 'chest-8', zone: 4, x: 3450, y: 1120, tier: 'precious', rewardId: 'cyber-iiv', xp: 100, coins: 85, title: 'Brankas Gardu SCADA' },
-  { id: 'chest-9', zone: 5, x: 2220, y: 1600, tier: 'exquisite', rewardId: 'fall-10', xp: 80, coins: 65, title: 'Peti Pilar Selatan' },
-  { id: 'chest-10', zone: 5, x: 1380, y: 1060, tier: 'common', rewardId: 'fact-24', xp: 65, coins: 50, title: 'Peti Obor Kuno' },
+  { id: 'chest-9', zone: 5, x: 2220, y: 1600, tier: 'exquisite', rewardId: 'lit-sherlock', xp: 80, coins: 65, title: 'Arsip Kasus Sherlock' },
+  { id: 'chest-10', zone: 5, x: 1380, y: 1060, tier: 'common', rewardId: 'fact-24', xp: 65, coins: 50, title: 'Peti Entropi & Peluang' },
   { id: 'chest-11', zone: 6, x: 190, y: 1080, tier: 'precious', rewardId: 'dict-20', xp: 110, coins: 95, title: 'Peti Bintang Orator' },
   { id: 'chest-12', zone: 6, x: 940, y: 1600, tier: 'precious', rewardId: 'cyber-c2pa', xp: 110, coins: 95, title: 'Arsip Anti-Deepfake' }
 ];
 
-// 12 NPC (Cerita, Duel Pengetahuan, Akademi Belajar Bahasa, & Laboratorium Siber!)
+// 13 NPC (Cerita Buku, Duel Pengetahuan, Akademi Bahasa, Arsip Orwell & Laboratorium Siber!)
 export const NPCS = [
   {
     id: 'jaja',
@@ -142,14 +142,14 @@ export const NPCS = [
     x: 450,
     y: 310,
     challengeType: 'story',
-    questTitle: 'Misi Utama I: Kronik Kedai 1894',
+    questTitle: 'Bab I: Tamu Nyasar di Halaman Rumput 1894',
     introLines: [
-      'Selamat datang di Kedai Kopi 1894, Petualang! Retakan Waktu Siber bikin hoaks dan monster abad ke-21 tumpah ke lembah vintage kita!',
-      'Coba mampir dulu ke Panggung Open-Mic Stand-Up di sebelah barat kedai buat pemanasan ngelucu, lalu bantu bongkar teori Kang Deden dan kalahkan Slime Hoaks!',
-      'Di timur kedai juga berdiri Menara Kronik Abadi yang tidak pernah ada lantai terakhirnya, serta Segel Matematika menuju Akademi Bahasa Korea dan Distrik Siber!'
+      'Eh, kamu juga tersedot masuk ke buku kulit antik ini? Aku sama Ciko tadi cuma lagi menyeduh kopi, tahu-tahu sudah mendarat di Halaman Rumput 1894!',
+      'Di sebelah timur ada Tuan George di Arsip Orwell (beliau lagi resah gara-gara Kementerian Gema), dan di barat ada Panggung Salon Satir 1894 buat pemanasan komedi kering!',
+      'Kamu juga bisa langsung tekan [F] buat menebas Slime Hoaks di selatan, atau naik Menara Bab Abadi yang halamannya tidak pernah habis.'
     ],
     repeatLines: [
-      'Kopi tubruk 1894 masih panas! Coba naik ke Panggung Open-Mic di sebelah kiri kedai atau tantang Menara Kronik Abadi kalau mau adu skor tanpa batas!'
+      'Kopi tamu nyasar tetap hangat! Jangan lupa mampir ke Arsip Orwell di timur atau Salon Satir 1894 di barat, dan coba zoom out pakai scroll buat melihat bentuk buku raksasa di bawah kaki kita!'
     ]
   },
   {
@@ -342,19 +342,19 @@ export const NPCS = [
 ];
 
 export const LANDMARKS = [
-  // Zona 1: Desa Warkop 1894 + Panggung Stand-Up Vintage + Menara Kronik Abadi
-  { type: 'warkop', x: 350, y: 170, w: 200, h: 95, solid: true, label: 'KEDAI BANG JAJA 1894' },
-  { type: 'standup_stage', x: 185, y: 190, w: 120, h: 70, solid: true, label: 'OPEN-MIC STAND-UP' },
-  { type: 'endless_tower', x: 585, y: 390, w: 62, h: 62, solid: true, label: 'MENARA ABADI' },
+  // Bab I: Halaman Rumput 1894 + Salon Satir Vintage + Menara Bab Abadi + Arsip Orwell
+  { type: 'warkop', x: 350, y: 170, w: 200, h: 95, solid: true, label: 'KEDAI TAMU NYASAR 1894' },
+  { type: 'standup_stage', x: 185, y: 190, w: 120, h: 70, solid: true, label: 'SALON SATIR 1894' },
+  { type: 'endless_tower', x: 585, y: 390, w: 62, h: 62, solid: true, label: 'MENARA BAB ABADI' },
   { type: 'library', x: 840, y: 425, w: 150, h: 72, solid: true, label: 'ARSIP ORWELL' },
-  { type: 'posronda', x: 765, y: 105, w: 115, h: 72, solid: true, label: 'POS RONDA' },
+  { type: 'posronda', x: 765, y: 105, w: 115, h: 72, solid: true, label: 'POS PENGAMAT' },
   { type: 'pond', x: 140, y: 560, w: 185, h: 110, solid: true },
 
-  // Zona 2: Distrik Bahasa & Akademi
-  { type: 'library', x: 1500, y: 100, w: 235, h: 105, solid: true, label: 'BALAI PUSTAKA' },
-  { type: 'hanok', x: 1950, y: 100, w: 240, h: 105, solid: true, label: 'AKADEMI KOREA (한글)' },
+  // Bab II: Stasiun Transit Korea & Balai Bahasa
+  { type: 'library', x: 1500, y: 100, w: 235, h: 105, solid: true, label: 'BALAI DIKSI & PUSTAKA' },
+  { type: 'hanok', x: 1950, y: 100, w: 240, h: 105, solid: true, label: 'STASIUN CHUNCHEON · 한글' },
   { type: 'fountain', x: 1790, y: 365, w: 115, h: 115, solid: true },
-  { type: 'guild', x: 1520, y: 485, w: 190, h: 85, solid: true, label: 'GUILD STARTUP' },
+  { type: 'guild', x: 1520, y: 485, w: 190, h: 85, solid: true, label: 'GUILD JARGON' },
   { type: 'polyglot', x: 1960, y: 485, w: 225, h: 85, solid: true, label: 'PAVILIUN POLIGLOT' },
 
   // Zona 3: Distrik Siber & AI Lab
@@ -412,33 +412,33 @@ export function getActiveMainQuest(save) {
 
   if (!save.talkedNpcs.includes('jaja')) {
     return {
-      chapter: 'Misi Utama I · Desa Warkop',
-      title: 'Temui Bang Jaja di Gerobak Kopi',
-      hint: 'Jalan ke Gerobak Warkop dan tekan [E] untuk menerima peta misi.',
+      chapter: 'Bab I · Halaman Rumput 1894',
+      title: 'Temui Bang Jaja (Tamu Nyasar) atau Arsip Orwell',
+      hint: 'Jalan ke Kedai Tamu Nyasar dan tekan [E], atau geser kursor untuk melihat peta buku 3D.',
       target: { x: 450, y: 310, label: 'Bang Jaja' }
     };
   }
   if (!save.completedNpcs.includes('deden')) {
     return {
-      chapter: 'Misi Utama I · Desa Warkop',
+      chapter: 'Bab I · Halaman Rumput 1894',
       title: 'Bongkar Teori Kang Deden',
-      hint: 'Hampiri Kang Deden di Pos Ronda utara Desa Warkop.',
+      hint: 'Hampiri Kang Deden di Pos Pengamat utara Bab I, atau mampir ke Arsip Orwell di timur.',
       target: { x: 820, y: 220, label: 'Kang Deden' }
     };
   }
   if (!defeated.includes('slime_hoaks')) {
     return {
-      chapter: 'Latihan Tempur Attack & Defense',
+      chapter: 'Latihan Strike [F] & Attack-Defense',
       title: 'Kalahkan Slime Hoaks Berantai',
-      hint: 'Hampiri Slime Hoaks di selatan Desa Warkop untuk belajar jurus SERANG, BERTAHAN, dan COUNTER!',
+      hint: 'Dekati Slime Hoaks di selatan Bab I lalu tekan [F] untuk Ambush Strike -22 HP!',
       target: { x: 420, y: 590, label: 'Slime Hoaks' }
     };
   }
   if (!save.solvedGates.includes('gate-1')) {
     return {
-      chapter: 'Segel Matematika #1',
-      title: 'Buka Jembatan ke Distrik Bahasa (Lv. 2)',
-      hint: 'Dekati Jembatan Timur Desa Warkop dan pecahkan 3 Rune Matematika.',
+      chapter: 'Segel Matematika #1 (Balik ke Bab II)',
+      title: 'Buka Jembatan ke Stasiun Transit & Bahasa',
+      hint: 'Dekati Jembatan Timur Bab I dan pecahkan 3 Rune Matematika.',
       target: { x: 1068, y: 400, label: 'Segel Matematika #1' }
     };
   }
