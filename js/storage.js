@@ -1,16 +1,18 @@
-// Auto-save progres petualangan RPG Warkop Impact di localStorage.
+// Penyimpanan Multi-Akun Lokal + Auto-Save Progres RPG Warkop Impact.
 
-const SAVE_KEY = 'warkop_impact_rpg_v1';
+const ACCOUNTS_KEY = 'warkop_impact_accounts_v2';
 
-export function createFreshSave(playerName = 'Petualang') {
+export function createFreshAccount(username, characterClass = 'orator') {
   return {
-    playerName,
+    username,
+    playerName: username,
+    characterClass,
     x: 340,
     y: 410,
     facing: 'down',
     xp: 0,
     coins: 0,
-    level: 1, // Adventure Rank / Level
+    level: 1,
     solvedGates: [],
     talkedNpcs: [],
     completedNpcs: [],
@@ -20,43 +22,89 @@ export function createFreshSave(playerName = 'Petualang') {
     mathSolvedCount: 0,
     stageCompletions: 0,
     muted: false,
-    started: false
+    createdAt: new Date().toISOString()
   };
 }
 
-export function loadSave() {
+function loadStore() {
   try {
-    const raw = localStorage.getItem(SAVE_KEY);
-    if (!raw) return createFreshSave();
+    const raw = localStorage.getItem(ACCOUNTS_KEY);
+    if (!raw) return { activeUsername: null, accounts: {} };
     const parsed = JSON.parse(raw);
     return {
-      ...createFreshSave(),
-      ...parsed,
-      solvedGates: Array.isArray(parsed.solvedGates) ? parsed.solvedGates : [],
-      talkedNpcs: Array.isArray(parsed.talkedNpcs) ? parsed.talkedNpcs : [],
-      completedNpcs: Array.isArray(parsed.completedNpcs) ? parsed.completedNpcs : [],
-      openedChests: Array.isArray(parsed.openedChests) ? parsed.openedChests : [],
-      unlockedWaypoints: Array.isArray(parsed.unlockedWaypoints) ? parsed.unlockedWaypoints : ['wp-1'],
-      codexIds: Array.isArray(parsed.codexIds) ? parsed.codexIds : []
+      activeUsername: parsed.activeUsername || null,
+      accounts: parsed.accounts && typeof parsed.accounts === 'object' ? parsed.accounts : {}
     };
   } catch {
-    return createFreshSave();
+    return { activeUsername: null, accounts: {} };
   }
 }
 
-export function persistSave(save) {
+function saveStore(store) {
   try {
-    localStorage.setItem(SAVE_KEY, JSON.stringify(save));
+    localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(store));
   } catch {
-    // Abaikan jika penyimpanan dibatasi
+    // Abaikan jika localStorage dibatasi
   }
 }
 
-export function resetSave(playerName = 'Petualang') {
-  const fresh = createFreshSave(playerName);
-  fresh.started = true;
+export function listSavedAccounts() {
+  const store = loadStore();
+  return Object.values(store.accounts).sort((a, b) => (b.level || 1) - (a.level || 1));
+}
+
+export function getActiveAccount() {
+  const store = loadStore();
+  if (!store.activeUsername || !store.accounts[store.activeUsername]) return null;
+  const acc = store.accounts[store.activeUsername];
+  return normalizeAccount(acc);
+}
+
+export function registerAccount(username, characterClass) {
+  const store = loadStore();
+  const acc = createFreshAccount(username, characterClass);
+  store.accounts[username] = acc;
+  store.activeUsername = username;
+  saveStore(store);
+  return acc;
+}
+
+export function switchAccount(username) {
+  const store = loadStore();
+  if (!store.accounts[username]) return null;
+  store.activeUsername = username;
+  saveStore(store);
+  return normalizeAccount(store.accounts[username]);
+}
+
+export function persistSave(account) {
+  if (!account || !account.username) return;
+  const store = loadStore();
+  store.accounts[account.username] = account;
+  store.activeUsername = account.username;
+  saveStore(store);
+}
+
+export function resetCurrentAccount(account) {
+  if (!account || !account.username) return null;
+  const fresh = createFreshAccount(account.username, account.characterClass || 'orator');
+  fresh.muted = account.muted;
   persistSave(fresh);
   return fresh;
+}
+
+function normalizeAccount(acc) {
+  return {
+    ...createFreshAccount(acc.username || 'Petualang', acc.characterClass || 'orator'),
+    ...acc,
+    playerName: acc.username || acc.playerName || 'Petualang',
+    solvedGates: Array.isArray(acc.solvedGates) ? acc.solvedGates : [],
+    talkedNpcs: Array.isArray(acc.talkedNpcs) ? acc.talkedNpcs : [],
+    completedNpcs: Array.isArray(acc.completedNpcs) ? acc.completedNpcs : [],
+    openedChests: Array.isArray(acc.openedChests) ? acc.openedChests : [],
+    unlockedWaypoints: Array.isArray(acc.unlockedWaypoints) ? acc.unlockedWaypoints : ['wp-1'],
+    codexIds: Array.isArray(acc.codexIds) ? acc.codexIds : []
+  };
 }
 
 export function xpNeededForLevel(level) {

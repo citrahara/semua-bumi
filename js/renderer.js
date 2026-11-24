@@ -12,6 +12,7 @@ import {
   TREES
 } from './world.js';
 import { CAST } from './characters.js';
+import { getCharacterClass } from './data/registration.js';
 
 export class WorldRenderer {
   constructor(canvas, minimapCanvas) {
@@ -803,6 +804,7 @@ export class WorldRenderer {
   }
 
   drawPlayer(ctx, player, nowSec) {
+    const cls = getCharacterClass(player.characterClass);
     const walkBounce = player.moving ? Math.abs(Math.sin(nowSec * (player.sprinting ? 16 : 11))) * 4.5 : 0;
     const footSwing = player.moving ? Math.sin(nowSec * (player.sprinting ? 16 : 11)) * 5 : 0;
 
@@ -819,8 +821,8 @@ export class WorldRenderer {
     ctx.arc(player.x + 6, player.y + 13 - footSwing * 0.6, 4.5, 0, Math.PI * 2);
     ctx.fill();
 
-    // Cloak / Body
-    ctx.fillStyle = '#E64A19';
+    // Cloak / Body sesuai jenis karakter
+    ctx.fillStyle = cls.cloakColor;
     ctx.strokeStyle = '#1B1714';
     ctx.lineWidth = 2.2;
     ctx.beginPath();
@@ -828,8 +830,8 @@ export class WorldRenderer {
     ctx.fill();
     ctx.stroke();
 
-    // Flowing golden scarf
-    ctx.fillStyle = '#FFD166';
+    // Trim / Syal khas kelas karakter
+    ctx.fillStyle = cls.trimColor;
     ctx.beginPath();
     ctx.roundRect(player.x - 11, player.y - 9 - walkBounce, 22, 6, 3);
     ctx.fill();
@@ -841,11 +843,42 @@ export class WorldRenderer {
     ctx.fill();
     ctx.stroke();
 
-    // Hair
-    ctx.fillStyle = '#241B17';
-    ctx.beginPath();
-    ctx.arc(player.x, player.y - 23 - walkBounce, 12.5, Math.PI * 0.92, Math.PI * 0.08);
-    ctx.fill();
+    // Hair / Hat sesuai kelas karakter
+    if (cls.hatStyle === 'fedora') {
+      ctx.fillStyle = '#4D3623';
+      ctx.beginPath();
+      ctx.ellipse(player.x, player.y - 27 - walkBounce, 17, 4.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.roundRect(player.x - 10, player.y - 36 - walkBounce, 20, 10, 4);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#48DBFB';
+      ctx.fillRect(player.x - 10, player.y - 29 - walkBounce, 20, 2.5);
+    } else if (cls.hatStyle === 'beret') {
+      ctx.fillStyle = '#4A172B';
+      ctx.beginPath();
+      ctx.ellipse(player.x + 2, player.y - 28 - walkBounce, 15, 7, -0.18, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    } else {
+      ctx.fillStyle = '#241B17';
+      ctx.beginPath();
+      ctx.arc(player.x, player.y - 23 - walkBounce, 12.5, Math.PI * 0.92, Math.PI * 0.08);
+      ctx.fill();
+      if (cls.hatStyle === 'goggles') {
+        ctx.fillStyle = '#48DBFB';
+        ctx.strokeStyle = '#FFD166';
+        ctx.lineWidth = 1.8;
+        ctx.beginPath();
+        ctx.arc(player.x - 4.5, player.y - 26 - walkBounce, 3.6, 0, Math.PI * 2);
+        ctx.arc(player.x + 4.5, player.y - 26 - walkBounce, 3.6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.strokeStyle = '#1B1714';
+      }
+    }
 
     // Directional eyes
     if (player.facing !== 'up') {

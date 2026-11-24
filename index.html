@@ -98,31 +98,9 @@
     </div>
   </div>
 
-  <!-- Title Overlay (transparan di atas dunia hidup 2D!) -->
+  <!-- Auth / Character Creation Overlay (transparan di atas dunia hidup 2D!) -->
   <div id="title-overlay" class="modal-backdrop">
-    <div class="title-card">
-      <div class="title-kicker">OPEN-WORLD RPG · WAWASAN, BAHASA & SEGEL MATEMATIKA</div>
-      <h1 class="title-logo">WARKOP IMPACT</h1>
-      <p class="title-desc">
-        Jelajahi 4 wilayah dunia 2D bersama <strong>Ciko</strong> si roh kopi. Bantu warga menumpas mitos, naikkan level diksi, menangkan duel logika, lalu pecahkan <strong>Segel Matematika</strong> di tiap jembatan untuk membuka level baru!
-      </p>
-
-      <div class="title-form">
-        <label class="title-label" for="input-player-name">Nama Petualangmu</label>
-        <input id="input-player-name" class="rpg-input" type="text" maxlength="16" placeholder="Ketik namamu..." value="Petualang" />
-      </div>
-
-      <div class="title-actions">
-        <button class="rpg-btn primary" id="btn-start-adventure" type="button">Masuk Dunia Warkop</button>
-        <button class="rpg-btn ghost hidden" id="btn-reset-adventure" type="button">Mulai Ulang dari Lv. 1</button>
-      </div>
-
-      <div class="title-mini-feats">
-        <span>Gerak bebas WASD / Klik / Joystick HP</span>
-        <span>4 Wilayah + 3 Segel Matematika</span>
-        <span>7 Peti Harta & 4 Waypoint Teleport</span>
-      </div>
-    </div>
+    <div id="auth-card-root" class="title-card"></div>
   </div>
 
   <!-- Dynamic Overlay Container (Dialogue, Battle, Math Seal, Stage Mic, World Map, Codex, Profile) -->

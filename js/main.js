@@ -4,6 +4,14 @@ import { FALLACIES_BANK } from './data/fallacies.js';
 import { STAGE_PROMPTS } from './data/stage.js';
 import { generateMathQuestion, GATE_META } from './data/math.js';
 import {
+  CHARACTER_CLASSES,
+  FUNNY_USERNAMES,
+  getCharacterClass,
+  validateUsername,
+  buildRegistrationExam,
+  REJECT_ROASTS
+} from './data/registration.js';
+import {
   ZONES,
   BRIDGES,
   WAYPOINTS,
@@ -18,9 +26,13 @@ import { WorldRenderer } from './renderer.js';
 import { audio } from './audio.js';
 import { MicStudio, detectKeywords } from './speech.js';
 import {
-  loadSave,
+  createFreshAccount,
+  listSavedAccounts,
+  getActiveAccount,
+  registerAccount,
+  switchAccount,
   persistSave,
-  resetSave,
+  resetCurrentAccount,
   xpNeededForLevel,
   grantRewards
 } from './storage.js';
@@ -32,6 +44,7 @@ const worldCanvas = document.getElementById('world-canvas');
 const minimapCanvas = document.getElementById('minimap-canvas');
 const hudLayer = document.getElementById('hud-layer');
 const titleOverlay = document.getElementById('title-overlay');
+const authCardRoot = document.getElementById('auth-card-root');
 const overlayRoot = document.getElementById('overlay-root');
 const toastEl = document.getElementById('toast');
 
@@ -53,8 +66,8 @@ const zoneBannerName = document.getElementById('zone-banner-name');
 const btnInteract = document.getElementById('btn-interact');
 const interactLabel = document.getElementById('interact-label');
 
-// Core state
-let save = loadSave();
+// Core state (pakai akun dummy pratinjau untuk kanvas latar sebelum akun resmi dibuat/dipilih)
+let save = getActiveAccount() || createFreshAccount('Tamu', 'orator');
 audio.setMuted(save.muted);
 
 const renderer = new WorldRenderer(worldCanvas, minimapCanvas);
@@ -68,6 +81,7 @@ const player = {
   y: save.y,
   radius: 15,
   facing: save.facing || 'down',
+  characterClass: save.characterClass || 'orator',
   moving: false,
   sprinting: false,
   walkTarget: null,
@@ -143,9 +157,16 @@ function pickFreshItems(bank, count) {
   return ordered.slice(0, count);
 }
 
-function awardAndNotify({ xp = 0, coins = 0, codexId = null }) {
+function awardAndNotify({ xp = 0, coins = 0, codexId = null, category = null }) {
+  const cls = getCharacterClass(save.characterClass);
+  let finalXp = xp;
+  let finalCoins = coins;
+  if (category && cls.xpBonusType === category) {
+    finalXp = Math.round(xp * cls.xpBonusMult);
+    finalCoins = Math.round(coins * cls.xpBonusMult);
+  }
   const prevLvl = save.level;
-  const leveled = grantRewards(save, { xp, coins, codexId });
+  const leveled = grantRewards(save, { xp: finalXp, coins: finalCoins, codexId });
   refreshHud();
   if (leveled) {
     audio.playVictory();
@@ -157,8 +178,9 @@ function awardAndNotify({ xp = 0, coins = 0, codexId = null }) {
 }
 
 function refreshHud() {
-  hudAvatar.innerHTML = renderCharacterSVG('hero', 'idle');
-  hudPlayerName.textContent = save.playerName || 'Petualang';
+  const cls = getCharacterClass(save.characterClass);
+  hudAvatar.innerHTML = renderCharacterSVG(cls.portraitKey, 'idle');
+  hudPlayerName.textContent = `@${save.username || save.playerName || 'Petualang'}`;
   hudArBadge.textContent = `LV ${save.level}`;
   const need = xpNeededForLevel(save.level);
   const pct = Math.min(100, Math.round((save.xp / need) * 100));
@@ -309,7 +331,7 @@ function handleOpenChest(ch) {
   save.openedChests.push(ch.id);
   audio.playChestOpen();
   renderer.spawnBurst(ch.x, ch.y, '#FFD166', 28);
-  awardAndNotify({ xp: ch.xp, coins: ch.coins, codexId: ch.rewardId });
+  awardAndNotify({ xp: ch.xp, coins: ch.coins, codexId: ch.rewardId, category: 'math' });
 
   const item = findCodexEntryById(ch.rewardId);
   modalOpen = true;
@@ -463,7 +485,7 @@ function openMathSealModal(bridge) {
         audio.playGateUnlock();
         renderer.triggerShake(14);
         renderer.spawnBurst(bridge.rect.x + bridge.rect.w / 2, bridge.rect.y + bridge.rect.h / 2, '#FFD166', 44);
-        awardAndNotify({ xp: 120, coins: 80 });
+        awardAndNotify({ xp: 120, coins: 80, category: 'math' });
         showZoneBanner(`SEGEL HANCUR! LEVEL ${meta.unlocksLevel} TERBUKA`, `Jembatan ke ${meta.unlocksZone} kini bisa dilalui!`);
         sayCiko(`Gacor! Ayo seberangi jembatan ke ${meta.unlocksZone}!`, 5);
         return;
@@ -730,7 +752,7 @@ function runNpcChallenge(npc) {
     } else {
       audio.playWrong();
     }
-    awardAndNotify({ xp: ok ? 35 : 15, coins: ok ? 20 : 8, codexId: q.id });
+    awardAndNotify({ xp: ok ? 35 : 15, coins: ok ? 20 : 8, codexId: q.id, category: 'logic' });
     renderQ({
       ok,
       picked: val,
@@ -753,7 +775,8 @@ function runNpcChallenge(npc) {
     } else {
       audio.playWrong();
     }
-    awardAndNotify({ xp: ok ? 40 : 15, coins: ok ? 25 : 8, codexId: q.id });
+    const cat = npc.challengeType === 'diction' ? 'diction' : 'logic';
+    awardAndNotify({ xp: ok ? 40 : 15, coins: ok ? 25 : 8, codexId: q.id, category: cat });
     renderQ({
       ok,
       picked: idx,
@@ -1018,7 +1041,7 @@ function runBossStageChallenge(npc) {
     save.stageCompletions += 1;
     const xpGain = 120 + hits * 50;
     const coinGain = 80 + hits * 35;
-    awardAndNotify({ xp: xpGain, coins: coinGain });
+    awardAndNotify({ xp: xpGain, coins: coinGain, category: 'stage' });
     audio.playVictory();
     renderer.spawnBurst(npc.x, npc.y, '#FFD166', 44);
     closeOverlay();
@@ -1239,6 +1262,7 @@ function openCodexModal() {
 function openProfileModal() {
   modalOpen = true;
   audio.playClick();
+  const cls = getCharacterClass(save.characterClass);
   const titleRank = save.completedNpcs.includes('maestro')
     ? 'Archon Lidah Emas'
     : save.solvedGates.length >= 2
@@ -1249,14 +1273,15 @@ function openProfileModal() {
 
   overlayRoot.innerHTML = `
     <div class="modal-backdrop">
-      <div class="altar-card" style="max-width:520px;">
+      <div class="altar-card" style="max-width:540px;">
         <div class="panel-head" style="margin-bottom:14px;">
           <div style="display:flex; align-items:center; gap:14px;">
-            <div class="portrait-box" style="width:68px; height:68px;">${renderCharacterSVG('hero', 'happy')}</div>
+            <div class="portrait-box" style="width:68px; height:68px;">${renderCharacterSVG(cls.portraitKey, 'happy')}</div>
             <div>
-              <div class="title-kicker">KARTU PETUALANG · LV ${save.level}</div>
-              <h2 style="margin:0; font-size:1.45rem;">${escapeHtml(save.playerName)}</h2>
-              <div style="font-size:0.84rem; color:var(--gold); font-weight:700;">Gelar: ${titleRank}</div>
+              <div class="title-kicker">KARTU PETUALANG · LV ${save.level} · ${escapeHtml(cls.name)}</div>
+              <h2 style="margin:0; font-size:1.4rem;">@${escapeHtml(save.username || save.playerName)}</h2>
+              <div style="font-size:0.82rem; color:var(--gold); font-weight:700;">Gelar: ${titleRank}</div>
+              <div style="font-size:0.74rem; color:#8ce9b5; margin-top:2px;">${escapeHtml(cls.bonusLabel)}</div>
             </div>
           </div>
           <button class="rpg-btn ghost" id="btn-close-prof" type="button" style="padding:7px 12px;">Tutup</button>
@@ -1269,9 +1294,10 @@ function openProfileModal() {
           <div class="zone-card unlocked"><h3>${save.openedChests.length}/${CHESTS.length}</h3><p>Peti Harta Dibuka</p></div>
         </div>
 
-        <div style="display:flex; flex-wrap:wrap; gap:10px; justify-content:space-between;">
-          <button class="rpg-btn gold" id="btn-share-profile" type="button">Salin Kartu Petualang</button>
-          <button class="rpg-btn ghost" id="btn-reset-from-prof" type="button">Reset Petualangan</button>
+        <div style="display:flex; flex-wrap:wrap; gap:8px; justify-content:space-between;">
+          <button class="rpg-btn gold" id="btn-share-profile" type="button">Salin Kartu</button>
+          <button class="rpg-btn ghost" id="btn-switch-acc" type="button">Ganti / Buat Akun</button>
+          <button class="rpg-btn ghost" id="btn-reset-from-prof" type="button">Reset Lv. 1</button>
         </div>
       </div>
     </div>
@@ -1281,7 +1307,7 @@ function openProfileModal() {
   document.getElementById('btn-share-profile')?.addEventListener('click', async () => {
     const shareText = [
       `WARKOP IMPACT | Kartu Petualang`,
-      `${save.playerName} (LV ${save.level} · ${titleRank})`,
+      `@${save.username || save.playerName} (${cls.name} · LV ${save.level} · ${titleRank})`,
       `Wilayah: ${save.solvedGates.length + 1}/4 | Segel MTK: ${save.mathSolvedCount} | Codex: ${save.codexIds.length}/${TOTAL_CODEX} | Peti: ${save.openedChests.length}/${CHESTS.length}`
     ].join('\n');
     try {
@@ -1291,13 +1317,16 @@ function openProfileModal() {
       showToast('Gagal menyalin otomatis. Screenshot kartu ini saja!');
     }
   });
-  document.getElementById('btn-reset-from-prof')?.addEventListener('click', () => {
-    save = resetSave(save.playerName);
-    player.x = save.x;
-    player.y = save.y;
-    player.walkTarget = null;
+  document.getElementById('btn-switch-acc')?.addEventListener('click', () => {
     closeOverlay();
-    showToast('Petualangan dimulai ulang dari Desa Warkop Lv. 1!');
+    hudLayer.classList.add('hidden');
+    openAuthFlow('username');
+  });
+  document.getElementById('btn-reset-from-prof')?.addEventListener('click', () => {
+    save = resetCurrentAccount(save);
+    syncPlayerFromSave();
+    closeOverlay();
+    showToast(`Progres @${save.username} dimulai ulang dari Desa Warkop Lv. 1!`);
   });
 }
 
@@ -1391,42 +1420,451 @@ btnToggleSound.addEventListener('click', () => {
   if (!save.muted) audio.playClick();
 });
 
-// Title Overlay Boot
-const nameInput = document.getElementById('input-player-name');
-const btnStart = document.getElementById('btn-start-adventure');
-const btnReset = document.getElementById('btn-reset-adventure');
+// ==========================================
+// 3-STEP ACCOUNT CREATION & GATEKEEPER EXAM
+// ==========================================
 
-if (save.started) {
-  nameInput.value = save.playerName || 'Petualang';
-  btnStart.textContent = `Lanjutkan Petualangan (Lv. ${save.level})`;
-  btnReset.classList.remove('hidden');
+const auth = {
+  step: 'username', // username | exam | rejected | approved | character
+  pendingUsername: '',
+  errorMsg: '',
+  examQuestions: [],
+  examIdx: 0,
+  examTimeLeft: 20,
+  examTimerId: null,
+  examPassed: false,
+  rejectReason: '',
+  rejectRoast: '',
+  cooldownLeft: 0,
+  cooldownTimerId: null,
+  selectedClass: 'orator'
+};
+
+function clearAuthTimers() {
+  if (auth.examTimerId) {
+    clearInterval(auth.examTimerId);
+    auth.examTimerId = null;
+  }
+  if (auth.cooldownTimerId) {
+    clearInterval(auth.cooldownTimerId);
+    auth.cooldownTimerId = null;
+  }
 }
 
-btnStart.addEventListener('click', () => {
-  save.playerName = (nameInput.value || 'Petualang').trim().slice(0, 16) || 'Petualang';
-  save.started = true;
-  persistSave(save);
-  titleOverlay.classList.add('hidden');
-  hudLayer.classList.remove('hidden');
-  audio.playWaypoint();
-  refreshHud();
-  const z = getZoneAt(player.x, player.y);
-  showZoneBanner(z.subtitle, z.name);
-  sayCiko(`Halo ${save.playerName}! Ayo temui Bang Jaja!`, 4.8);
-});
-
-btnReset.addEventListener('click', () => {
-  const nm = (nameInput.value || 'Petualang').trim().slice(0, 16) || 'Petualang';
-  save = resetSave(nm);
+function syncPlayerFromSave() {
   player.x = save.x;
   player.y = save.y;
+  player.facing = save.facing || 'down';
+  player.characterClass = save.characterClass || 'orator';
+  player.walkTarget = null;
+  ciko.x = player.x - 30;
+  ciko.y = player.y - 22;
+  currentZoneId = getZoneAt(player.x, player.y).id;
+  audio.setMuted(save.muted);
+  refreshHud();
+}
+
+function enterWorldWithAccount(account, isBrandNew = false) {
+  clearAuthTimers();
+  save = account;
+  syncPlayerFromSave();
   titleOverlay.classList.add('hidden');
   hudLayer.classList.remove('hidden');
   audio.playWaypoint();
-  refreshHud();
-  showZoneBanner('PETUALANGAN BARU', 'Desa Warkop');
-  sayCiko('Mulai segar dari Level 1! Ayo ke gerobak Bang Jaja!', 4.5);
-});
+  const cls = getCharacterClass(save.characterClass);
+  const z = getZoneAt(player.x, player.y);
+  showZoneBanner(isBrandNew ? `AKUN RESMI · ${cls.name.toUpperCase()}` : z.subtitle, isBrandNew ? `@${save.username} Masuk Dunia!` : z.name);
+  sayCiko(
+    isBrandNew
+      ? `Selamat datang @${save.username} sang ${cls.name}! Ayo temui Bang Jaja!`
+      : `Halo lagi @${save.username}! Lanjutkan petualangan kita!`,
+    4.8
+  );
+}
+
+function openAuthFlow(startStep = 'username') {
+  clearAuthTimers();
+  auth.step = startStep;
+  auth.errorMsg = '';
+  auth.examPassed = false;
+  titleOverlay.classList.remove('hidden');
+  renderAuthCard();
+}
+
+function renderStepper(currentNum) {
+  const steps = [
+    [1, '1. Username'],
+    [2, '2. Ujian Masuk'],
+    [3, '3. Pilih Karakter']
+  ];
+  return `
+    <div class="auth-stepper">
+      ${steps
+        .map(([n, label]) => {
+          const cls = n < currentNum ? 'done' : n === currentNum ? 'active' : '';
+          return `<span class="step-pill ${cls}">${label}</span>`;
+        })
+        .join('')}
+    </div>
+  `;
+}
+
+function renderAuthCard() {
+  if (auth.step === 'username') {
+    const savedList = listSavedAccounts();
+    authCardRoot.innerHTML = `
+      ${renderStepper(1)}
+      <div class="title-kicker">LOKET PENDAFTARAN WARGA WARKOP</div>
+      <h1 class="title-logo">WARKOP IMPACT</h1>
+      <p class="title-desc">
+        Buat <strong>username</strong> dulu, lalu taklukkan <strong>3 tantangan ujian masuk</strong> dari Bang Jaja untuk bisa memilih karakter dan masuk ke dunia RPG. Gagal satu soal saja, akunmu langsung ditolak!
+      </p>
+
+      <div class="title-form" style="max-width:400px;">
+        <label class="title-label" for="input-username">Buat Username Baru (3 sampai 16 karakter)</label>
+        <div class="username-row">
+          <div class="username-wrap">
+            <span class="username-at">@</span>
+            <input
+              id="input-username"
+              class="rpg-input"
+              type="text"
+              maxlength="16"
+              autocomplete="off"
+              placeholder="contoh: orator_kopi"
+              value="${escapeHtml(auth.pendingUsername)}"
+            />
+          </div>
+          <button class="rpg-btn ghost" id="btn-random-user" type="button" style="padding:11px 14px; font-size:0.82rem;">Acak</button>
+        </div>
+        <p class="auth-error" id="auth-error-msg">${escapeHtml(auth.errorMsg)}</p>
+      </div>
+
+      <div class="title-actions">
+        <button class="rpg-btn primary" id="btn-start-exam" type="button">Ikuti Ujian Masuk Akun (3 Tes)</button>
+      </div>
+
+      ${
+        savedList.length > 0
+          ? `
+        <div class="saved-accounts-box">
+          <div class="title-label" style="margin-bottom:2px;">Sudah lulus ujian sebelumnya? Langsung masuk:</div>
+          <div class="saved-accounts-list">
+            ${savedList
+              .map((acc) => {
+                const c = getCharacterClass(acc.characterClass);
+                return `
+                  <button class="account-chip" data-login-user="${escapeHtml(acc.username)}" type="button">
+                    <span>@${escapeHtml(acc.username)}</span>
+                    <span style="color:var(--gold);">LV ${acc.level}</span>
+                    <span style="color:var(--muted); font-weight:600;">${escapeHtml(c.name)}</span>
+                  </button>
+                `;
+              })
+              .join('')}
+          </div>
+        </div>
+      `
+          : `
+        <div class="title-mini-feats">
+          <span>3 Tes Kilat (Bahasa, Hitung, Wawasan)</span>
+          <span>Salah 1 = Akun Ditolak</span>
+          <span>4 Jenis Karakter RPG Unik</span>
+        </div>
+      `
+      }
+    `;
+
+    const inp = document.getElementById('input-username');
+    inp?.addEventListener('input', (e) => {
+      auth.pendingUsername = e.target.value;
+      auth.errorMsg = '';
+      const err = document.getElementById('auth-error-msg');
+      if (err) err.textContent = '';
+    });
+    inp?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') proceedToExam();
+    });
+
+    document.getElementById('btn-random-user')?.addEventListener('click', () => {
+      audio.playClick();
+      const existing = listSavedAccounts().map((a) => a.username.toLowerCase());
+      const available = FUNNY_USERNAMES.filter((u) => !existing.includes(u.toLowerCase()));
+      const pick = available.length
+        ? available[Math.floor(Math.random() * available.length)]
+        : `warga_${Math.floor(100 + Math.random() * 899)}`;
+      auth.pendingUsername = pick;
+      auth.errorMsg = '';
+      renderAuthCard();
+    });
+
+    document.getElementById('btn-start-exam')?.addEventListener('click', proceedToExam);
+
+    document.querySelectorAll('[data-login-user]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const acc = switchAccount(btn.dataset.loginUser);
+        if (acc) enterWorldWithAccount(acc, false);
+      });
+    });
+    return;
+  }
+
+  if (auth.step === 'exam') {
+    const q = auth.examQuestions[auth.examIdx];
+    const pct = Math.max(0, Math.round((auth.examTimeLeft / 20) * 100));
+    authCardRoot.innerHTML = `
+      ${renderStepper(2)}
+      <div class="exam-head">
+        <div class="portrait-box" style="width:68px; height:68px;">${renderCharacterSVG('jaja', 'idle')}</div>
+        <div style="flex:1;">
+          <div class="title-kicker" style="margin-bottom:2px;">UJIAN KELAYAKAN AKUN · @${escapeHtml(auth.pendingUsername)}</div>
+          <div style="font-weight:800; font-size:0.95rem; color:var(--paper);">
+            ${escapeHtml(q.tag)} · <span id="exam-timer-txt" style="color:var(--gold);">${auth.examTimeLeft} dtk</span>
+          </div>
+          <div style="font-size:0.78rem; color:var(--muted);">Aturan loket: jawab benar 3 kali beruntun. Salah 1 langsung gagal bikin akun!</div>
+        </div>
+      </div>
+
+      <div class="exam-timer-track">
+        <div class="exam-timer-fill ${auth.examTimeLeft <= 5 ? 'urgent' : ''}" id="exam-timer-fill" style="width:${pct}%"></div>
+      </div>
+
+      <div class="math-q-box" style="text-align:left;">
+        <p class="math-q-text" style="font-size:1.02rem;">${escapeHtml(q.q)}</p>
+      </div>
+
+      <div class="choice-grid">
+        ${q.options
+          .map(
+            (opt, idx) => `
+          <button class="rpg-choice" data-exam-opt="${idx}" type="button">
+            <span class="choice-badge">${['A', 'B', 'C', 'D'][idx]}</span>
+            <span>${escapeHtml(opt.label)}</span>
+          </button>
+        `
+          )
+          .join('')}
+      </div>
+    `;
+
+    document.querySelectorAll('[data-exam-opt]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const idx = Number(btn.dataset.examOpt);
+        handleExamAnswer(idx);
+      });
+    });
+    return;
+  }
+
+  if (auth.step === 'rejected') {
+    const waitLocked = auth.cooldownLeft > 0;
+    authCardRoot.innerHTML = `
+      ${renderStepper(2)}
+      <div style="display:flex; justify-content:center; margin-bottom:6px;">
+        <div class="portrait-box" style="width:76px; height:76px;">${renderCharacterSVG('jaja', 'smug')}</div>
+      </div>
+      <div class="stamp-banner rejected">AKUN DITOLAK!</div>
+      <p style="margin:0 0 12px; font-size:0.94rem; color:var(--paper); font-weight:700;">
+        Username <span style="color:var(--gold);">@${escapeHtml(auth.pendingUsername)}</span> gagal lolos ujian masuk!
+      </p>
+      <div class="insight-box" style="text-align:left; margin-top:0; margin-bottom:16px;">
+        <p><strong>Kata Bang Jaja:</strong> "${escapeHtml(auth.rejectRoast)}"</p>
+        <p>${escapeHtml(auth.rejectReason)}</p>
+      </div>
+      <div class="title-actions" style="margin-bottom:4px;">
+        <button class="rpg-btn primary" id="btn-retry-exam" type="button" ${waitLocked ? 'disabled style="opacity:0.55; cursor:not-allowed;"' : ''}>
+          ${waitLocked ? `Tunggu ${auth.cooldownLeft} dtk untuk Daftar Ulang` : 'Coba Ujian Masuk Lagi (Soal Baru)'}
+        </button>
+        <button class="rpg-btn ghost" id="btn-back-username" type="button">Ganti Username</button>
+      </div>
+    `;
+
+    document.getElementById('btn-retry-exam')?.addEventListener('click', () => {
+      if (auth.cooldownLeft > 0) return;
+      startGatekeeperExam();
+    });
+    document.getElementById('btn-back-username')?.addEventListener('click', () => {
+      clearAuthTimers();
+      auth.step = 'username';
+      auth.errorMsg = '';
+      renderAuthCard();
+    });
+    return;
+  }
+
+  if (auth.step === 'approved') {
+    authCardRoot.innerHTML = `
+      ${renderStepper(2)}
+      <div style="display:flex; justify-content:center; margin-bottom:6px;">
+        <div class="portrait-box" style="width:80px; height:80px;">${renderCharacterSVG('ciko', 'happy')}</div>
+      </div>
+      <div class="stamp-banner approved">AKUN DISETUJUI!</div>
+      <p style="margin:0 0 18px; font-size:0.98rem; color:var(--paper);">
+        Gacor! <strong>@${escapeHtml(auth.pendingUsername)}</strong> lolos 3/3 tes loket tanpa cacat. Sekarang pilih jenis karakter yang paling cocok dengan gaya mainmu!
+      </p>
+      <button class="rpg-btn gold" id="btn-go-character" type="button">Lanjut Pilih Jenis Karakter</button>
+    `;
+
+    document.getElementById('btn-go-character')?.addEventListener('click', () => {
+      audio.playClick();
+      auth.step = 'character';
+      renderAuthCard();
+    });
+    return;
+  }
+
+  if (auth.step === 'character') {
+    if (!auth.examPassed) {
+      auth.step = 'username';
+      renderAuthCard();
+      return;
+    }
+
+    const pickedCls = getCharacterClass(auth.selectedClass);
+    authCardRoot.innerHTML = `
+      ${renderStepper(3)}
+      <div class="title-kicker">PILIH JENIS KARAKTER · @${escapeHtml(auth.pendingUsername)}</div>
+      <h2 style="margin:0 0 6px; font-family:var(--font-display); font-size:1.65rem; color:var(--paper);">
+        Mau Jadi Tipe Petualang Apa?
+      </h2>
+      <p style="margin:0; font-size:0.86rem; color:var(--muted);">
+        Kostum, tampilan di peta 2D, dan bonus petualanganmu langsung mengikuti karakter yang kamu pilih.
+      </p>
+
+      <div class="char-pick-grid">
+        ${CHARACTER_CLASSES.map(
+          (c) => `
+          <button class="char-pick-card ${auth.selectedClass === c.id ? 'selected' : ''}" data-pick-cls="${c.id}" type="button">
+            <div class="char-pick-portrait">${renderCharacterSVG(c.portraitKey, auth.selectedClass === c.id ? 'happy' : 'idle')}</div>
+            <div>
+              <div class="char-pick-name">${escapeHtml(c.name)}</div>
+              <div class="char-pick-vibe">${escapeHtml(c.vibe)}</div>
+              <div class="char-pick-bonus">${escapeHtml(c.bonusLabel)}</div>
+            </div>
+          </button>
+        `
+        ).join('')}
+      </div>
+
+      <div class="title-actions" style="margin-bottom:0;">
+        <button class="rpg-btn primary" id="btn-confirm-create" type="button">
+          Resmikan @${escapeHtml(auth.pendingUsername)} (${escapeHtml(pickedCls.name)})
+        </button>
+      </div>
+    `;
+
+    document.querySelectorAll('[data-pick-cls]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        audio.playClick();
+        auth.selectedClass = btn.dataset.pickCls;
+        // Pratinjau langsung di kanvas dunia di belakang layar!
+        player.characterClass = auth.selectedClass;
+        renderAuthCard();
+      });
+    });
+
+    document.getElementById('btn-confirm-create')?.addEventListener('click', () => {
+      const created = registerAccount(auth.pendingUsername, auth.selectedClass);
+      enterWorldWithAccount(created, true);
+    });
+  }
+}
+
+function proceedToExam() {
+  const existing = listSavedAccounts().map((a) => a.username);
+  const check = validateUsername(auth.pendingUsername, existing);
+  if (!check.ok) {
+    auth.errorMsg = check.error;
+    audio.playWrong();
+    renderAuthCard();
+    return;
+  }
+  auth.pendingUsername = check.username;
+  auth.errorMsg = '';
+  startGatekeeperExam();
+}
+
+function startGatekeeperExam() {
+  clearAuthTimers();
+  audio.playDialogueOpen();
+  auth.examQuestions = buildRegistrationExam();
+  auth.examIdx = 0;
+  auth.examPassed = false;
+  auth.step = 'exam';
+  startExamQuestionTimer();
+  renderAuthCard();
+}
+
+function startExamQuestionTimer() {
+  clearAuthTimers();
+  auth.examTimeLeft = 20;
+  auth.examTimerId = setInterval(() => {
+    auth.examTimeLeft = Math.max(0, auth.examTimeLeft - 1);
+    const fill = document.getElementById('exam-timer-fill');
+    const txt = document.getElementById('exam-timer-txt');
+    if (fill) {
+      fill.style.width = `${(auth.examTimeLeft / 20) * 100}%`;
+      fill.classList.toggle('urgent', auth.examTimeLeft <= 5);
+    }
+    if (txt) txt.textContent = `${auth.examTimeLeft} dtk`;
+    if (auth.examTimeLeft <= 0) {
+      const q = auth.examQuestions[auth.examIdx];
+      failRegistrationExam(`Waktu habis sebelum kamu menjawab! Penjelasan: ${q ? q.explain : ''}`);
+    }
+  }, 1000);
+}
+
+function handleExamAnswer(optIdx) {
+  const q = auth.examQuestions[auth.examIdx];
+  if (!q) return;
+  const chosen = q.options[optIdx];
+
+  if (chosen && chosen.ok) {
+    audio.playCorrect();
+    if (auth.examIdx < auth.examQuestions.length - 1) {
+      auth.examIdx += 1;
+      startExamQuestionTimer();
+      renderAuthCard();
+    } else {
+      clearAuthTimers();
+      auth.examPassed = true;
+      auth.step = 'approved';
+      audio.playVictory();
+      renderAuthCard();
+    }
+  } else {
+    failRegistrationExam(`Jawaban kurang tepat! ${q.explain}`);
+  }
+}
+
+function failRegistrationExam(reason) {
+  clearAuthTimers();
+  audio.playWrong();
+  auth.examPassed = false;
+  auth.step = 'rejected';
+  auth.rejectReason = reason;
+  auth.rejectRoast = REJECT_ROASTS[Math.floor(Math.random() * REJECT_ROASTS.length)];
+  auth.cooldownLeft = 5;
+  renderAuthCard();
+
+  auth.cooldownTimerId = setInterval(() => {
+    auth.cooldownLeft = Math.max(0, auth.cooldownLeft - 1);
+    const btn = document.getElementById('btn-retry-exam');
+    if (btn) {
+      if (auth.cooldownLeft > 0) {
+        btn.textContent = `Tunggu ${auth.cooldownLeft} dtk untuk Daftar Ulang`;
+      } else {
+        btn.disabled = false;
+        btn.removeAttribute('style');
+        btn.textContent = 'Coba Ujian Masuk Lagi (Soal Baru)';
+      }
+    }
+    if (auth.cooldownLeft <= 0) {
+      clearInterval(auth.cooldownTimerId);
+      auth.cooldownTimerId = null;
+    }
+  }, 1000);
+}
 
 // ==========================================
 // MAIN 60FPS GAME LOOP
@@ -1498,7 +1936,9 @@ function updateWorld(dt) {
       player.facing = ny > 0 ? 'down' : 'up';
     }
 
-    const speed = player.sprinting ? 290 : 195;
+    const cls = getCharacterClass(save.characterClass);
+    const baseSpeed = player.sprinting ? 290 : 195;
+    const speed = baseSpeed * (cls.speedMult || 1);
     const nextX = player.x + nx * speed * dt;
     const nextY = player.y + ny * speed * dt;
 
@@ -1575,5 +2015,6 @@ function updateWorld(dt) {
   }
 }
 
+openAuthFlow('username');
 refreshHud();
 requestAnimationFrame(tick);

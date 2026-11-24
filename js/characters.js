@@ -3,12 +3,48 @@
 export const CAST = {
   hero: {
     name: 'Petualang',
-    role: 'Calon Archon Lidah Emas',
+    role: 'Orator Api',
     skin: '#E0AC84',
     shirt: '#E64A19',
     accent: '#FFD166',
     hair: '#241B17',
     prop: 'scarf'
+  },
+  hero_orator: {
+    name: 'Orator Api',
+    role: 'Panggung & Kelincahan',
+    skin: '#E0AC84',
+    shirt: '#E64A19',
+    accent: '#FFD166',
+    hair: '#241B17',
+    prop: 'scarf'
+  },
+  hero_pujangga: {
+    name: 'Pujangga Senja',
+    role: 'Diksi & Bahasa',
+    skin: '#E4B38E',
+    shirt: '#7A2E4B',
+    accent: '#F5C451',
+    hair: '#2B1F22',
+    prop: 'hero_beret'
+  },
+  hero_detektif: {
+    name: 'Detektif Logika',
+    role: 'Fakta & Anti-Hoaks',
+    skin: '#D69E72',
+    shirt: '#6B4E31',
+    accent: '#48DBFB',
+    hair: '#1E1B18',
+    prop: 'hero_fedora'
+  },
+  hero_alkemis: {
+    name: 'Alkemis Angka',
+    role: 'Segel Matematika',
+    skin: '#DDA67D',
+    shirt: '#1E6B5C',
+    accent: '#FFD166',
+    hair: '#231D1A',
+    prop: 'hero_goggles'
   },
   ciko: {
     name: 'Ciko',
@@ -165,6 +201,29 @@ export function renderCharacterSVG(key, mood = 'idle') {
     accessory = `
       <path d="M33 44 C34 18, 86 18, 87 44 C78 33, 42 33, 33 44 Z" fill="${c.hair}"/>
       <path d="M36 90 Q60 98 84 90 L80 104 Q60 110 40 104 Z" fill="#FFD166"/>
+    `;
+  } else if (c.prop === 'hero_beret') {
+    accessory = `
+      <path d="M30 40 C28 19, 82 14, 92 36 C78 35, 42 36, 30 40 Z" fill="#4A172B"/>
+      <path d="M58 20 L62 13" stroke="#F5C451" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="48" cy="54" r="7.5" fill="none" stroke="#F5C451" stroke-width="2.2"/>
+      <circle cx="72" cy="54" r="7.5" fill="none" stroke="#F5C451" stroke-width="2.2"/>
+      <line x1="55.5" y1="54" x2="64.5" y2="54" stroke="#F5C451" stroke-width="2.2"/>
+    `;
+  } else if (c.prop === 'hero_fedora') {
+    accessory = `
+      <ellipse cx="60" cy="36" rx="33" ry="6" fill="#3D2B1B"/>
+      <path d="M38 36 L43 17 Q60 13 77 17 L82 36 Z" fill="#4D3623"/>
+      <rect x="40" y="30" width="40" height="4.5" fill="#48DBFB"/>
+      <path d="M38 90 Q60 97 82 90 L78 103 Q60 108 42 103 Z" fill="#48DBFB"/>
+    `;
+  } else if (c.prop === 'hero_goggles') {
+    accessory = `
+      <path d="M33 44 C34 18, 86 18, 87 44 C78 33, 42 33, 33 44 Z" fill="${c.hair}"/>
+      <rect x="36" y="30" width="48" height="7" rx="3.5" fill="#2A2420"/>
+      <circle cx="48" cy="34" r="8" fill="#48DBFB" stroke="#FFD166" stroke-width="2.6"/>
+      <circle cx="72" cy="34" r="8" fill="#48DBFB" stroke="#FFD166" stroke-width="2.6"/>
+      <line x1="56" y1="34" x2="64" y2="34" stroke="#FFD166" stroke-width="2.6"/>
     `;
   } else if (c.prop === 'peci') {
     accessory = `
