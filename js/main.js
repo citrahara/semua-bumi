@@ -3,6 +3,15 @@ import { DICTION_BANK } from './data/diction.js';
 import { FALLACIES_BANK } from './data/fallacies.js';
 import { STAGE_PROMPTS } from './data/stage.js';
 import { generateMathQuestion, GATE_META } from './data/math.js';
+import { ENEMIES } from './data/enemies.js';
+import { CYBER_LAB } from './data/academy.js';
+import { launchCyberCombat } from './combat.js';
+import {
+  openKoreanAcademy,
+  openPolyglotAcademy,
+  openRhetoricAcademy,
+  openCyberLab
+} from './academy_ui.js';
 import {
   CHARACTER_CLASSES,
   FUNNY_USERNAMES,
@@ -37,7 +46,19 @@ import {
   grantRewards
 } from './storage.js';
 
-const TOTAL_CODEX = FACTS_BANK.length + DICTION_BANK.length + FALLACIES_BANK.length;
+const TOTAL_CODEX =
+  FACTS_BANK.length +
+  DICTION_BANK.length +
+  FALLACIES_BANK.length +
+  CYBER_LAB.breakthroughs.length;
+
+const enemyRuntime = ENEMIES.map((e, i) => ({
+  ...e,
+  curX: e.x,
+  curY: e.y,
+  phase: i * 1.3
+}));
+let enemyBumpCooldown = 0;
 
 // DOM Refs
 const worldCanvas = document.getElementById('world-canvas');
@@ -228,13 +249,30 @@ function findNearestInteractable() {
     const d = Math.hypot(npc.x - player.x, npc.y - player.y);
     if (d < bestDist) {
       bestDist = d;
+      const isAc = npc.challengeType.startsWith('academy_');
       best = {
         kind: 'npc',
         id: npc.id,
         x: npc.x,
         y: npc.y,
-        label: `Bicara dengan ${CAST[npc.id].name}`,
+        label: isAc ? `Masuk Ruang Belajar: ${CAST[npc.id].name}` : `Bicara dengan ${CAST[npc.id].name}`,
         data: npc
+      };
+    }
+  }
+
+  for (const en of enemyRuntime) {
+    const d = Math.hypot(en.curX - player.x, en.curY - player.y);
+    if (d < bestDist + 6) {
+      bestDist = d;
+      const defeated = (save.defeatedEnemies || []).includes(en.id);
+      best = {
+        kind: 'enemy',
+        id: en.id,
+        x: en.curX,
+        y: en.curY,
+        label: defeated ? `Latih Ulang Duel: ${en.name}` : `Lawan ${en.name} (Attack & Defense!)`,
+        data: en
       };
     }
   }
@@ -304,9 +342,71 @@ function triggerNearestInteraction() {
     handleOpenChest(item.data);
   } else if (item.kind === 'gate') {
     openMathSealModal(item.data);
+  } else if (item.kind === 'enemy') {
+    startEnemyCombat(item.data);
   } else if (item.kind === 'npc') {
     openNpcDialogue(item.data);
   }
+}
+
+function startEnemyCombat(enemy) {
+  if (modalOpen) return;
+  modalOpen = true;
+  player.walkTarget = null;
+  audio.playDialogueOpen();
+  launchCyberCombat({
+    overlayRoot,
+    save,
+    enemy,
+    onVictory: () => {
+      if (!save.defeatedEnemies) save.defeatedEnemies = [];
+      const firstKill = !save.defeatedEnemies.includes(enemy.id);
+      if (firstKill) save.defeatedEnemies.push(enemy.id);
+      awardAndNotify({
+        xp: firstKill ? enemy.xpReward : Math.round(enemy.xpReward * 0.5),
+        coins: firstKill ? enemy.coinReward : Math.round(enemy.coinReward * 0.5),
+        codexId: enemy.intelId,
+        category: 'logic'
+      });
+      renderer.spawnBurst(enemy.curX, enemy.curY, '#48DBFB', 36);
+      enemyBumpCooldown = 4.0;
+      closeOverlay();
+      showZoneBanner('DUEL SIBER MENANG!', `${enemy.name} Berhasil Dilumpuhkan!`);
+      sayCiko('Gacor! Pertahanan & seranganmu makin tajam!', 4);
+    },
+    onDefeat: () => {
+      // Tarik mundur ke Waypoint terdekat di zona saat ini
+      const z = getZoneAt(player.x, player.y);
+      const wp = WAYPOINTS.find((w) => w.zone === z.id) || WAYPOINTS[0];
+      player.x = wp.x;
+      player.y = wp.y + 34;
+      enemyBumpCooldown = 4.0;
+      closeOverlay();
+      showToast(`Ciko menarikmu kembali ke ${wp.name} dengan HP penuh!`);
+    },
+    onFlee: () => {
+      enemyBumpCooldown = 4.0;
+      closeOverlay();
+      showToast('Kamu mundur strategis dari duel siber.');
+    }
+  });
+}
+
+function handleAcademyComplete({ academyId, badgeName, npcId, xp, coins }) {
+  if (!save.academyBadges) save.academyBadges = [];
+  const firstTime = !save.academyBadges.includes(academyId);
+  if (firstTime) save.academyBadges.push(academyId);
+  if (npcId && !save.completedNpcs.includes(npcId)) save.completedNpcs.push(npcId);
+  awardAndNotify({
+    xp: firstTime ? xp : Math.round(xp * 0.4),
+    coins: firstTime ? coins : Math.round(coins * 0.4),
+    category: academyId === 'academy-cyber' ? 'math' : 'diction'
+  });
+  audio.playVictory();
+  renderer.spawnBurst(player.x, player.y, '#FFD166', 32);
+  closeOverlay();
+  showZoneBanner(firstTime ? `LENCANA DIRAIH: ${badgeName.toUpperCase()}` : 'LATIHAN SELESAI!', `Ilmu baru berhasil dikuasai (+${firstTime ? xp : Math.round(xp * 0.4)} XP)`);
+  sayCiko(`Keren! ${badgeName} sekarang terpajang di profilmu!`, 4.4);
 }
 
 // ==========================================
@@ -518,8 +618,8 @@ function openNpcDialogue(npc) {
   const info = CAST[npc.id];
   const alreadyDone = save.completedNpcs.includes(npc.id);
 
-  // Bang Jaja adalah pemberi quest cerita
-  if (npc.challengeType === 'story') {
+  // Bang Jaja & Insinyur Bima adalah pemberi quest cerita
+  if (npc.challengeType === 'story' || npc.challengeType === 'story_iiv') {
     const lines = alreadyDone ? npc.repeatLines : npc.introLines;
     let lineIdx = 0;
 
@@ -555,16 +655,47 @@ function openNpcDialogue(npc) {
           lineIdx += 1;
           renderStory();
         } else {
-          if (!save.completedNpcs.includes('jaja')) {
-            save.completedNpcs.push('jaja');
-            awardAndNotify({ xp: 40, coins: 20 });
+          if (!save.completedNpcs.includes(npc.id)) {
+            save.completedNpcs.push(npc.id);
+            awardAndNotify({ xp: 45, coins: 25 });
           }
           closeOverlay();
-          sayCiko('Ikuti panah emas menuju Kang Deden di utara!', 4.5);
+          const q = getActiveMainQuest(save);
+          sayCiko(q.target ? `Ayo arahkan ke ${q.target.label}!` : 'Ayo jelajahi seluruh dunia Warkop!', 4.5);
         }
       });
     }
     renderStory();
+    return;
+  }
+
+  // Ruang Belajar Interaktif (Akademi Bahasa Korea, Poliglot, Retorika, dan Radar Siber /berita-terkini!)
+  if (npc.challengeType === 'academy_korean') {
+    openKoreanAcademy({ overlayRoot, save, onComplete: handleAcademyComplete, onClose: closeOverlay });
+    return;
+  }
+  if (npc.challengeType === 'academy_polyglot') {
+    openPolyglotAcademy({ overlayRoot, save, onComplete: handleAcademyComplete, onClose: closeOverlay });
+    return;
+  }
+  if (npc.challengeType === 'academy_rhetoric') {
+    openRhetoricAcademy({ overlayRoot, save, onComplete: handleAcademyComplete, onClose: closeOverlay });
+    return;
+  }
+  if (npc.challengeType === 'academy_cyber') {
+    openCyberLab({
+      overlayRoot,
+      save,
+      onUnlockIntel: (intelId) => {
+        if (!save.codexIds.includes(intelId)) {
+          save.codexIds.push(intelId);
+          persistSave(save);
+          refreshHud();
+        }
+      },
+      onComplete: handleAcademyComplete,
+      onClose: closeOverlay
+    });
     return;
   }
 
@@ -1096,7 +1227,7 @@ function openWorldMapModal() {
         </div>
         <div class="zone-map-grid">${cards}</div>
         <p style="margin:0; font-size:0.84rem; color:var(--muted);">
-          Progres Segel Matematika: ${save.solvedGates.length}/3 gerbang terbuka · Total soal matematika dipecahkan: ${save.mathSolvedCount}.
+          Segel Matematika: ${save.solvedGates.length}/5 gerbang terbuka · Ancaman Siber dilumpuhkan: ${(save.defeatedEnemies || []).length}/${ENEMIES.length} · Lencana Akademi: ${(save.academyBadges || []).length}/4.
         </p>
       </div>
     </div>
@@ -1125,6 +1256,15 @@ function openWorldMapModal() {
 
 function getAllCodexEntries() {
   return [
+    ...CYBER_LAB.breakthroughs.map((cb) => ({
+      id: cb.id,
+      group: 'cyber',
+      groupLabel: `Siber · ${cb.category}`,
+      title: cb.title,
+      summary: cb.summary,
+      detail: cb.whyMatters,
+      example: cb.speakHook
+    })),
     ...DICTION_BANK.map((d) => ({
       id: d.id,
       group: 'diction',
@@ -1189,6 +1329,7 @@ function openCodexModal() {
           <div class="codex-bar">
             ${[
               ['all', 'Semua'],
+              ['cyber', 'Terobosan Siber'],
               ['fact', 'Fakta Gacor'],
               ['diction', 'Diksi Keren'],
               ['fallacy', 'Sesat Pikir']
@@ -1288,10 +1429,10 @@ function openProfileModal() {
         </div>
 
         <div class="zone-map-grid" style="margin-bottom:16px;">
-          <div class="zone-card unlocked"><h3>${save.solvedGates.length + 1}/4</h3><p>Wilayah Terbuka</p></div>
-          <div class="zone-card unlocked"><h3>${save.mathSolvedCount}</h3><p>Rune Matematika Pecah</p></div>
-          <div class="zone-card unlocked"><h3>${save.codexIds.length}/${TOTAL_CODEX}</h3><p>Codex Wawasan & Diksi</p></div>
-          <div class="zone-card unlocked"><h3>${save.openedChests.length}/${CHESTS.length}</h3><p>Peti Harta Dibuka</p></div>
+          <div class="zone-card unlocked"><h3>${save.solvedGates.length + 1}/6</h3><p>Wilayah Terbuka</p></div>
+          <div class="zone-card unlocked"><h3>${(save.defeatedEnemies || []).length}/${ENEMIES.length}</h3><p>Musuh Siber Kalah</p></div>
+          <div class="zone-card unlocked"><h3>${(save.academyBadges || []).length}/4</h3><p>Lencana Akademi</p></div>
+          <div class="zone-card unlocked"><h3>${save.codexIds.length}/${TOTAL_CODEX}</h3><p>Codex & Intel Siber</p></div>
         </div>
 
         <div style="display:flex; flex-wrap:wrap; gap:8px; justify-content:space-between;">
@@ -1308,7 +1449,7 @@ function openProfileModal() {
     const shareText = [
       `WARKOP IMPACT | Kartu Petualang`,
       `@${save.username || save.playerName} (${cls.name} · LV ${save.level} · ${titleRank})`,
-      `Wilayah: ${save.solvedGates.length + 1}/4 | Segel MTK: ${save.mathSolvedCount} | Codex: ${save.codexIds.length}/${TOTAL_CODEX} | Peti: ${save.openedChests.length}/${CHESTS.length}`
+      `Wilayah: ${save.solvedGates.length + 1}/6 | Segel MTK: ${save.mathSolvedCount} | Siber: ${(save.defeatedEnemies || []).length}/${ENEMIES.length} | Lencana: ${(save.academyBadges || []).length}/4 | Codex: ${save.codexIds.length}/${TOTAL_CODEX}`
     ].join('\n');
     try {
       await navigator.clipboard.writeText(shareText);
@@ -1886,7 +2027,8 @@ function tick(ts) {
     ciko,
     save,
     activeQuest,
-    nearestInteract
+    nearestInteract,
+    enemies: enemyRuntime
   });
 
   requestAnimationFrame(tick);
@@ -1895,8 +2037,26 @@ function tick(ts) {
 function updateWorld(dt) {
   if (ciko.bubbleTimer > 0) ciko.bubbleTimer -= dt;
   if (gateBumpCooldown > 0) gateBumpCooldown -= dt;
+  if (enemyBumpCooldown > 0) enemyBumpCooldown -= dt;
+
+  // Gerakkan musuh patroli secara halus di jalur orbit masing-masing
+  const nowSec = performance.now() / 1000;
+  for (const en of enemyRuntime) {
+    const r = en.patrolRadius || 55;
+    en.curX = en.x + Math.cos(nowSec * 0.9 + en.phase) * r * 0.65;
+    en.curY = en.y + Math.sin(nowSec * 1.1 + en.phase) * r * 0.45;
+  }
 
   const canMove = !modalOpen && titleOverlay.classList.contains('hidden');
+  if (canMove && enemyBumpCooldown <= 0) {
+    for (const en of enemyRuntime) {
+      if ((save.defeatedEnemies || []).includes(en.id)) continue;
+      if (Math.hypot(en.curX - player.x, en.curY - player.y) < 34) {
+        startEnemyCombat(en);
+        return;
+      }
+    }
+  }
   let vx = 0;
   let vy = 0;
 

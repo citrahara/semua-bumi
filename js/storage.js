@@ -19,6 +19,8 @@ export function createFreshAccount(username, characterClass = 'orator') {
     openedChests: [],
     unlockedWaypoints: ['wp-1'],
     codexIds: [],
+    defeatedEnemies: [],
+    academyBadges: [],
     mathSolvedCount: 0,
     stageCompletions: 0,
     muted: false,
@@ -103,7 +105,9 @@ function normalizeAccount(acc) {
     completedNpcs: Array.isArray(acc.completedNpcs) ? acc.completedNpcs : [],
     openedChests: Array.isArray(acc.openedChests) ? acc.openedChests : [],
     unlockedWaypoints: Array.isArray(acc.unlockedWaypoints) ? acc.unlockedWaypoints : ['wp-1'],
-    codexIds: Array.isArray(acc.codexIds) ? acc.codexIds : []
+    codexIds: Array.isArray(acc.codexIds) ? acc.codexIds : [],
+    defeatedEnemies: Array.isArray(acc.defeatedEnemies) ? acc.defeatedEnemies : [],
+    academyBadges: Array.isArray(acc.academyBadges) ? acc.academyBadges : []
   };
 }
 

@@ -126,6 +126,42 @@ export const CAST = {
     accent: '#FFD166',
     hair: '#1C1621',
     prop: 'maestro_hat'
+  },
+  sora: {
+    name: 'Sora-ssi',
+    role: 'Mentor Bahasa Korea (Hangul)',
+    skin: '#F0C7A8',
+    shirt: '#D85C7B',
+    accent: '#FFD166',
+    hair: '#241B1E',
+    prop: 'hanbok_ribbon'
+  },
+  kenji: {
+    name: 'Kenji-san',
+    role: 'Mentor Jepang & Idiom Global',
+    skin: '#EBC09D',
+    shirt: '#234E70',
+    accent: '#F5C451',
+    hair: '#1C1F26',
+    prop: 'headband'
+  },
+  vega: {
+    name: 'Komandan Vega',
+    role: 'Analis SOC AI · Radar /berita-terkini',
+    skin: '#D8A27A',
+    shirt: '#133B5C',
+    accent: '#48DBFB',
+    hair: '#18222F',
+    prop: 'cyber_visor'
+  },
+  bima: {
+    name: 'Insinyur Bima',
+    role: 'Penjaga Gardu IIV / SCADA',
+    skin: '#C88D60',
+    shirt: '#B45309',
+    accent: '#FDE047',
+    hair: '#1F1B18',
+    prop: 'hardhat'
   }
 };
 
@@ -277,6 +313,30 @@ export function renderCharacterSVG(key, mood = 'idle') {
       <rect x="40" y="14" width="40" height="22" rx="6" fill="#2A1433"/>
       <rect x="40" y="29" width="40" height="5" fill="#FFD166"/>
       <circle cx="60" cy="23" r="4" fill="#FFD166"/>
+    `;
+  } else if (c.prop === 'hanbok_ribbon') {
+    accessory = `
+      <path d="M32 48 C34 20, 86 20, 88 48 C79 34, 41 34, 32 48 Z" fill="${c.hair}"/>
+      <circle cx="80" cy="32" r="7" fill="#FFD166"/>
+      <path d="M44 92 L60 100 L76 92" fill="none" stroke="#FBF6EC" stroke-width="5" stroke-linecap="round"/>
+    `;
+  } else if (c.prop === 'headband') {
+    accessory = `
+      <path d="M34 42 C36 21, 84 21, 86 42 Z" fill="${c.hair}"/>
+      <rect x="35" y="34" width="50" height="6" rx="2" fill="#FBF6EC"/>
+      <circle cx="60" cy="37" r="3" fill="#E64A19"/>
+    `;
+  } else if (c.prop === 'cyber_visor') {
+    accessory = `
+      <path d="M34 42 C36 20, 84 20, 86 42 Z" fill="${c.hair}"/>
+      <rect x="36" y="47" width="48" height="14" rx="7" fill="rgba(72, 219, 251, 0.35)" stroke="#48DBFB" stroke-width="2.5"/>
+      <line x1="42" y1="54" x2="78" y2="54" stroke="#48DBFB" stroke-width="2" stroke-dasharray="5 3"/>
+    `;
+  } else if (c.prop === 'hardhat') {
+    accessory = `
+      <path d="M32 39 C34 17, 86 17, 88 39 Z" fill="#FACC15" stroke="#1B1714" stroke-width="2.2"/>
+      <rect x="28" y="36" width="64" height="6" rx="3" fill="#EAB308" stroke="#1B1714" stroke-width="2"/>
+      <rect x="55" y="21" width="10" height="12" rx="2" fill="#FFF"/>
     `;
   }
 

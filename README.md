@@ -1,6 +1,6 @@
 # Warkop Impact
 
-Game RPG 2D dunia terbuka (*open-world*) di peramban yang menggabungkan loket pendaftaran akun ber-ujian masuk, 4 jenis karakter RPG, jelajah peta, sistem *quest* ala Genshin Impact, kuis wawasan lintas bidang, ketajaman diksi bahasa Indonesia (KBBI VI dan EYD V), duel sesat pikir, panggung orasi 30 detik, dan **Segel Matematika** untuk membuka tiap level wilayah baru.
+Game RPG 2D dunia terbuka (*open-world*) di peramban yang menggabungkan loket pendaftaran akun ber-ujian masuk, 4 jenis karakter RPG, 6 wilayah jelajah, sistem tempur **Attack & Defense** melawan ancaman dunia siber, **Ruang Belajar Bahasa** (Korea, Jepang, Inggris, Indonesia, dan Retorika) lengkap dengan suara pelafalan, **Pusat Komando Siber & Radar `/berita-terkini`** (terobosan AI & IIV/CII + 21 sumber global), serta **5 Segel Matematika** untuk membuka tiap level wilayah baru.
 
 ## Alur Pendaftaran Akun & 4 Jenis Karakter
 
@@ -12,16 +12,23 @@ Game RPG 2D dunia terbuka (*open-world*) di peramban yang menggabungkan loket pe
    - **Detektif Logika**: +20% XP dan Koin dari Duel Fakta dan Sesat Pikir.
    - **Alkemis Angka**: +25% XP dan Koin saat memecahkan Segel Matematika dan membuka peti harta.
 
-## Empat Wilayah & Segel Matematika
+## Enam Wilayah, Akademi Belajar & Segel Matematika
 
-1. **Desa Warkop (Lv. 1)**: bantu Bang Jaja, Kang Deden, dan Pak Budi memisahkan fakta sains, sejarah, dan budaya dari mitos populer.
-2. **Segel Matematika #1 -> Kota Bahasa (Lv. 2)**: pecahkan 3 Rune Aritmetika, Persentase, dan Pola Bilangan untuk membuka jembatan menuju Taman Sastra (Teh Rina & Mbak Siska).
-3. **Segel Matematika #2 -> Lembah Logika (Lv. 3)**: pecahkan 3 Rune Aljabar, Rasio, dan Geometri Sudut untuk masuk ke Benteng Debat (duel sesat pikir lawan Mas Fikri & Hakim Nalar).
-4. **Segel Matematika #3 -> Puncak Orator (Lv. 4)**: pecahkan 3 Rune Kecepatan, Sistem Persamaan, dan Kombinasi untuk naik ke Amfiteater Langit dan menghadapi Boss Maestro Lidah Emas dalam ujian orasi 30 detik (Mikrofon lokal atau Ketik Kilat).
+1. **Desa Warkop (Lv. 1)**: misi Bang Jaja, Kang Deden, Pak Budi, dan latihan tempur *Attack & Defense* melawan Slime Hoaks Berantai.
+2. **Segel Matematika #1 -> Distrik Bahasa & Akademi (Lv. 2)**:
+   - **Akademi Korea (Sora-ssi)**: belajar Hangul dasar, 8 frasa sopan santun dengan tombol pelafalan suara (`ko-KR`), dan praktik kafe Seoul.
+   - **Paviliun Poliglot (Kenji-san)**: belajar konsep budaya Jepang (`ja-JP`) dan idiom bahasa Inggris elegan (`en-US`).
+   - **Balai Pustaka (Teh Rina)** & **Guild Startup (Mbak Siska)**: audit KBBI VI / EYD V dan diksi tajam.
+3. **Segel Matematika #2 -> Distrik Siber & AI Lab (Lv. 3)**:
+   - **Pusat Komando SOC (Komandan Vega)**: 8 terobosan baru dunia siber (Post-Quantum Cryptography NIST FIPS 203/204, Prompt Injection, ICS/OT/SCADA IIV, Passkeys/FIDO2, Zero-Trust, C2PA Deepfake, SBOM, AI SOC), peta 21 sumber `/berita-terkini`, dan simulasi analis.
+   - Duel *Attack & Defense* melawan **Phishing Botnet Drone** dan **Prompt-Injection Wyrm**.
+4. **Segel Matematika #3 -> Benteng IIV / SCADA Grid (Lv. 4)**: lindungi gardu energi bersama Insinyur Bima dengan menumbangkan **Ransomware Titan** dan **SCADA Worm Sentinel**.
+5. **Segel Matematika #4 -> Lembah Logika & Debat (Lv. 5)**: ruang belajar kerangka retorika PREP (Hakim Nalar), duel sesat pikir Mas Fikri, dan **Golem Sesat Pikir**.
+6. **Segel Matematika #5 -> Puncak Amfiteater Orator (Lv. 6)**: hadapi Boss **Overlord Deepfake** lalu taklukkan ujian orasi 30 detik bersama **Maestro Lidah Emas** (Mikrofon lokal atau Ketik Kilat).
 
 ## Kontrol
 
-- **Desktop**: `WASD` atau tombol panah (atau klik langsung di peta untuk berjalan), `Shift` untuk lari, `E` untuk berinteraksi, `M` untuk Peta Dunia & Teleportasi Waypoint, `C` untuk Codex Wawasan.
+- **Desktop**: `WASD` atau tombol panah (atau klik langsung di peta untuk berjalan), `Shift` untuk lari, `E` untuk berinteraksi, `M` untuk Peta Dunia & Teleportasi Waypoint, `C` untuk Codex Wawasan & Intel Siber.
 - **Ponsel**: D-Pad sentuh di kiri bawah, tombol `AKSI` dan `LARI` di kanan bawah, atau ketuk langsung di peta.
 
 ## Menjalankan Lokal

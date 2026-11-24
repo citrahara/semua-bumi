@@ -1272,6 +1272,302 @@ button {
   border-color: var(--gold);
 }
 
+/* ========================
+   CYBER COMBAT ARENA (ATTACK & DEFENSE)
+   ======================== */
+.combat-arena {
+  width: 100%;
+  max-width: 780px;
+  padding: 22px 24px;
+  border-radius: 24px;
+  background: linear-gradient(170deg, #131c29, #1f1724);
+  border: 2px solid var(--cyan);
+  box-shadow: 0 28px 70px rgba(0, 0, 0, 0.72);
+  animation: popUp 0.24s ease both;
+}
+
+.combat-top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.combat-stage {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.combatant {
+  padding: 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1.5px solid var(--border-soft);
+  text-align: center;
+}
+
+.combatant.hit {
+  animation: hitShake 0.34s ease;
+  border-color: var(--bad);
+}
+
+.combatant.shield {
+  box-shadow: 0 0 22px rgba(72, 219, 251, 0.4);
+  border-color: var(--cyan);
+}
+
+.combat-portrait {
+  width: 86px;
+  height: 86px;
+  margin: 0 auto 8px;
+  border-radius: 18px;
+  overflow: hidden;
+}
+
+.combat-portrait svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.combat-name {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1rem;
+  color: var(--gold);
+  margin-bottom: 8px;
+}
+
+.combat-bar-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.74rem;
+  font-weight: 800;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.combat-bar {
+  width: 100%;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  overflow: hidden;
+}
+
+.combat-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.combat-bar-fill.hero {
+  background: linear-gradient(90deg, #2ea46f, #6ee7b7);
+}
+
+.combat-bar-fill.enemy {
+  background: linear-gradient(90deg, #e05252, #f59e0b);
+}
+
+.combat-sub-stats {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.shield-chip {
+  color: var(--cyan);
+  background: rgba(72, 219, 251, 0.14);
+  padding: 3px 9px;
+  border-radius: 999px;
+}
+
+.energy-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--gold);
+}
+
+.energy-pip {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid var(--gold);
+  display: inline-block;
+}
+
+.energy-pip.full {
+  background: var(--gold);
+  box-shadow: 0 0 8px var(--gold);
+}
+
+.combat-vs {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--gold);
+}
+
+.intent-pill {
+  margin-top: 10px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--paper);
+}
+
+.intent-pill.danger {
+  background: rgba(224, 82, 82, 0.25);
+  border: 1px solid #ff6b6b;
+  color: #ffd166;
+}
+
+.combat-log {
+  padding: 12px 15px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.35);
+  border-left: 4px solid var(--cyan);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--paper);
+  margin-bottom: 14px;
+}
+
+.combat-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.combat-btn {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  text-align: left;
+  padding: 13px 15px;
+  border-radius: 14px;
+  border: 1.5px solid var(--border-soft);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--paper);
+  transition: transform 0.14s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.combat-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+}
+
+.combat-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.combat-btn strong {
+  font-family: var(--font-display);
+  font-size: 0.98rem;
+}
+
+.combat-btn span {
+  font-size: 0.76rem;
+  color: var(--muted);
+}
+
+.combat-btn.atk { border-color: #ff7849; background: rgba(230, 74, 25, 0.18); }
+.combat-btn.def { border-color: var(--cyan); background: rgba(72, 219, 251, 0.14); }
+.combat-btn.skill { border-color: #c084fc; background: rgba(168, 85, 247, 0.16); }
+.combat-btn.counter { border-color: var(--gold); background: rgba(255, 209, 102, 0.14); }
+.combat-btn.counter.pulse-glow {
+  box-shadow: 0 0 20px rgba(255, 209, 102, 0.45);
+  background: rgba(255, 209, 102, 0.26);
+}
+
+/* ========================
+   ACADEMIES & CYBER LAB UI
+   ======================== */
+.study-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.study-card {
+  padding: 14px 12px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-soft);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.study-big-char {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--gold);
+  line-height: 1.1;
+}
+
+.study-rom {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--cyan);
+}
+
+.study-tip {
+  margin: 0;
+  font-size: 0.74rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.speak-btn {
+  padding: 6px 11px;
+  border-radius: 999px;
+  border: 1px solid var(--gold);
+  background: rgba(255, 209, 102, 0.16);
+  color: var(--gold);
+  font-size: 0.76rem;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.speak-btn:hover {
+  background: var(--gold);
+  color: var(--ink);
+}
+
+.source-pill {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(72, 219, 251, 0.13);
+  border: 1px solid rgba(72, 219, 251, 0.35);
+  color: #bae6fd;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+@keyframes hitShake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-7px); }
+  55% { transform: translateX(7px); }
+  80% { transform: translateX(-4px); }
+}
+
 /* Toast */
 .toast {
   position: fixed;
@@ -1389,7 +1685,20 @@ button {
 
   .choice-grid.two-col,
   .zone-map-grid,
-  .char-pick-grid {
+  .char-pick-grid,
+  .combat-actions {
     grid-template-columns: 1fr;
+  }
+
+  .combat-stage {
+    grid-template-columns: 1fr;
+  }
+
+  .combat-vs {
+    display: none;
+  }
+
+  .study-grid {
+    grid-template-columns: 1fr 1fr;
   }
 }
