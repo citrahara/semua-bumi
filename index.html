@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Kronik Atlas | RPG 3D Peta Dalam Buku Tanpa Akhir</title>
-  <meta name="description" content="RPG 3D peta pop-up di dalam buku antologi: 6 Bab dunia pengetahuan, duel taktis berisiko tinggi, relik sastra dan bahasa, radar siber, serta eskalasi Jilid tanpa batas." />
+  <title>Taman Kronik | Gardenscapes 3D dalam Buku</title>
+  <meta name="description" content="Jelajahi taman bangsawan 3D ala Genshin, taklukkan puzzle Match-3 bertingkat ala Gardenscapes dengan ubin segel wawasan, dan renovasi 12 area taman dengan 3 pilihan gaya." />
   <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -12,85 +12,74 @@
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
-  <canvas id="world-canvas" aria-label="Peta 3D Kronik Atlas"></canvas>
+  <canvas id="world-canvas" aria-label="Taman 3D Taman Kronik"></canvas>
 
-  <!-- Minimalist Breathable HUD -->
+  <!-- Minimalist Gardenscapes x Genshin 3D HUD -->
   <div id="hud-layer" class="hud-layer hidden">
-    <!-- Top Left: Compact Status + 1-Line Objective Ribbon -->
+    <!-- Top Left: Profile, Hearts, Stars, Coins & Next Renovation -->
     <div class="hud-top-left">
-      <div class="player-pill" id="btn-open-profile" role="button" tabindex="0" title="Profil & Catatan Pembaca">
-        <div class="player-avatar-mini" id="hud-avatar"></div>
-        <div class="player-meta">
-          <div class="player-name-row">
-            <span id="hud-player-name">Pembaca</span>
-            <span class="hud-badges">
-              <span class="vol-badge" id="hud-vol-badge">JILID 1</span>
-              <span class="ar-badge" id="hud-ar-badge">LV 1</span>
-            </span>
-          </div>
-          <div class="hp-mini-row">
-            <div class="hp-mini-track"><div class="hp-mini-fill" id="hud-hp-fill" style="width:100%"></div></div>
-            <span class="hp-mini-text" id="hud-hp-text">100/100</span>
-          </div>
-          <div class="xp-bar-track">
-            <div class="xp-bar-fill" id="hud-xp-fill" style="width:0%"></div>
-          </div>
-          <div class="player-sub">
-            <span id="hud-zone-mini">Bab I</span>
-            <span>·</span>
-            <span id="hud-coins">0 Koin</span>
-          </div>
+      <div class="garden-stat-bar">
+        <button class="player-avatar-btn" id="btn-open-profile" type="button" title="Profil Pembaca">
+          <div class="player-avatar-mini" id="hud-avatar"></div>
+        </button>
+        <div class="garden-res-group">
+          <button class="res-pill hearts" id="btn-refill-heart" type="button" title="Nyawa (klik untuk isi lewat 1 soal kilat)">
+            <span class="res-ico">♥</span>
+            <span id="hud-lives">5/5</span>
+          </button>
+          <span class="res-pill stars" title="Bintang Renovasi Taman">
+            <span class="res-ico">★</span>
+            <span id="hud-stars">1</span>
+          </span>
+          <span class="res-pill coins" title="Koin Taman">
+            <span id="hud-coins">120</span>
+            <small>Koin</small>
+          </span>
         </div>
       </div>
 
-      <button class="quest-ribbon" id="btn-quest-tracker" type="button" title="Klik untuk petunjuk misi">
-        <span class="quest-diamond" aria-hidden="true">◆</span>
-        <span class="quest-title" id="quest-title">Temui Penjaga Pos</span>
-        <span class="quest-dist" id="quest-dist">12m</span>
+      <button class="quest-ribbon" id="btn-open-tasks" type="button" title="Buka daftar renovasi taman">
+        <span class="quest-diamond" aria-hidden="true">★</span>
+        <span class="quest-title" id="hud-next-task">Renovasi: Gerbang Utama</span>
+        <span class="quest-dist" id="hud-task-progress">0/12</span>
       </button>
     </div>
 
-    <!-- Top Right: Pocket Atlas Minimap + Single Slim Action Row -->
+    <!-- Top Right: Clean Minimal Actions -->
     <div class="hud-top-right">
-      <button class="minimap-frame" id="btn-open-map" type="button" title="Atlas Buku & Teleportasi Bab (M)">
-        <canvas id="minimap-canvas" width="144" height="96"></canvas>
-        <span class="minimap-tag">ATLAS [M]</span>
-      </button>
-
       <div class="hud-icon-row">
-        <button class="hud-btn" id="btn-open-forge" type="button" title="Tempa Atribut, Relik & Jilid (U)">Tempa</button>
-        <button class="hud-btn" id="btn-open-codex" type="button" title="Codex Pengetahuan (C)">Codex <span id="hud-codex-count">0/78</span></button>
-        <button class="hud-btn" id="btn-open-daily" type="button" title="Komisi Harian (H)">Harian <span id="hud-daily-count">0/4</span></button>
+        <button class="hud-btn" id="btn-open-study" type="button" title="Arsip Belajar: Korea, Sastra, Siber & Codex (C)">Arsip <span id="hud-codex-count">0/78</span></button>
         <button class="hud-btn" id="btn-toggle-sound" type="button" title="Suara">Suara</button>
+        <button class="hud-btn help-circle" id="btn-toggle-help" type="button" title="Panduan Kontrol">?</button>
+      </div>
+      <div class="help-popover hidden" id="help-popover">
+        <div><strong>Jalan 3D:</strong> WASD / Panah / Klik Tanah · <strong>Lari:</strong> Shift</div>
+        <div><strong>POV:</strong> Tarik Kursor 360° / Scroll Zoom / [V] POV Bebas</div>
+        <div><strong>Aksi:</strong> [E] Renovasi / Bicara · [P] Main Puzzle · [T] Tugas · [C] Arsip</div>
       </div>
     </div>
 
-    <!-- Zone Entry Banner -->
+    <!-- Banner -->
     <div class="zone-banner" id="zone-banner" aria-live="polite">
-      <div class="zone-banner-sub" id="zone-banner-sub">BAB BARU</div>
-      <div class="zone-banner-name" id="zone-banner-name">Bab I</div>
+      <div class="zone-banner-sub" id="zone-banner-sub">RENOVASI SELESAI</div>
+      <div class="zone-banner-name" id="zone-banner-name">Gerbang Utama Taman</div>
     </div>
 
     <!-- Bottom Center: Contextual Interact Prompt -->
     <button class="interact-prompt hidden" id="btn-interact" type="button">
       <span class="key-cap">E</span>
-      <span id="interact-label">Bicara</span>
+      <span id="interact-label">Renovasi Gerbang Utama</span>
     </button>
 
-    <!-- Bottom Right: Subtle Strike + On-Demand Controls Guide -->
+    <!-- Bottom Right: Iconic Gardenscapes Play Level Button -->
     <div class="hud-bottom-right">
-      <div class="help-popover hidden" id="help-popover">
-        <div><strong>Gerak:</strong> WASD / Panah / Klik Tanah · <strong>Lari:</strong> Shift</div>
-        <div><strong>POV:</strong> Tarik Kursor / Scroll Zoom / [V] POV Bebas</div>
-        <div><strong>Aksi:</strong> [E] Interaksi · [F] Strike Ambush · [U] Tempa · [M] Atlas · [C] Codex</div>
-      </div>
-      <div class="hud-bottom-btns">
-        <button class="hud-btn strike-btn" id="btn-hud-strike" type="button" title="Tebasan Strike & Ambush (F)">Strike [F]</button>
-        <button class="hud-btn help-circle" id="btn-toggle-help" type="button" title="Panduan Kontrol">?</button>
-      </div>
+      <button class="play-level-btn" id="btn-play-level" type="button">
+        <span class="play-diff-tag normal" id="play-diff-tag">Normal</span>
+        <strong id="play-level-label">Main · Level 1</strong>
+      </button>
     </div>
 
-    <!-- Mobile Touch D-Pad + Action Controls -->
+    <!-- Mobile Touch D-Pad -->
     <div class="touch-controls" id="touch-controls">
       <div class="dpad">
         <button class="dpad-btn up" data-dir="up" type="button" aria-label="Jalan ke atas">▲</button>
@@ -99,22 +88,20 @@
         <button class="dpad-btn down" data-dir="down" type="button" aria-label="Jalan ke bawah">▼</button>
       </div>
       <div class="touch-right-btns">
-        <button class="touch-action-btn strike" id="btn-touch-strike" type="button">STRIKE</button>
-        <button class="touch-action-btn sprint" id="btn-touch-sprint" type="button">LARI</button>
         <button class="touch-action-btn act" id="btn-touch-act" type="button">AKSI</button>
+        <button class="touch-action-btn strike" id="btn-touch-play" type="button">MAIN</button>
       </div>
     </div>
   </div>
 
-  <!-- Auth / Book Cover Overlay -->
+  <!-- Cover / Registration Overlay -->
   <div id="title-overlay" class="modal-backdrop">
     <div id="auth-card-root" class="title-card"></div>
   </div>
 
-  <!-- Dynamic Modal Container -->
+  <!-- Dynamic Modals (Match-3 Board, Renovation Picker, Tasks, Study Archive, Profile) -->
   <div id="overlay-root"></div>
 
-  <!-- Toast -->
   <div id="toast" class="toast" role="status" aria-live="assertive"></div>
 
   <script type="module" src="./js/main.js"></script>

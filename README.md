@@ -1,21 +1,18 @@
-# Kronik Atlas · RPG 3D Peta Dalam Buku Tanpa Akhir
+# Taman Kronik · Gardenscapes 3D dalam Buku
 
-RPG 3D peta pop-up di dalam buku antologi kulit antik (Three.js WebGL dengan *fallback* 2D otomatis) yang menggabungkan sistem progresi **endless berisiko tinggi**, relik pengetahuan, duel taktis, dan UX minimalis yang lapang.
+Game **Match-3 bertingkat ala Gardenscapes** yang dipadukan dengan **taman bangsawan 3D yang bisa dijelajahi bebas ala Genshin** (berdiri di atas bentangan buku kulit antik terbuka).
 
-## Sistem Endless RPG yang Menantang
+## Fitur Utama
 
-- **HP Persisten & Istirahat Penanda Bab**: sisa HP terbawa antar-duel. Pulihkan HP dengan istirahat di Penanda Bab atau membeli **Tinta Pemulih** (`+45% HP` tanpa menghabiskan giliran).
-- **Menu Tempa (`[U]`)**: tingkatkan `ATK`, `DEF / Perisai`, `Max HP`, dan `Kritikal` tanpa batas menggunakan Koin dari duel, peti, dan Segel Matematika.
-- **5 Relik Ilmu (Sinergi Belajar & Tempur)**: menyelesaikan Arsip Sastra (Orwell, Huxley, Austen, Sherlock, Pramoedya), Stasiun Korea (Hangul + audio), Paviliun Poliglot (Jepang & Inggris), Pusat SOC (`/berita-terkini`), dan Balai Retorika memberikan *buff* tempur permanen (`+18% Strike`, `+25 HP & Regen`, `+1 Energi awal`, `+25% Perisai`, `+35% Counter/Overdrive`).
-- **Duel Taktis Berwaktu**: musuh Bab III–VI dan Jilid lanjutan memiliki **Armor/Perisai**. Gunakan **Overdrive (2 Energi, 10 detik)** untuk serangan tembus armor `2.35x DMG` dan **Counter Taktis (12 detik)** untuk membatalkan Ultimate musuh.
-- **Segel Matematika Ketat**: 3 rune berwaktu (25 detik per rune, menyusut di Jilid tinggi) dengan batas maksimal 2 kesalahan.
-- **Eskalasi Jilid Tanpa Akhir (`Jilid I -> II -> III -> ∞`)**: setelah menumbangkan Dalang Deepfake di Bab VI, buka Jilid berikutnya lewat menu **Tempa `[U]`** agar seluruh musuh, armor, dan segel bangkit jauh lebih tangguh sambil mempertahankan Level, Tempaan, Codex (`78` kartu), dan 5 Relik Ilmu.
-
-## Kontrol
-
-- **Gerak**: `WASD` / tombol panah / klik singkat di tanah (`Shift` untuk lari).
-- **POV 3D**: tarik kursor di mana saja (360° & atas-bawah), *scroll* untuk zoom, atau tekan `V` untuk POV bebas.
-- **Aksi**: `E` interaksi, `F` Strike Ambush (`-18% HP` musuh), `U` Tempa, `M` Atlas, `C` Codex, `H` Harian, `?` panduan ringkas.
+- **Puzzle Match-3 Bertingkat Tanpa Akhir (`Level 1` sampai Tak Terbatas)**:
+  - Ubin botani khusus: Apel, Pir, Beri, Lemon, Daun Teh, dan Bunga Sakura.
+  - **Power-Up & Mega Combo**: 4 segaris (`Roket`), bentuk L/T (`Bom 3x3`), 5 segaris (`Bola Pelangi`), serta 6 kombinasi ganda antar Power-Up (`Pelangi + Bom/Roket`, `Bom + Bom 5x5`, `Bom + Roket`, `Pelangi + Pelangi`).
+  - **Kurva Kesulitan Gardenscapes**: rotasi `Normal` (`+1 ★`), `Sulit` (`+2 ★`), dan `Sangat Sulit` (`+3 ★`) dengan bentuk papan bervariasi dan rintangan bertahap (**Kotak Kayu 1–2 lapis**, **Es Beku 1–2 lapis**, **Rantai Besi**, **Karpet Lumut**, serta **Ubin Segel Ilmu**).
+- **Quest Pengetahuan Natural di Dalam Puzzle**:
+  - Menggeser atau mengetuk **Ubin Segel Ilmu**, mengaktifkan **Booster gratis**, mengklaim **+5 Langkah Darurat**, atau mengisi **Nyawa (`♥ 5/5`)** memunculkan 1 soal kilat (Bahasa Korea + suara pelafalan, Sastra Klasik Orwell/Austen/Sherlock/Huxley/Pramoedya, Diksi KBBI, Keamanan Siber `/berita-terkini`, Fakta, Logika, atau Matematika).
+- **Taman Bangsawan 3D yang Berubah Fisik Saat Direnovasi**:
+  - 12 area renovasi 3D (Gerbang Utama, Air Mancur Tengah, Taman Bunga, Lampu 1894, Paviliun Arsip Sastra, Pergola Teh & Hangul, Jembatan Kolam, Rumah Kaca Botani, Hutan Sakura, Lorong Bunga, Menara Observasi Siber, dan Gazebo Salon) masing-masing dengan **3 pilihan gaya desain 3D** dan **Musim Taman** tak terbatas.
+  - Karakter 3D berjalan bebas (`WASD` / klik tanah) dengan **POV geser kursor 360°**, *scroll zoom*, dan mode POV bebas `[V]`.
 
 ## Menjalankan Lokal
 
@@ -23,4 +20,4 @@ RPG 3D peta pop-up di dalam buku antologi kulit antik (Three.js WebGL dengan *fa
 python -m http.server 8090
 ```
 
-Buka `http://localhost:8090`. Statis murni tanpa *build step*, siap tayang di GitHub Pages.
+Buka `http://localhost:8090`. Statis murni tanpa *build step*, siap tayang langsung di GitHub Pages.

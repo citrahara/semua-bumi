@@ -158,6 +158,30 @@ class RpgAudio {
     this.playTone(340, 0.18, 'sine', 0.13, 0, 680);
     this.playTone(510, 0.24, 'triangle', 0.12, 0.06, 920);
   }
+
+  playSwap() {
+    this.playTone(460, 0.06, 'sine', 0.08, 0, 560);
+  }
+
+  playMatch(combo = 1) {
+    const scale = [523.25, 587.33, 659.25, 783.99, 880, 1046.5, 1174.66];
+    const base = scale[Math.min(scale.length - 1, Math.max(0, combo - 1))];
+    this.playTone(base, 0.13, 'triangle', 0.13, 0, base * 1.12);
+    this.playTone(base * 1.25, 0.16, 'sine', 0.1, 0.05);
+  }
+
+  playBlast() {
+    this.playNoise(0.24, 0.15, 0, 950);
+    this.playTone(220, 0.28, 'sawtooth', 0.14, 0, 72);
+    this.playTone(680, 0.16, 'triangle', 0.12, 0.04, 1180);
+  }
+
+  playRenovate() {
+    const notes = [440, 554.37, 659.25, 880, 1108.73];
+    notes.forEach((n, i) => {
+      this.playTone(n, i === notes.length - 1 ? 0.45 : 0.14, 'triangle', 0.14, i * 0.07);
+    });
+  }
 }
 
 export const audio = new RpgAudio();
