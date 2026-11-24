@@ -5,8 +5,8 @@ export const KOREAN_ACADEMY = {
   id: 'academy-korean',
   npcId: 'sora',
   badgeName: 'Lencana Hangul',
-  title: 'Paviliun Bahasa Korea (Hangul & Percakapan)',
-  intro: 'Di sini kamu tidak langsung diuji! Pelajari dulu cara baca Hangul, dengarkan pelafalan aslinya, baru coba misi praktik pesan kopi di kafe Seoul.',
+  title: 'Bahasa Korea',
+  intro: 'Pelajari huruf Hangul, dengarkan pelafalan, lalu coba latihan singkat.',
   hangulBasics: [
     { symbol: 'ㄱ', rom: 'g / k', tip: 'Bentuknya seperti lidah menyentuh langit-langit belakang (mirip huruf g/k).', speak: '가' },
     { symbol: 'ㄴ', rom: 'n', tip: 'Bentuknya seperti ujung lidah menyentuh gusi depan (bunyi n).', speak: '나' },
@@ -232,7 +232,7 @@ export const RHETORIC_ACADEMY = {
   frameworks: [
     {
       name: 'PREP (Point · Reason · Example · Point)',
-      desc: 'Jurus paling cepat untuk menjawab pertanyaan dadakan dalam rapat, wawancara, atau tongkrongan tanpa berputar-putar.',
+      desc: 'Struktur ringkas untuk menjawab pertanyaan dadakan dalam rapat atau wawancara.',
       example: 'Point: "Tidur siang 20 menit itu investasi produktivitas." Reason: "Otak memulihkan fokus." Example: "Studi NASA membuktikan kewaspadaan pilot naik signifikan." Point: "Jadi istirahat singkat justru mempercepat kerja."'
     },
     {

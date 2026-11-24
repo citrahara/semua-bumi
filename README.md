@@ -1,23 +1,19 @@
-# Taman Kronik · Gardenscapes 3D dalam Buku
+# Taman Kronik
 
-Game **Match-3 bertingkat ala Gardenscapes** yang dipadukan dengan **taman bangsawan 3D yang bisa dijelajahi bebas ala Genshin** (berdiri di atas bentangan buku kulit antik terbuka).
+Game puzzle Match-3 bertingkat dengan renovasi taman 3D dalam buku terbuka.
 
 ## Fitur Utama
 
-- **Puzzle Match-3 Bertingkat Tanpa Akhir (`Level 1` sampai Tak Terbatas)**:
-  - Ubin botani khusus: Apel, Pir, Beri, Lemon, Daun Teh, dan Bunga Sakura.
-  - **Power-Up & Mega Combo**: 4 segaris (`Roket`), bentuk L/T (`Bom 3x3`), 5 segaris (`Bola Pelangi`), serta 6 kombinasi ganda antar Power-Up (`Pelangi + Bom/Roket`, `Bom + Bom 5x5`, `Bom + Roket`, `Pelangi + Pelangi`).
-  - **Kurva Kesulitan Gardenscapes**: rotasi `Normal` (`+1 ★`), `Sulit` (`+2 ★`), dan `Sangat Sulit` (`+3 ★`) dengan bentuk papan bervariasi dan rintangan bertahap (**Kotak Kayu 1–2 lapis**, **Es Beku 1–2 lapis**, **Rantai Besi**, **Karpet Lumut**, serta **Ubin Segel Ilmu**).
-- **Quest Pengetahuan Natural di Dalam Puzzle**:
-  - Menggeser atau mengetuk **Ubin Segel Ilmu**, mengaktifkan **Booster gratis**, mengklaim **+5 Langkah Darurat**, atau mengisi **Nyawa (`♥ 5/5`)** memunculkan 1 soal kilat (Bahasa Korea + suara pelafalan, Sastra Klasik Orwell/Austen/Sherlock/Huxley/Pramoedya, Diksi KBBI, Keamanan Siber `/berita-terkini`, Fakta, Logika, atau Matematika).
-- **Taman Bangsawan 3D yang Berubah Fisik Saat Direnovasi**:
-  - 12 area renovasi 3D (Gerbang Utama, Air Mancur Tengah, Taman Bunga, Lampu 1894, Paviliun Arsip Sastra, Pergola Teh & Hangul, Jembatan Kolam, Rumah Kaca Botani, Hutan Sakura, Lorong Bunga, Menara Observasi Siber, dan Gazebo Salon) masing-masing dengan **3 pilihan gaya desain 3D** dan **Musim Taman** tak terbatas.
-  - Karakter 3D berjalan bebas (`WASD` / klik tanah) dengan **POV geser kursor 360°**, *scroll zoom*, dan mode POV bebas `[V]`.
+- **Pendaftaran Akun 2 Langkah**: Buat username lalu selesaikan 3 soal seleksi singkat (bahasa, hitung, dan nalar) tanpa pemilihan karakter.
+- **Papan Match-3 Bertahap**: Dimulai dari ukuran `5x5` di Level 1 lalu membesar sampai `8x8` pada level lanjutan, dilengkapi aset buah dan Power-Up 3D realistis (`assets/tiles/*.png`), animasi geser dan pantul halus, serta Power-Up yang sepenuhnya menunggu kendali pemain.
+- **Micro-Quest Ringkas**: Satu soal singkat (Bahasa Korea dengan suara `ko-KR`, Sastra Klasik, Diksi KBBI VI, Keamanan Siber, Fakta, Logika, atau Hitung) muncul saat membuka Segel Ilmu, mengaktifkan Booster gratis, menambah `+5 Langkah`, atau mengisi nyawa (`♥`).
+- **Pratinjau Renovasi 3D Langsung**: Memilih salah satu dari 12 area taman mengarahkan kamera 3D ke lokasi objek dan menampilkan 3 pilihan gaya secara langsung sebelum memakai bintang (`★`).
+- **Peta Taman Interaktif**: Menampilkan posisi pemain saat ini serta status seluruh 12 area (`Siap`, `Kunci`, dan `Buka`) dengan penanda gembok 3D di taman.
 
-## Menjalankan Lokal
+## Menjalankan Secara Lokal
 
 ```bash
 python -m http.server 8090
 ```
 
-Buka `http://localhost:8090`. Statis murni tanpa *build step*, siap tayang langsung di GitHub Pages.
+Buka `http://localhost:8090` di browser.

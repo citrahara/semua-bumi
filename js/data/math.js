@@ -61,8 +61,8 @@ function genL1Discount() {
   const ans = price - disc;
   const fmt = (v) => `Rp${v.toLocaleString('id-ID')}`;
   return {
-    tag: 'Persentase Warkop',
-    question: `Paket kopi seharga ${fmt(price)} mendapat diskon ${pct}%. Berapa harga akhirnya?`,
+    tag: 'Persentase',
+    question: `Harga buku ${fmt(price)} mendapat diskon ${pct}%. Berapa harga akhirnya?`,
     choices: makeChoices(ans, [disc, price - pct * 1000, ans + 5000], fmt),
     explain: `Diskon ${pct}% = ${fmt(disc)}, sehingga harga bayarnya ${fmt(price)} - ${fmt(disc)} = ${fmt(ans)}.`
   };
@@ -77,13 +77,13 @@ function genL1Sequence() {
   const ans = s4 + d + 3;
   return {
     tag: 'Pola Bilangan',
-    question: `Lanjutkan deret rune berikut: ${s1}, ${s2}, ${s3}, ${s4}, ...`,
+    question: `Lanjutkan pola bilangan berikut: ${s1}, ${s2}, ${s3}, ${s4}, ...`,
     choices: makeChoices(ans, [ans - 1, ans + 2, s4 + d]),
     explain: `Selisih bertambah 1 tiap langkah (+${d}, +${d + 1}, +${d + 2}, lalu +${d + 3}). Jadi ${s4} + ${d + 3} = ${ans}.`
   };
 }
 
-// LEVEL 2 (Buka Zona 3: Distrik Siber & AI Lab)
+// LEVEL 2
 function genL2Linear() {
   const a = randInt(2, 6);
   const x = randInt(4, 14);
@@ -98,14 +98,13 @@ function genL2Linear() {
 }
 
 function genL2Binary() {
-  // Matematika Siber: Biner ke Desimal!
   const val = randInt(9, 29);
   const bin = val.toString(2);
   return {
-    tag: 'Biner Dunia Siber',
-    question: `Kode gerbang Distrik Siber tertulis dalam biner: ${bin}₂. Berapa nilainya dalam bilangan desimal?`,
+    tag: 'Biner',
+    question: `Ubah bilangan biner ${bin}₂ menjadi desimal.`,
     choices: makeChoices(val, [val + 2, val - 2, val + 4]),
-    explain: `Ubah tiap bit 1 ke pangkat 2 dari kanan (1, 2, 4, 8, 16): ${bin}₂ = ${val}.`
+    explain: `Jumlahkan pangkat 2 pada bit bernilai 1 dari kanan (1, 2, 4, 8, 16): ${bin}₂ = ${val}.`
   };
 }
 
@@ -115,7 +114,7 @@ function genL2Triangle() {
   const ans = 180 - a - b;
   return {
     tag: 'Geometri Sudut',
-    question: `Kristal segitiga memiliki dua sudut ${a}° dan ${b}°. Berapa besar sudut ketiganya?`,
+    question: `Segitiga memiliki dua sudut ${a}° dan ${b}°. Berapa besar sudut ketiganya?`,
     choices: makeChoices(ans, [ans + 10, Math.max(10, ans - 15), 90], (v) => `${v}°`),
     explain: `Total sudut segitiga selalu 180°. Sudut ketiga = 180° - (${a}° + ${b}°) = ${ans}°.`
   };

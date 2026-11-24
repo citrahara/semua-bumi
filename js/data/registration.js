@@ -1,89 +1,30 @@
-// Sistem Pendaftaran Akun, 4 Jenis Karakter RPG, dan Ujian Masuk (Gatekeeper Challenge).
+// Pendaftaran akun: validasi username + 3 soal seleksi singkat (tanpa pemilihan karakter).
 
-export const CHARACTER_CLASSES = [
-  {
-    id: 'orator',
-    portraitKey: 'hero_orator',
-    name: 'Orator',
-    vibe: 'Gerak cepat dan bonus panggung orasi',
-    bonusLabel: 'Lari +12% · +15% XP Panggung & Salon',
-    cloakColor: '#B84A2C',
-    trimColor: '#D9B466',
-    hatStyle: 'scarf',
-    speedMult: 1.12,
-    xpBonusType: 'stage',
-    xpBonusMult: 1.15
-  },
-  {
-    id: 'pujangga',
-    portraitKey: 'hero_pujangga',
-    name: 'Pujangga',
-    vibe: 'Presisi diksi dan bonus bahasa',
-    bonusLabel: '+20% XP & Koin Quest Bahasa dan Sastra',
-    cloakColor: '#7A2E4B',
-    trimColor: '#E2C382',
-    hatStyle: 'beret',
-    speedMult: 1.0,
-    xpBonusType: 'diction',
-    xpBonusMult: 1.2
-  },
-  {
-    id: 'detektif',
-    portraitKey: 'hero_detektif',
-    name: 'Detektif',
-    vibe: 'Peluang kritikal tinggi dan deduksi tajam',
-    bonusLabel: '+14% Kritikal · +20% XP & Koin Duel',
-    cloakColor: '#6B4E31',
-    trimColor: '#57B4C9',
-    hatStyle: 'fedora',
-    speedMult: 1.04,
-    xpBonusType: 'logic',
-    xpBonusMult: 1.2
-  },
-  {
-    id: 'alkemis',
-    portraitKey: 'hero_alkemis',
-    name: 'Alkemis',
-    vibe: 'Perisai tebal dan bonus Segel Matematika',
-    bonusLabel: '+18% Perisai · +25% XP & Koin Segel & Peti',
-    cloakColor: '#1E6B5C',
-    trimColor: '#D9B466',
-    hatStyle: 'goggles',
-    speedMult: 1.04,
-    xpBonusType: 'math',
-    xpBonusMult: 1.25
-  }
-];
-
-export function getCharacterClass(id) {
-  return CHARACTER_CLASSES.find((c) => c.id === id) || CHARACTER_CLASSES[0];
-}
-
-export const FUNNY_USERNAMES = [
-  'pembaca_malam',
-  'kurator_diksi',
-  'detektif_1894',
-  'penumpang_seoul',
-  'penjaga_kerang',
-  'pengamat_kabut',
-  'komika_intj',
-  'orwell_santai'
+export const SUGGESTED_USERNAMES = [
+  'nala_k',
+  'senja_89',
+  'taman_utara',
+  'karsa_04',
+  'dara_m',
+  'raka_p',
+  'sore_tenang',
+  'arsip_lama'
 ];
 
 export function validateUsername(raw, existingUsernames = []) {
   const clean = (raw || '').trim().replace(/^@+/, '');
   if (clean.length < 3) {
-    return { ok: false, error: 'Username minimal 3 karakter.' };
+    return { ok: false, error: 'Minimal 3 karakter.' };
   }
   if (clean.length > 16) {
-    return { ok: false, error: 'Username maksimal 16 karakter.' };
+    return { ok: false, error: 'Maksimal 16 karakter.' };
   }
   if (!/^[a-zA-Z0-9_]+$/.test(clean)) {
-    return { ok: false, error: 'Pakai huruf, angka, atau garis bawah (_) saja tanpa spasi.' };
+    return { ok: false, error: 'Gunakan huruf, angka, atau garis bawah tanpa spasi.' };
   }
   const taken = existingUsernames.some((u) => u.toLowerCase() === clean.toLowerCase());
   if (taken) {
-    return { ok: false, error: `Username @${clean} sudah terdaftar! Pilih nama lain atau langsung masuk akunmu.` };
+    return { ok: false, error: `@${clean} sudah terdaftar. Pilih nama lain atau langsung masuk.` };
   }
   return { ok: true, username: clean };
 }
@@ -101,62 +42,60 @@ function randInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-// Soal 1: Uji EYD / KBBI Kilat (verifikasi bukan bot kaku)
-const EYD_POOL = [
+const LANG_POOL = [
   {
-    q: 'Verifikasi Bahasa: pilih penulisan yang BAKU menurut KBBI VI!',
+    q: 'Pilih penulisan baku menurut KBBI VI.',
     options: [
       { label: 'sekadar · risiko · praktik', ok: true },
       { label: 'sekedar · resiko · praktek', ok: false },
       { label: 'sekadar · resiko · praktek', ok: false },
       { label: 'sekedar · risiko · praktik', ok: false }
     ],
-    explain: 'Bentuk baku KBBI VI adalah sekadar, risiko, dan praktik.'
+    explain: 'Bentuk bakunya sekadar, risiko, dan praktik.'
   },
   {
-    q: 'Verifikasi Bahasa: mana penulisan awalan dan kata depan yang tepat?',
+    q: 'Pilih penulisan awalan dan kata depan yang benar.',
     options: [
-      { label: 'Kopi diseduh di dapur, bukan di mana-mana.', ok: true },
-      { label: 'Kopi di seduh didapur, bukan dimana-mana.', ok: false },
-      { label: 'Kopi diseduh didapur, bukan dimana-mana.', ok: false },
-      { label: 'Kopi di seduh di dapur, bukan dimana-mana.', ok: false }
+      { label: 'Teh diseduh di dapur, bukan di mana-mana.', ok: true },
+      { label: 'Teh di seduh didapur, bukan dimana-mana.', ok: false },
+      { label: 'Teh diseduh didapur, bukan dimana-mana.', ok: false },
+      { label: 'Teh di seduh di dapur, bukan dimana-mana.', ok: false }
     ],
-    explain: 'Awalan pasif dirangkai (diseduh), sedangkan kata depan tempat dipisah (di dapur, di mana).'
+    explain: 'Awalan pasif dirangkai (diseduh); kata depan tempat dipisah (di dapur, di mana).'
   },
   {
-    q: 'Verifikasi Bahasa: pilih deretan kata yang seluruhnya BAKU!',
+    q: 'Pilih deretan kata baku.',
     options: [
       { label: 'silakan · mengubah · izin', ok: true },
       { label: 'silahkan · merubah · ijin', ok: false },
       { label: 'silakan · merubah · izin', ok: false },
       { label: 'silahkan · mengubah · izin', ok: false }
     ],
-    explain: 'Kata baku menurut KBBI adalah silakan (tanpa h), mengubah (dari ubah), dan izin (pakai z).'
+    explain: 'Bentuk bakunya silakan, mengubah, dan izin.'
   },
   {
-    q: 'Verifikasi Bahasa: apa arti sebenarnya kata "acuh" di KBBI?',
+    q: 'Apa arti kata "acuh" dalam KBBI?',
     options: [
       { label: 'Peduli atau menaruh perhatian', ok: true },
-      { label: 'Cuek dan masa bodoh', ok: false },
-      { label: 'Marah sambil mengomel', ok: false },
-      { label: 'Lupa ingatan sesaat', ok: false }
+      { label: 'Cuek atau masa bodoh', ok: false },
+      { label: 'Marah sambil menggerutu', ok: false },
+      { label: 'Lupa sesaat', ok: false }
     ],
-    explain: 'Kata "acuh" berarti peduli; kalau cuek, bentuk yang benar adalah "tak acuh".'
+    explain: 'Acuh berarti peduli; bentuk negasinya tak acuh.'
   },
   {
-    q: 'Verifikasi Bahasa: pilih bentuk yang seluruhnya BAKU menurut KBBI!',
+    q: 'Pilih bentuk kata baku.',
     options: [
       { label: 'napas · andal · analisis', ok: true },
       { label: 'nafas · handal · analisa', ok: false },
       { label: 'napas · handal · analisis', ok: false },
       { label: 'nafas · andal · analisa', ok: false }
     ],
-    explain: 'Bentuk bakunya adalah napas (pakai p), andal (tanpa h), dan analisis (akhiran -is).'
+    explain: 'Bentuk bakunya napas, andal, dan analisis.'
   }
 ];
 
-// Soal 2: Hitung Cepat Kasir Warkop (dinamis!)
-function genQuickCashierMath() {
+function genQuickMath() {
   const variant = randInt(0, 2);
   if (variant === 0) {
     const a = randInt(4, 12);
@@ -164,17 +103,16 @@ function genQuickCashierMath() {
     const c = randInt(2, 5);
     const ans = a + b * c;
     const trap = (a + b) * c;
-    const opts = shuffle([
-      { label: String(ans), ok: true },
-      { label: String(trap), ok: false },
-      { label: String(ans + b), ok: false },
-      { label: String(Math.max(1, ans - c)), ok: false }
-    ]);
     return {
-      tag: 'Tes 2/3 · Hitung Kasir',
-      q: `Hitung cepat sebelum antrean panjang: ${a} + ${b} × ${c} = ?`,
-      options: opts,
-      explain: `Kerjakan perkalian dulu: ${b} × ${c} = ${b * c}, lalu ${a} + ${b * c} = ${ans}.`
+      tag: '2/3 · Hitung',
+      q: `Hitung nilai ${a} + ${b} × ${c}.`,
+      options: shuffle([
+        { label: String(ans), ok: true },
+        { label: String(trap), ok: false },
+        { label: String(ans + b), ok: false },
+        { label: String(Math.max(1, ans - c)), ok: false }
+      ]),
+      explain: `Perkalian lebih dulu: ${b} × ${c} = ${b * c}, lalu tambah ${a} menjadi ${ans}.`
     };
   }
   if (variant === 1) {
@@ -184,105 +122,96 @@ function genQuickCashierMath() {
     const pay = Math.ceil((total + 3000) / 10000) * 10000;
     const change = pay - total;
     const fmt = (v) => `Rp${v.toLocaleString('id-ID')}`;
-    const opts = shuffle([
-      { label: fmt(change), ok: true },
-      { label: fmt(change + 2000), ok: false },
-      { label: fmt(Math.max(1000, change - 2000)), ok: false },
-      { label: fmt(total), ok: false }
-    ]);
     return {
-      tag: 'Tes 2/3 · Hitung Kasir',
-      q: `Kamu pesan ${qty} gelas kopi seharga ${fmt(price)} per gelas, lalu bayar ${fmt(pay)}. Berapa kembalianmu?`,
-      options: opts,
-      explain: `Total belanja ${qty} × ${fmt(price)} = ${fmt(total)}. Kembaliannya ${fmt(pay)} - ${fmt(total)} = ${fmt(change)}.`
+      tag: '2/3 · Hitung',
+      q: `Total ${qty} buku seharga ${fmt(price)} dibayar ${fmt(pay)}. Berapa kembaliannya?`,
+      options: shuffle([
+        { label: fmt(change), ok: true },
+        { label: fmt(change + 2000), ok: false },
+        { label: fmt(Math.max(1000, change - 2000)), ok: false },
+        { label: fmt(total), ok: false }
+      ]),
+      explain: `${qty} × ${fmt(price)} = ${fmt(total)}; ${fmt(pay)} - ${fmt(total)} = ${fmt(change)}.`
     };
   }
   const start = randInt(3, 8);
   const step = randInt(3, 6);
   const seq = [start, start + step, start + step * 2, start + step * 3];
   const ans = start + step * 4;
-  const opts = shuffle([
-    { label: String(ans), ok: true },
-    { label: String(ans + 1), ok: false },
-    { label: String(ans - 2), ok: false },
-    { label: String(ans + step), ok: false }
-  ]);
   return {
-    tag: 'Tes 2/3 · Pola Kilat',
-    q: `Lengkapi kode loket warkop berikut: ${seq.join(', ')}, ...`,
-    options: opts,
-    explain: `Setiap angka bertambah ${step}, jadi angka selanjutnya ${seq[3]} + ${step} = ${ans}.`
+    tag: '2/3 · Pola',
+    q: `Lanjutkan pola: ${seq.join(', ')}, ...`,
+    options: shuffle([
+      { label: String(ans), ok: true },
+      { label: String(ans + 1), ok: false },
+      { label: String(ans - 2), ok: false },
+      { label: String(ans + step), ok: false }
+    ]),
+    explain: `Setiap suku bertambah ${step}, sehingga angka berikutnya ${ans}.`
   };
 }
 
-// Soal 3: Uji Fakta & Nalar Tongkrongan
-const WIT_POOL = [
+const LOGIC_POOL = [
   {
-    q: 'Uji Nalar: seseorang membantah saranmu hanya dengan bilang "Ah, kamu masih muda, nggak tahu apa-apa!" Itu contoh sesat pikir apa?',
+    q: 'Menolak argumen dengan menyerang usia pembicaranya disebut sesat pikir apa?',
     options: [
-      { label: 'Ad Hominem (menyerang pribadi, bukan argumen)', ok: true },
-      { label: 'Serendipiti (keberuntungan tak terduga)', ok: false },
-      { label: 'Eufemisme (penghalusan kata)', ok: false },
-      { label: 'Pleonasme (pemborosan kata)', ok: false }
+      { label: 'Ad Hominem', ok: true },
+      { label: 'Eufemisme', ok: false },
+      { label: 'Pleonasme', ok: false },
+      { label: 'Serendipiti', ok: false }
     ],
-    explain: 'Menyerang usia atau pribadi pembicara alih-alih isi argumennya disebut Ad Hominem.'
+    explain: 'Ad Hominem menyerang pribadi pembicara, bukan argumennya.'
   },
   {
-    q: 'Uji Wawasan: pernyataan mana yang BENAR-BENAR FAKTA dunia nyata?',
+    q: 'Pernyataan mana yang merupakan fakta?',
     options: [
-      { label: 'Gurita memiliki tiga jantung dan darah berwarna biru.', ok: true },
-      { label: 'Manusia normal hanya memakai 10 persen otaknya.', ok: false },
-      { label: 'Ikan mas koki hanya punya daya ingat 3 detik.', ok: false },
-      { label: 'Banteng marah karena melihat warna merah.', ok: false }
+      { label: 'Gurita memiliki tiga jantung dan darah biru.', ok: true },
+      { label: 'Manusia hanya memakai 10 persen otaknya.', ok: false },
+      { label: 'Ikan mas koki hanya ingat selama 3 detik.', ok: false },
+      { label: 'Banteng marah karena warna merah.', ok: false }
     ],
-    explain: 'Gurita memang punya 3 jantung dan darah biru berbasis tembaga (hemosianin); tiga opsi lainnya adalah mitos populer.'
+    explain: 'Gurita memiliki tiga jantung dan hemosianin berbasis tembaga yang membuat darahnya biru.'
   },
   {
-    q: 'Uji Diksi: berita menulis "Dia tak bergeming sedikit pun" untuk maksud tetap diam teguh. Kenapa keliru?',
+    q: 'Mengapa frasa "tak bergeming" keliru untuk arti tetap diam?',
     options: [
-      { label: 'Kata "bergeming" sendiri sudah berarti diam tidak bergerak.', ok: true },
-      { label: 'Kata "bergeming" artinya berlari kencang.', ok: false },
-      { label: 'Kata "bergeming" hanya dipakai untuk benda mati.', ok: false },
-      { label: 'Harusnya ditulis "ber-geming" pakai tanda hubung.', ok: false }
+      { label: '"Bergeming" sendiri sudah berarti diam.', ok: true },
+      { label: '"Bergeming" berarti berlari cepat.', ok: false },
+      { label: '"Bergeming" hanya untuk benda mati.', ok: false },
+      { label: 'Harus ditulis memakai tanda hubung.', ok: false }
     ],
-    explain: 'Karena "bergeming" berarti diam, menambahkan "tak" justru membalik maknanya menjadi bergerak.'
+    explain: 'Karena bergeming berarti diam, awalan tak justru membalik maknanya.'
   },
   {
-    q: 'Uji Wawasan: mana fakta sejarah yang BENAR?',
+    q: 'Pernyataan sejarah mana yang benar?',
     options: [
-      { label: 'Universitas Oxford lebih tua daripada Kekaisaran Aztek.', ok: true },
-      { label: 'Einstein selalu gagal matematika waktu sekolah.', ok: false },
-      { label: 'Tembok Besar Tiongkok tampak jelas dengan mata telanjang dari Bulan.', ok: false },
-      { label: 'Tinggi Napoleon Bonaparte tidak sampai 150 cm.', ok: false }
+      { label: 'Universitas Oxford lebih tua dari Kekaisaran Aztek.', ok: true },
+      { label: 'Tembok Besar Tiongkok tampak jelas dari Bulan.', ok: false },
+      { label: 'Einstein selalu gagal pelajaran matematika.', ok: false },
+      { label: 'Tinggi Napoleon di bawah 150 cm.', ok: false }
     ],
-    explain: 'Oxford mulai beroperasi sekitar 1096, lebih dari dua abad sebelum berdirinya ibu kota Aztek (1325).'
+    explain: 'Pengajaran di Oxford dimulai sekitar 1096, jauh sebelum berdirinya ibu kota Aztek pada 1325.'
   }
 ];
 
 export function buildRegistrationExam() {
-  const eyd = EYD_POOL[randInt(0, EYD_POOL.length - 1)];
-  const mathQ = genQuickCashierMath();
-  const wit = WIT_POOL[randInt(0, WIT_POOL.length - 1)];
+  const lang = LANG_POOL[randInt(0, LANG_POOL.length - 1)];
+  const mathQ = genQuickMath();
+  const logic = LOGIC_POOL[randInt(0, LOGIC_POOL.length - 1)];
 
   return [
     {
-      tag: 'Tes 1/3 · Cek Bahasa',
-      q: eyd.q,
-      options: shuffle(eyd.options),
-      explain: eyd.explain
+      tag: '1/3 · Bahasa',
+      q: lang.q,
+      options: shuffle(lang.options),
+      explain: lang.explain
     },
     mathQ,
     {
-      tag: 'Tes 3/3 · Cek Wawasan',
-      q: wit.q,
-      options: shuffle(wit.options),
-      explain: wit.explain
+      tag: '3/3 · Nalar',
+      q: logic.q,
+      options: shuffle(logic.options),
+      explain: logic.explain
     }
   ];
 }
-
-export const REJECT_ROASTS = [
-  'Sampul buku menolak terbuka. Periksa catatan singkat di bawah, lalu coba ulang.',
-  'Belum lolos seleksi pembaca. Satu kesalahan saja mengunci kartu ini selama 5 detik.',
-  'Ciko menghela napas pelan: hampir tepat, tapi segel sampul tidak menerima kompromi.'
-];

@@ -1,4 +1,4 @@
-// Taman Kronik: Gardenscapes Match-3 Bertingkat + Renovasi Taman Bangsawan 3D (Genshin Exploration & Cursor POV).
+// Taman Kronik: Match-3 bertingkat + renovasi taman 3D dengan pratinjau langsung, peta area terkunci, dan daftar akun 2 langkah.
 
 import { GARDEN_W, GARDEN_H, RESTORATION_TASKS, GARDEN_NPCS } from './garden_data.js';
 import { GardenWorld3D } from './garden3d.js';
@@ -17,14 +17,10 @@ import {
   speakPhrase
 } from './academy_ui.js';
 import {
-  CHARACTER_CLASSES,
-  FUNNY_USERNAMES,
-  getCharacterClass,
+  SUGGESTED_USERNAMES,
   validateUsername,
-  buildRegistrationExam,
-  REJECT_ROASTS
+  buildRegistrationExam
 } from './data/registration.js';
-import { renderCharacterSVG } from './characters.js';
 import { audio } from './audio.js';
 import {
   MAX_LIVES,
@@ -54,7 +50,7 @@ const authCardRoot = document.getElementById('auth-card-root');
 const overlayRoot = document.getElementById('overlay-root');
 const toastEl = document.getElementById('toast');
 
-const hudAvatar = document.getElementById('hud-avatar');
+const hudInitial = document.getElementById('hud-initial');
 const hudLives = document.getElementById('hud-lives');
 const hudStars = document.getElementById('hud-stars');
 const hudCoins = document.getElementById('hud-coins');
@@ -63,6 +59,10 @@ const hudTaskProgress = document.getElementById('hud-task-progress');
 const hudCodexCount = document.getElementById('hud-codex-count');
 const btnToggleSound = document.getElementById('btn-toggle-sound');
 const helpPopover = document.getElementById('help-popover');
+
+const mmProgress = document.getElementById('mm-progress');
+const mmPins = document.getElementById('mm-pins');
+const mmPlayer = document.getElementById('mm-player');
 
 const playBtn = document.getElementById('btn-play-level');
 const playDiffTag = document.getElementById('play-diff-tag');
@@ -74,8 +74,8 @@ const zoneBannerName = document.getElementById('zone-banner-name');
 const btnInteract = document.getElementById('btn-interact');
 const interactLabel = document.getElementById('interact-label');
 
-// Core State
-let save = getActiveGardenAccount() || createFreshGardenAccount('Tamu', 'detektif');
+// State
+let save = getActiveGardenAccount() || createFreshGardenAccount('tamu', 'default');
 audio.setMuted(save.muted);
 
 const garden = new GardenWorld3D(worldCanvas);
@@ -83,20 +83,18 @@ window.addEventListener('resize', () => garden.resize());
 
 const player = {
   x: save.x || 700,
-  y: save.y || 700,
-  facing: save.facing || 'down',
-  characterClass: save.characterClass || 'detektif',
+  y: save.y || 760,
+  facing: save.facing || 'up',
   moving: false,
   sprinting: false,
   walkTarget: null,
   autoInteract: false
 };
 
-const ciko = { x: player.x - 32, y: player.y - 24 };
-
 const keys = new Set();
 const touchDirs = new Set();
 let modalOpen = false;
+let previewOpen = false; // True saat Dock Pratinjau 3D terbuka (kamera tetap bisa diputar!)
 let nearestInteract = null;
 let saveCooldown = 0;
 
@@ -118,7 +116,7 @@ function showToast(msg) {
   toastEl.textContent = msg;
   toastEl.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2800);
+  toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2500);
 }
 
 let bannerTimer = null;
@@ -127,7 +125,7 @@ function showBanner(sub, title) {
   zoneBannerName.textContent = title;
   zoneBanner.classList.add('show');
   clearTimeout(bannerTimer);
-  bannerTimer = setTimeout(() => zoneBanner.classList.remove('show'), 2600);
+  bannerTimer = setTimeout(() => zoneBanner.classList.remove('show'), 2400);
 }
 
 function exitPointerLockSafe() {
@@ -139,11 +137,15 @@ function exitPointerLockSafe() {
       document.exitPointerLock();
     }
   } catch {
-    // Abaikan pembatasan pointer lock
+    // Abaikan jika browser membatasi pointer lock
   }
 }
 
 function closeOverlay() {
+  if (previewOpen) {
+    previewOpen = false;
+    garden.clearPreview(save.renovations || {}, save.stars || 0);
+  }
   modalOpen = false;
   overlayRoot.innerHTML = '';
   refreshHud();
@@ -157,10 +159,83 @@ function getRestoredCount() {
   return RESTORATION_TASKS.filter((t) => typeof save.renovations?.[t.id] === 'number').length;
 }
 
+// Miniatur siluet SVG arsitektur per objek untuk tombol pilihan gaya!
+function renderSitePreviewSVG(siteId, style) {
+  const c = style.color;
+  const a = style.accent;
+  if (siteId === 'gate') {
+    return `<svg viewBox="0 0 64 48" class="st-svg"><rect x="10" y="16" width="9" height="26" rx="2" fill="${c}"/><rect x="45" y="16" width="9" height="26" rx="2" fill="${c}"/><circle cx="14.5" cy="14" r="4" fill="${a}"/><circle cx="49.5" cy="14" r="4" fill="${a}"/><path d="M14.5 18 Q32 4 49.5 18" fill="none" stroke="${a}" stroke-width="3.2" stroke-linecap="round"/></svg>`;
+  }
+  if (siteId === 'fountain') {
+    return `<svg viewBox="0 0 64 48" class="st-svg"><ellipse cx="32" cy="36" rx="22" ry="7" fill="${c}"/><ellipse cx="32" cy="34" rx="17" ry="4.5" fill="${a}"/><rect x="28" y="20" width="8" height="14" rx="2" fill="${c}"/><ellipse cx="32" cy="20" rx="10" ry="3.5" fill="${c}"/><path d="M32 18 L32 8 M32 9 Q25 13 24 20 M32 9 Q39 13 40 20" fill="none" stroke="#9CE5F5" stroke-width="2" stroke-linecap="round"/></svg>`;
+  }
+  if (siteId === 'flowerbeds') {
+    return `<svg viewBox="0 0 64 48" class="st-svg"><rect x="8" y="28" width="48" height="12" rx="4" fill="#3B6342"/><circle cx="18" cy="25" r="6" fill="${c}"/><circle cx="32" cy="22" r="7" fill="${a}"/><circle cx="46" cy="25" r="6" fill="${c}"/><circle cx="25" cy="30" r="5" fill="${c}"/><circle cx="39" cy="30" r="5" fill="${a}"/></svg>`;
+  }
+  if (siteId === 'lanterns') {
+    return `<svg viewBox="0 0 64 48" class="st-svg"><rect x="29" y="18" width="6" height="24" rx="2" fill="${c}"/><rect x="23" y="39" width="18" height="4" rx="2" fill="${c}"/><polygon points="24,18 40,18 36,9 28,9" fill="${a}"/><circle cx="32" cy="14" r="8" fill="${a}" opacity="0.25"/><path d="M23 9 L32 4 L41 9 Z" fill="${c}"/></svg>`;
+  }
+  if (siteId === 'orwell_pavilion' || siteId === 'clock_gazebo') {
+    return `<svg viewBox="0 0 64 48" class="st-svg"><polygon points="10,20 32,7 54,20" fill="${a}"/><rect x="16" y="20" width="5" height="20" fill="${c}"/><rect x="43" y="20" width="5" height="20" fill="${c}"/><rect x="29" y="20" width="6" height="20" fill="${c}" opacity="0.75"/><rect x="11" y="38" width="42" height="5" rx="2" fill="${c}"/></svg>`;
+  }
+  if (siteId === 'tea_pergola') {
+    return `<svg viewBox="0 0 64 48" class="st-svg"><path d="M8 18 Q32 9 56 18 L52 22 L12 22 Z" fill="${a}"/><rect x="15" y="22" width="5" height="19" fill="${c}"/><rect x="44" y="22" width="5" height="19" fill="${c}"/><rect x="24" y="33" width="16" height="4" rx="1.5" fill="${c}"/><rect x="11" y="39" width="42" height="4" rx="2" fill="${c}"/></svg>`;
+  }
+  if (siteId === 'pond_bridge') {
+    return `<svg viewBox="0 0 64 48" class="st-svg"><ellipse cx="32" cy="39" rx="26" ry="5" fill="#3B7A8C" opacity="0.7"/><path d="M10 36 Q32 14 54 36" fill="none" stroke="${c}" stroke-width="6" stroke-linecap="round"/><path d="M14 29 Q32 10 50 29" fill="none" stroke="${a}" stroke-width="2.4" stroke-linecap="round"/></svg>`;
+  }
+  if (siteId === 'greenhouse') {
+    return `<svg viewBox="0 0 64 48" class="st-svg"><polygon points="12,22 32,9 52,22" fill="${a}" opacity="0.75" stroke="${c}" stroke-width="2.4"/><rect x="14" y="22" width="36" height="19" fill="${a}" opacity="0.55" stroke="${c}" stroke-width="2.4"/><line x1="26" y1="22" x2="26" y2="41" stroke="${c}" stroke-width="2"/><line x1="38" y1="22" x2="38" y2="41" stroke="${c}" stroke-width="2"/></svg>`;
+  }
+  if (siteId === 'sakura_grove') {
+    return `<svg viewBox="0 0 64 48" class="st-svg"><rect x="29" y="26" width="6" height="16" rx="2" fill="${a}"/><circle cx="32" cy="18" r="11" fill="${c}"/><circle cx="21" cy="23" r="8" fill="${c}"/><circle cx="43" cy="23" r="8" fill="${c}"/></svg>`;
+  }
+  if (siteId === 'rose_arch') {
+    return `<svg viewBox="0 0 64 48" class="st-svg"><path d="M15 41 L15 22 A17 17 0 0 1 49 22 L49 41" fill="none" stroke="${a}" stroke-width="5" stroke-linecap="round"/><circle cx="17" cy="22" r="4.2" fill="${c}"/><circle cx="25" cy="11" r="4.5" fill="${c}"/><circle cx="39" cy="11" r="4.5" fill="${c}"/><circle cx="47" cy="22" r="4.2" fill="${c}"/></svg>`;
+  }
+  // signal_tower
+  return `<svg viewBox="0 0 64 48" class="st-svg"><polygon points="22,42 26,18 38,18 42,42" fill="${c}"/><path d="M24 18 A8 8 0 0 1 40 18 Z" fill="${a}"/><line x1="32" y1="10" x2="32" y2="4" stroke="${a}" stroke-width="2.5" stroke-linecap="round"/><circle cx="32" cy="4" r="2.2" fill="${a}"/></svg>`;
+}
+
+// Peta Taman Interaktif (menunjukkan posisi pemain + 12 area terkunci/siap/terbuka)
+function renderMinimapPins() {
+  const doneCount = getRestoredCount();
+  if (mmProgress) mmProgress.textContent = `${doneCount}/${RESTORATION_TASKS.length}`;
+  if (!mmPins) return;
+
+  const stars = save.stars || 0;
+  mmPins.innerHTML = RESTORATION_TASKS.map((t) => {
+    const done = typeof save.renovations?.[t.id] === 'number';
+    const ready = !done && stars >= t.starCost;
+    const cls = done ? 'open' : ready ? 'ready' : 'locked';
+    const leftPct = (t.x / GARDEN_W) * 100;
+    const topPct = (t.y / GARDEN_H) * 100;
+    const tip = done ? `${t.name} (Terbuka)` : ready ? `${t.name} (Siap · ${t.starCost} ★)` : `${t.name} (Terkunci · ${t.starCost} ★)`;
+    return `<button class="mm-pin ${cls}" data-mm-site="${t.id}" style="left:${leftPct.toFixed(1)}%; top:${topPct.toFixed(1)}%;" type="button" title="${escapeHtml(tip)}"></button>`;
+  }).join('');
+
+  mmPins.querySelectorAll('[data-mm-site]').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (modalOpen) return;
+      const task = RESTORATION_TASKS.find((x) => x.id === btn.dataset.mmSite);
+      if (task) openRenovationPreview(task);
+    });
+  });
+}
+
+function updateMinimapPlayer() {
+  if (!mmPlayer) return;
+  const leftPct = (player.x / GARDEN_W) * 100;
+  const topPct = (player.y / GARDEN_H) * 100;
+  mmPlayer.style.left = `${leftPct.toFixed(1)}%`;
+  mmPlayer.style.top = `${topPct.toFixed(1)}%`;
+}
+
 function refreshHud() {
   syncLives(save);
-  const cls = getCharacterClass(save.characterClass);
-  hudAvatar.innerHTML = renderCharacterSVG(cls.portraitKey, 'idle');
+  const initial = (save.username || 'T').charAt(0).toUpperCase();
+  if (hudInitial) hudInitial.textContent = initial;
   hudLives.textContent = `${save.lives}/${MAX_LIVES}`;
   hudStars.textContent = String(save.stars || 0);
   hudCoins.textContent = String(save.coins || 0);
@@ -171,8 +246,8 @@ function refreshHud() {
   const next = getNextPendingTask();
   hudTaskProgress.textContent = `${doneCount}/${RESTORATION_TASKS.length}`;
   hudNextTask.textContent = next
-    ? `Renovasi: ${next.name} (${next.starCost} ★)`
-    : `Musim ${save.season || 1} Tuntas · Buka Musim Baru`;
+    ? `${next.name} · ${next.starCost} ★`
+    : `Musim ${save.season || 1} Selesai`;
 
   const cfg = getLevelConfig(save.level || 1);
   playLevelLabel.textContent = `Main · Level ${cfg.level}`;
@@ -180,14 +255,18 @@ function refreshHud() {
   playBtn.classList.remove('hard', 'super');
   if (cfg.difficulty === 'Sulit') playBtn.classList.add('hard');
   if (cfg.difficulty === 'Sangat Sulit') playBtn.classList.add('super');
+
+  garden.syncRenovations(save.renovations || {}, null, save.stars || 0);
+  renderMinimapPins();
+  updateMinimapPlayer();
 }
 
 // ==========================================
-// INTERACTION DETECTION IN 3D GARDEN
+// INTERAKSI DI TAMAN 3D
 // ==========================================
 function findNearestInteractable() {
   let best = null;
-  let bestDist = 92;
+  let bestDist = 96;
 
   for (const task of RESTORATION_TASKS) {
     const d = Math.hypot(task.x - player.x, task.y - player.y);
@@ -198,7 +277,7 @@ function findNearestInteractable() {
         kind: 'task',
         x: task.x,
         y: task.y,
-        label: done ? `Ubah Gaya: ${task.name}` : `Renovasi: ${task.name} (${task.starCost} ★)`,
+        label: done ? `Ubah ${task.name}` : `Lihat ${task.name} (${task.starCost} ★)`,
         data: task
       };
     }
@@ -212,7 +291,7 @@ function findNearestInteractable() {
         kind: 'npc',
         x: npc.x,
         y: npc.y,
-        label: `Bicara dengan ${npc.name} (${npc.role})`,
+        label: `${npc.name} · ${npc.role}`,
         data: npc
       };
     }
@@ -222,22 +301,23 @@ function findNearestInteractable() {
 }
 
 function triggerNearestInteraction() {
-  if (modalOpen || !titleOverlay.classList.contains('hidden')) return;
+  if (modalOpen || previewOpen || !titleOverlay.classList.contains('hidden')) return;
   if (!nearestInteract) return;
   exitPointerLockSafe();
   player.walkTarget = null;
   if (nearestInteract.kind === 'task') {
-    openRenovationModal(nearestInteract.data);
+    openRenovationPreview(nearestInteract.data);
   } else if (nearestInteract.kind === 'npc') {
     openNpcStudy(nearestInteract.data);
   }
 }
 
 // ==========================================
-// PLAY MATCH-3 LEVEL (GARDENSCAPES CORE!)
+// MATCH-3 PUZZLE
 // ==========================================
 function openCurrentPuzzle() {
   if (modalOpen || !titleOverlay.classList.contains('hidden')) return;
+  if (previewOpen) closeOverlay();
   exitPointerLockSafe();
   syncLives(save);
   if (save.lives <= 0) {
@@ -257,24 +337,25 @@ function openCurrentPuzzle() {
       save.totalClearedLevels = (save.totalClearedLevels || 0) + 1;
       persistGardenSave(save);
       closeOverlay();
-      garden.spawnBurst(player.x, player.y, '#D9B466', 32);
-      showBanner(`LEVEL ${level} SELESAI`, `+${stars} Bintang Renovasi (★) · +${coins} Koin`);
+      garden.spawnBurst(player.x, player.y, '#D9B466', 28);
+      showBanner(`LEVEL ${level} SELESAI`, `+${stars} ★ · +${coins} Koin`);
     },
     onLose: () => {
       if (save.lives >= MAX_LIVES) save.lastLifeAt = Date.now();
       save.lives = Math.max(0, save.lives - 1);
       persistGardenSave(save);
       closeOverlay();
-      showToast(`Nyawa tersisa ${save.lives}/${MAX_LIVES}. Klik ♥ di kiri atas untuk isi lewat 1 soal kilat.`);
+      showToast(`Nyawa tersisa ${save.lives}/${MAX_LIVES}.`);
     },
     onClose: closeOverlay
   });
 }
 
 // ==========================================
-// REFILL HEART VIA 1 MICRO-QUEST
+// ISI ULANG NYAWA (+1 ♥)
 // ==========================================
 function openRefillHeartModal() {
+  if (previewOpen) closeOverlay();
   exitPointerLockSafe();
   syncLives(save);
   modalOpen = true;
@@ -283,11 +364,10 @@ function openRefillHeartModal() {
   if (save.lives >= MAX_LIVES) {
     overlayRoot.innerHTML = `
       <div class="modal-backdrop">
-        <div class="altar-card" style="max-width:440px; text-align:center;">
-          <div class="title-kicker">NYAWA PENUH</div>
-          <h2 style="margin:0 0 8px; font-family:var(--font-display); color:var(--paper);">♥ ${save.lives}/${MAX_LIVES} Nyawa Siap</h2>
-          <p style="margin:0 0 16px; color:var(--muted); font-size:0.88rem;">Kamu bisa langsung bermain level puzzle berikutnya.</p>
-          <button class="rpg-btn gold" id="btn-hr-close" type="button">Kembali ke Taman</button>
+        <div class="altar-card" style="max-width:380px; text-align:center;">
+          <h2 style="margin:0 0 8px; font-family:var(--font-display); color:var(--paper);">♥ ${save.lives}/${MAX_LIVES}</h2>
+          <p style="margin:0 0 16px; color:var(--muted); font-size:0.86rem;">Nyawa penuh.</p>
+          <button class="rpg-btn gold" id="btn-hr-close" type="button">Tutup</button>
         </div>
       </div>
     `;
@@ -303,17 +383,15 @@ function openRefillHeartModal() {
     const minTxt = `${Math.floor(secs / 60)}m ${String(secs % 60).padStart(2, '0')}d`;
     overlayRoot.innerHTML = `
       <div class="modal-backdrop">
-        <div class="altar-card" style="max-width:520px;">
-          <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:8px;">
-            <span class="title-kicker" style="margin:0;">ISI NYAWA (+1 ♥) · ${escapeHtml(q.topic)}</span>
+        <div class="altar-card" style="max-width:480px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px;">
+            <strong style="font-size:0.94rem; color:var(--paper);">Isi +1 ♥ · ${escapeHtml(q.topic)}</strong>
             <button class="rpg-btn ghost" id="btn-hr-close" type="button" style="padding:6px 12px; font-size:0.78rem;">Tutup</button>
           </div>
-          <p style="margin:0 0 10px; font-size:0.82rem; color:var(--muted);">
-            Nyawa saat ini: ♥ ${save.lives}/${MAX_LIVES} (pulih otomatis dalam ${minTxt}). Jawab 1 soal kilat untuk langsung mengisi +1 ♥.
-          </p>
-          ${q.audioText ? `<button class="speak-btn" id="btn-hr-audio" type="button" style="margin-bottom:8px;">Dengar Pelafalan</button>` : ''}
+          <p style="margin:0 0 10px; font-size:0.8rem; color:var(--muted);">♥ ${save.lives}/${MAX_LIVES} · Pulih otomatis ${minTxt}</p>
+          ${q.audioText ? `<button class="speak-btn" id="btn-hr-audio" type="button" style="margin-bottom:8px;">Suara</button>` : ''}
           <div class="math-q-box" style="margin-bottom:10px;">
-            <p class="math-q-text" style="font-size:0.98rem;">${escapeHtml(q.prompt)}</p>
+            <p class="math-q-text" style="font-size:0.96rem;">${escapeHtml(q.prompt)}</p>
           </div>
           <div class="choice-grid">
             ${q.options
@@ -330,11 +408,11 @@ function openRefillHeartModal() {
           ${
             feedback
               ? `
-            <div class="insight-box" style="margin-top:12px;">
-              <p style="margin:0;"><strong>${feedback.ok ? '+1 Nyawa dipulihkan.' : 'Belum tepat.'}</strong> ${escapeHtml(q.explain)}</p>
+            <div class="insight-box" style="margin-top:10px;">
+              <p style="margin:0;"><strong>${feedback.ok ? '+1 ♥ aktif.' : 'Keliru.'}</strong> ${escapeHtml(q.explain)}</p>
             </div>
-            <div style="margin-top:12px; text-align:right;">
-              <button class="rpg-btn gold" id="btn-hr-done" type="button">${feedback.ok ? 'Lanjut Main' : 'Coba Soal Lain'}</button>
+            <div style="margin-top:10px; text-align:right;">
+              <button class="rpg-btn gold" id="btn-hr-done" type="button">${feedback.ok ? 'Selesai' : 'Soal Lain'}</button>
             </div>
           `
               : ''
@@ -379,56 +457,56 @@ function openRefillHeartModal() {
 }
 
 // ==========================================
-// 3-STYLE RENOVATION PICKER & TASK LIST
+// PRATINJAU RENOVASI 3D LANGSUNG (DOCK BAWAH TANPA MENUTUP TAMAN!)
 // ==========================================
-function openRenovationModal(task) {
+function openRenovationPreview(task) {
   exitPointerLockSafe();
-  modalOpen = true;
+  modalOpen = false;
+  previewOpen = true;
   audio.playClick();
 
   const alreadyDone = typeof save.renovations?.[task.id] === 'number';
   let pickedStyle = alreadyDone ? save.renovations[task.id] : 0;
 
-  function renderPick() {
+  // Fokus kamera 3D langsung ke objek & tampilkan bentuk gaya pertama secara live!
+  garden.setCameraFocus(task.x, task.y, 12.2, 0.42);
+  garden.previewSiteStyle(task.id, pickedStyle);
+
+  function renderDock() {
     const canPay = alreadyDone || (save.stars || 0) >= task.starCost;
     overlayRoot.innerHTML = `
-      <div class="modal-backdrop">
-        <div class="altar-card" style="max-width:600px;">
-          <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
+      <div class="ren-dock-wrap">
+        <div class="ren-dock">
+          <div class="ren-dock-head">
             <div>
-              <div class="title-kicker">${alreadyDone ? 'UBAH GAYA DESAIN (GRATIS)' : `RENOVASI TAMAN · ${task.starCost} ★`}</div>
-              <h2 style="margin:2px 0 4px; font-family:var(--font-display); font-size:1.45rem; color:var(--paper);">${escapeHtml(task.name)}</h2>
-              <p style="margin:0; font-size:0.86rem; color:var(--muted);">${escapeHtml(task.shortDesc)}</p>
+              <h3>${escapeHtml(task.name)}</h3>
+              <span>${alreadyDone ? 'Ganti gaya gratis · Seret layar untuk putar 3D' : `Pratinjau 3D · Butuh ${task.starCost} ★ (kamu punya ${save.stars || 0} ★)`}</span>
             </div>
-            <button class="rpg-btn ghost" id="btn-ren-close" type="button" style="padding:6px 12px; font-size:0.78rem;">Tutup</button>
+            <button class="rpg-btn ghost" id="btn-ren-cancel" type="button" style="padding:6px 12px; font-size:0.78rem;">Batal</button>
           </div>
 
-          <div class="style-grid">
-            ${task.styles
-              .map(
-                (st) => `
-              <button class="style-card ${pickedStyle === st.id ? 'selected' : ''}" data-st-id="${st.id}" type="button">
-                <div class="style-swatches">
-                  <span class="swatch-dot" style="background:${st.color}"></span>
-                  <span class="swatch-dot" style="background:${st.accent}"></span>
-                </div>
-                <strong style="display:block; font-size:0.9rem; margin-bottom:3px;">${escapeHtml(st.name)}</strong>
-                <span style="font-size:0.74rem; color:var(--muted); line-height:1.4; display:block;">${escapeHtml(st.note)}</span>
-              </button>
-            `
-              )
-              .join('')}
-          </div>
+          <div class="ren-dock-body">
+            <div class="ren-style-row">
+              ${task.styles
+                .map(
+                  (st) => `
+                <button class="ren-style-btn ${pickedStyle === st.id ? 'selected' : ''}" data-st-id="${st.id}" type="button">
+                  <div class="ren-thumb">${renderSitePreviewSVG(task.id, st)}</div>
+                  <div class="ren-meta">
+                    <strong>${escapeHtml(st.name)}</strong>
+                    <small>${escapeHtml(st.note)}</small>
+                  </div>
+                </button>
+              `
+                )
+                .join('')}
+            </div>
 
-          <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
-            <span style="font-size:0.82rem; color:var(--gold); font-weight:700;">
-              ${alreadyDone ? 'Bebas ubah gaya kapan saja.' : `Bintang kamu: ${save.stars || 0} ★ · Hadiah: +${task.coinReward} Koin`}
-            </span>
-            <div style="display:flex; gap:8px;">
+            <div class="ren-dock-cta">
               ${
-                !canPay
-                  ? `<button class="rpg-btn primary" id="btn-ren-play" type="button">Main Level ${save.level} untuk ★</button>`
-                  : `<button class="rpg-btn gold" id="btn-ren-confirm" type="button">${alreadyDone ? 'Terapkan Gaya 3D' : `Bangun Sekarang (${task.starCost} ★)`}</button>`
+                canPay
+                  ? `<button class="rpg-btn gold" id="btn-ren-confirm" type="button">${alreadyDone ? 'Simpan Gaya' : `Pasang · ${task.starCost} ★`}</button>`
+                  : `<button class="rpg-btn primary" id="btn-ren-play" type="button">Main Level ${save.level} (+★)</button>`
               }
             </div>
           </div>
@@ -436,18 +514,25 @@ function openRenovationModal(task) {
       </div>
     `;
 
-    document.getElementById('btn-ren-close')?.addEventListener('click', closeOverlay);
+    document.getElementById('btn-ren-cancel')?.addEventListener('click', () => {
+      audio.playClick();
+      closeOverlay();
+    });
+
     document.querySelectorAll('[data-st-id]').forEach((b) => {
       b.addEventListener('click', () => {
         audio.playClick();
         pickedStyle = Number(b.dataset.stId);
-        renderPick();
+        garden.previewSiteStyle(task.id, pickedStyle);
+        renderDock();
       });
     });
+
     document.getElementById('btn-ren-play')?.addEventListener('click', () => {
       closeOverlay();
       openCurrentPuzzle();
     });
+
     document.getElementById('btn-ren-confirm')?.addEventListener('click', () => {
       if (!alreadyDone) {
         if ((save.stars || 0) < task.starCost) return;
@@ -456,23 +541,33 @@ function openRenovationModal(task) {
       }
       save.renovations[task.id] = pickedStyle;
       persistGardenSave(save);
-      garden.syncRenovations(save.renovations, task.id);
+
+      previewOpen = false;
+      garden.previewSiteId = null;
+      garden.clearCameraFocus();
+      garden.syncRenovations(save.renovations, task.id, save.stars);
       audio.playRenovate();
-      // Arahkan pandangan hero dekat ke objek yang baru dibangun
+
       player.x = Math.min(GARDEN_W - 80, Math.max(80, task.x));
       player.y = Math.min(GARDEN_H - 80, Math.max(80, task.y + 72));
       save.x = Math.round(player.x);
       save.y = Math.round(player.y);
       persistGardenSave(save);
-      closeOverlay();
-      showBanner(alreadyDone ? 'GAYA DIPERBARUI' : `RENOVASI SELESAI (+${task.coinReward} KOIN)`, task.name);
+
+      overlayRoot.innerHTML = '';
+      refreshHud();
+      showBanner(alreadyDone ? 'GAYA TERSIMPAN' : `AREA TERBUKA · +${task.coinReward} KOIN`, task.name);
     });
   }
 
-  renderPick();
+  renderDock();
 }
 
+// ==========================================
+// DAFTAR 12 AREA TAMAN (T)
+// ==========================================
 function openTasksModal() {
+  if (previewOpen) closeOverlay();
   exitPointerLockSafe();
   modalOpen = true;
   audio.playClick();
@@ -481,12 +576,9 @@ function openTasksModal() {
 
   overlayRoot.innerHTML = `
     <div class="modal-backdrop">
-      <div class="panel-modal" style="max-width:680px;">
+      <div class="panel-modal" style="max-width:640px;">
         <div class="panel-head">
-          <div>
-            <div class="title-kicker">DAFTAR RENOVASI · MUSIM ${save.season || 1} · ${doneCount}/${RESTORATION_TASKS.length}</div>
-            <h2>Tugas Taman 3D</h2>
-          </div>
+          <h2>Area Taman (${doneCount}/${RESTORATION_TASKS.length})</h2>
           <div style="display:flex; align-items:center; gap:10px;">
             <span style="font-weight:800; color:var(--gold); font-size:0.9rem;">${save.stars || 0} ★</span>
             <button class="rpg-btn ghost" id="btn-tk-close" type="button" style="padding:7px 13px; font-size:0.8rem;">Tutup</button>
@@ -496,12 +588,9 @@ function openTasksModal() {
         ${
           allDone
             ? `
-          <div class="insight-box" style="margin:0 0 14px; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
-            <div>
-              <p style="margin:0 0 2px;"><strong>Seluruh 12 area Musim ${save.season || 1} selesai direnovasi.</strong></p>
-              <p style="margin:0; font-size:0.82rem; color:var(--muted);">Buka Musim ${(save.season || 1) + 1} untuk mendesain ulang taman dengan bonus +250 Koin sambil mempertahankan Level Puzzle dan Codex.</p>
-            </div>
-            <button class="rpg-btn gold" id="btn-next-season" type="button" style="padding:9px 16px; font-size:0.82rem;">Buka Musim ${(save.season || 1) + 1}</button>
+          <div class="insight-box" style="margin:0 0 12px; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+            <p style="margin:0;"><strong>Musim ${save.season || 1} selesai.</strong> Buka Musim ${(save.season || 1) + 1} (+250 Koin).</p>
+            <button class="rpg-btn gold" id="btn-next-season" type="button" style="padding:8px 16px; font-size:0.82rem;">Musim ${(save.season || 1) + 1}</button>
           </div>
         `
             : ''
@@ -511,18 +600,16 @@ function openTasksModal() {
           ${RESTORATION_TASKS.map((t) => {
             const done = typeof save.renovations?.[t.id] === 'number';
             const styleName = done ? t.styles[save.renovations[t.id]]?.name : null;
-            const canAfford = (save.stars || 0) >= t.starCost;
+            const ready = !done && (save.stars || 0) >= t.starCost;
             return `
-              <div class="task-row ${done ? 'done' : ''}">
+              <div class="task-row ${done ? 'done' : ready ? 'ready' : ''}">
                 <div>
-                  <div style="font-weight:800; color:var(--paper); font-size:0.94rem;">${t.order}. ${escapeHtml(t.name)}</div>
-                  <div style="font-size:0.78rem; color:var(--muted);">${done ? `Selesai · Gaya: ${escapeHtml(styleName)}` : escapeHtml(t.shortDesc)}</div>
+                  <div style="font-weight:800; color:var(--paper); font-size:0.92rem;">${escapeHtml(t.name)}</div>
+                  <div style="font-size:0.78rem; color:var(--muted);">${done ? `Terbuka · ${escapeHtml(styleName)}` : ready ? `Siap dibuka · ${t.starCost} ★` : `Terkunci · ${t.starCost} ★`}</div>
                 </div>
-                <div style="display:flex; gap:6px; flex-shrink:0;">
-                  <button class="rpg-btn ${done ? 'ghost' : canAfford ? 'gold' : 'ghost'}" data-open-ren="${t.id}" type="button" style="padding:7px 13px; font-size:0.78rem;">
-                    ${done ? 'Ubah Gaya' : `Renovasi (${t.starCost} ★)`}
-                  </button>
-                </div>
+                <button class="rpg-btn ${ready ? 'gold' : 'ghost'}" data-open-ren="${t.id}" type="button" style="padding:7px 13px; font-size:0.78rem;">
+                  ${done ? 'Ubah' : 'Lihat 3D'}
+                </button>
               </div>
             `;
           }).join('')}
@@ -535,7 +622,10 @@ function openTasksModal() {
   document.querySelectorAll('[data-open-ren]').forEach((btn) => {
     btn.addEventListener('click', () => {
       const task = RESTORATION_TASKS.find((x) => x.id === btn.dataset.openRen);
-      if (task) openRenovationModal(task);
+      if (task) {
+        modalOpen = false;
+        openRenovationPreview(task);
+      }
     });
   });
   document.getElementById('btn-next-season')?.addEventListener('click', () => {
@@ -543,15 +633,15 @@ function openTasksModal() {
     save.renovations = {};
     save.coins = (save.coins || 0) + 250;
     persistGardenSave(save);
-    garden.syncRenovations({});
+    garden.syncRenovations({}, null, save.stars);
     audio.playGateUnlock();
     closeOverlay();
-    showBanner(`MUSIM TAMAN ${save.season}`, 'Taman siap dirancang ulang · +250 Koin');
+    showBanner(`MUSIM ${save.season}`, '+250 Koin');
   });
 }
 
 // ==========================================
-// STUDY ARCHIVE & CODEX (78 CARDS + KOREA + ORWELL + CYBER /berita-terkini)
+// ARSIP & RUANG BELAJAR (C)
 // ==========================================
 function unlockCodexId(id) {
   if (id && !save.codexIds.includes(id)) {
@@ -561,36 +651,23 @@ function unlockCodexId(id) {
   }
 }
 
-function handleStudyComplete({ badgeName, xp = 0, coins = 50 }) {
+function handleStudyComplete({ badgeName, coins = 50 }) {
   save.coins = (save.coins || 0) + coins;
   persistGardenSave(save);
   audio.playVictory();
   closeOverlay();
-  showBanner('CATATAN TERSIMPAN', `${badgeName} · +${coins} Koin`);
+  showBanner('TERSIMPAN', `${badgeName} · +${coins} Koin`);
 }
 
 function openNpcStudy(npc) {
+  if (previewOpen) closeOverlay();
+  modalOpen = true;
   if (npc.action === 'study_lit') {
-    modalOpen = true;
-    openClassicLitAcademy({
-      overlayRoot,
-      save,
-      onUnlockLit: unlockCodexId,
-      onComplete: handleStudyComplete,
-      onClose: closeOverlay
-    });
+    openClassicLitAcademy({ overlayRoot, save, onUnlockLit: unlockCodexId, onComplete: handleStudyComplete, onClose: closeOverlay });
   } else if (npc.action === 'study_korean') {
-    modalOpen = true;
     openKoreanAcademy({ overlayRoot, save, onComplete: handleStudyComplete, onClose: closeOverlay });
   } else if (npc.action === 'study_cyber') {
-    modalOpen = true;
-    openCyberLab({
-      overlayRoot,
-      save,
-      onUnlockIntel: unlockCodexId,
-      onComplete: handleStudyComplete,
-      onClose: closeOverlay
-    });
+    openCyberLab({ overlayRoot, save, onUnlockIntel: unlockCodexId, onComplete: handleStudyComplete, onClose: closeOverlay });
   }
 }
 
@@ -599,29 +676,26 @@ function getAllCodexEntries() {
     ...CLASSIC_LIT_ACADEMY.concepts.map((lit) => ({
       id: lit.id,
       group: 'lit',
-      groupLabel: `Sastra · ${lit.author}`,
+      groupLabel: lit.author,
       title: lit.title,
       summary: lit.summary,
-      detail: lit.modernLink,
-      example: lit.speakHook
+      detail: lit.modernLink
     })),
     ...CYBER_LAB.breakthroughs.map((cb) => ({
       id: cb.id,
       group: 'cyber',
-      groupLabel: `Siber · ${cb.category}`,
+      groupLabel: cb.category,
       title: cb.title,
       summary: cb.summary,
-      detail: cb.whyMatters,
-      example: cb.speakHook
+      detail: cb.whyMatters
     })),
     ...DICTION_BANK.map((d) => ({
       id: d.id,
       group: 'diction',
-      groupLabel: 'Diksi KBBI',
+      groupLabel: 'Diksi',
       title: d.term,
       summary: d.meaning,
-      detail: d.pitfall,
-      example: d.usage
+      detail: d.usage
     })),
     ...FALLACIES_BANK.map((fl) => ({
       id: fl.id,
@@ -629,25 +703,25 @@ function getAllCodexEntries() {
       groupLabel: 'Logika',
       title: fl.fallacyName,
       summary: fl.meaning,
-      detail: fl.pitfall,
-      example: fl.usage
+      detail: fl.usage
     })),
     ...FACTS_BANK.map((f) => ({
       id: f.id,
       group: 'fact',
-      groupLabel: `Fakta · ${f.category}`,
-      title: f.isFact ? 'Fakta Sahih' : 'Mitos Keliru',
+      groupLabel: f.category,
+      title: f.isFact ? 'Fakta' : 'Mitos',
       summary: f.statement,
-      detail: f.punchline,
-      example: f.hook
+      detail: f.punchline
     }))
   ];
 }
 
 function openStudyHubModal() {
+  if (previewOpen) closeOverlay();
   exitPointerLockSafe();
   modalOpen = true;
   audio.playClick();
+
   let filter = 'all';
   let revealAll = false;
   let query = '';
@@ -665,19 +739,16 @@ function openStudyHubModal() {
       <div class="modal-backdrop">
         <div class="panel-modal">
           <div class="panel-head">
-            <div>
-              <div class="title-kicker">ARSIP PENGETAHUAN & RUANG BELAJAR</div>
-              <h2>Codex Taman (${save.codexIds.length}/${TOTAL_CODEX})</h2>
-            </div>
+            <h2>Arsip (${save.codexIds.length}/${TOTAL_CODEX})</h2>
             <button class="rpg-btn ghost" id="btn-st-close" type="button" style="padding:7px 14px; font-size:0.8rem;">Tutup</button>
           </div>
 
-          <div class="codex-bar" style="margin-bottom:12px;">
-            <button class="rpg-btn ghost" id="btn-open-ac-lit" type="button" style="padding:7px 13px; font-size:0.78rem;">Arsip Sastra (Orwell & Austen)</button>
-            <button class="rpg-btn ghost" id="btn-open-ac-kr" type="button" style="padding:7px 13px; font-size:0.78rem;">Belajar Korea (Hangul + Suara)</button>
-            <button class="rpg-btn ghost" id="btn-open-ac-poly" type="button" style="padding:7px 13px; font-size:0.78rem;">Jepang & Inggris</button>
-            <button class="rpg-btn ghost" id="btn-open-ac-cyber" type="button" style="padding:7px 13px; font-size:0.78rem;">Radar Siber /berita-terkini</button>
-            <button class="rpg-btn ghost" id="btn-open-ac-rhet" type="button" style="padding:7px 13px; font-size:0.78rem;">Kerangka Retorika</button>
+          <div class="codex-bar" style="margin-bottom:10px;">
+            <button class="rpg-btn ghost" id="btn-open-ac-lit" type="button" style="padding:7px 12px; font-size:0.78rem;">Sastra</button>
+            <button class="rpg-btn ghost" id="btn-open-ac-kr" type="button" style="padding:7px 12px; font-size:0.78rem;">Korea</button>
+            <button class="rpg-btn ghost" id="btn-open-ac-poly" type="button" style="padding:7px 12px; font-size:0.78rem;">Jepang & Inggris</button>
+            <button class="rpg-btn ghost" id="btn-open-ac-cyber" type="button" style="padding:7px 12px; font-size:0.78rem;">Siber</button>
+            <button class="rpg-btn ghost" id="btn-open-ac-rhet" type="button" style="padding:7px 12px; font-size:0.78rem;">Retorika</button>
           </div>
 
           <div class="codex-bar">
@@ -691,8 +762,8 @@ function openStudyHubModal() {
             ]
               .map(([k, lbl]) => `<button class="filter-chip ${filter === k ? 'active' : ''}" data-cf="${k}" type="button">${lbl}</button>`)
               .join('')}
-            <button class="filter-chip ${revealAll ? 'active' : ''}" id="btn-cd-reveal" type="button">${revealAll ? 'Mode Baca: Semua' : 'Buka Semua'}</button>
-            <input class="rpg-input" id="cd-search" type="search" placeholder="Cari catatan..." value="${escapeHtml(query)}" style="max-width:200px; padding:6px 11px; font-size:0.82rem;" />
+            <button class="filter-chip ${revealAll ? 'active' : ''}" id="btn-cd-reveal" type="button">${revealAll ? 'Sembunyikan' : 'Tampilkan Semua'}</button>
+            <input class="rpg-input" id="cd-search" type="search" placeholder="Cari..." value="${escapeHtml(query)}" style="max-width:190px; padding:6px 10px; font-size:0.8rem;" />
           </div>
 
           <div class="codex-list">
@@ -700,15 +771,14 @@ function openStudyHubModal() {
               .map((item) => {
                 const open = revealAll || save.codexIds.includes(item.id);
                 if (!open) {
-                  return `<div class="codex-item locked"><div class="title-kicker" style="margin-bottom:2px;">${escapeHtml(item.groupLabel)}</div><h4>Terkunci</h4><p>Buka ubin segel di papan puzzle atau kunjungi ruang belajar di atas.</p></div>`;
+                  return `<div class="codex-item locked"><h4>Terkunci · ${escapeHtml(item.groupLabel)}</h4><p>Buka lewat Segel Ilmu di papan puzzle.</p></div>`;
                 }
                 return `
                   <div class="codex-item">
-                    <div class="title-kicker" style="margin-bottom:2px;">${escapeHtml(item.groupLabel)}</div>
+                    <small style="color:var(--gold); font-weight:700;">${escapeHtml(item.groupLabel)}</small>
                     <h4>${escapeHtml(item.title)}</h4>
-                    <p><strong>${escapeHtml(item.summary)}</strong></p>
-                    <p>${escapeHtml(item.detail)}</p>
-                    <p style="color:var(--gold); font-style:italic;">${escapeHtml(item.example)}</p>
+                    <p>${escapeHtml(item.summary)}</p>
+                    <p style="color:var(--muted);">${escapeHtml(item.detail)}</p>
                   </div>
                 `;
               })
@@ -759,37 +829,31 @@ function openStudyHubModal() {
 }
 
 // ==========================================
-// PROFILE & SHORT WELCOME CARD
+// PROFIL RINGKAS
 // ==========================================
 function openProfileModal() {
+  if (previewOpen) closeOverlay();
   exitPointerLockSafe();
   modalOpen = true;
   audio.playClick();
-  const cls = getCharacterClass(save.characterClass);
   overlayRoot.innerHTML = `
     <div class="modal-backdrop">
-      <div class="altar-card" style="max-width:500px;">
+      <div class="altar-card" style="max-width:440px;">
         <div class="panel-head" style="margin-bottom:14px;">
-          <div style="display:flex; align-items:center; gap:12px;">
-            <div class="portrait-box" style="width:62px; height:62px;">${renderCharacterSVG(cls.portraitKey, 'idle')}</div>
-            <div>
-              <div class="title-kicker">PEMBACA · ${escapeHtml(cls.name)} · MUSIM ${save.season || 1}</div>
-              <h2 style="margin:0; font-size:1.35rem;">@${escapeHtml(save.username)}</h2>
-            </div>
-          </div>
+          <h2 style="margin:0; font-size:1.3rem;">@${escapeHtml(save.username)}</h2>
           <button class="rpg-btn ghost" id="btn-pr-close" type="button" style="padding:6px 12px;">Tutup</button>
         </div>
 
         <div class="zone-map-grid" style="margin-bottom:14px;">
-          <div class="zone-card unlocked"><h3>Level ${save.level}</h3><p>Progres Match-3 Tanpa Akhir</p></div>
-          <div class="zone-card unlocked"><h3>${getRestoredCount()}/${RESTORATION_TASKS.length}</h3><p>Area Taman Direnovasi</p></div>
-          <div class="zone-card unlocked"><h3>${save.solvedQuests || 0}</h3><p>Soal Segel Terjawab</p></div>
-          <div class="zone-card unlocked"><h3>${save.codexIds.length}/${TOTAL_CODEX}</h3><p>Codex Tersimpan</p></div>
+          <div class="zone-card unlocked"><h3>Level ${save.level}</h3><p>Puzzle</p></div>
+          <div class="zone-card unlocked"><h3>${getRestoredCount()}/${RESTORATION_TASKS.length}</h3><p>Area Terbuka</p></div>
+          <div class="zone-card unlocked"><h3>${save.solvedQuests || 0}</h3><p>Segel Terjawab</p></div>
+          <div class="zone-card unlocked"><h3>${save.codexIds.length}/${TOTAL_CODEX}</h3><p>Arsip</p></div>
         </div>
 
-        <div style="display:flex; flex-wrap:wrap; gap:8px; justify-content:space-between;">
+        <div style="display:flex; gap:8px; justify-content:space-between;">
           <button class="rpg-btn ghost" id="btn-pr-switch" type="button">Ganti Akun</button>
-          <button class="rpg-btn ghost" id="btn-pr-reset" type="button">Reset Level 1</button>
+          <button class="rpg-btn ghost" id="btn-pr-reset" type="button">Reset Progres</button>
         </div>
       </div>
     </div>
@@ -804,64 +868,12 @@ function openProfileModal() {
     save = resetGardenAccount(save);
     syncFromSave();
     closeOverlay();
-    showToast('Progres dimulai ulang dari Level 1.');
+    showToast('Progres diatur ulang.');
   });
 }
 
-function openShortWelcome(onDone) {
-  modalOpen = true;
-  let step = 0;
-  const pages = [
-    {
-      kicker: 'HALAMAN I · TAMAN KRONIK',
-      title: 'Taman Bangsawan di Dalam Buku',
-      text: 'Kamu bisa berjalan bebas keliling taman 3D (WASD atau klik tanah) dan menggeser sudut pandang langsung dengan menarik kursor. Dua belas sudut taman yang terbengkalai menunggumu untuk direnovasi dalam tiga pilihan gaya.',
-      aside: 'Kamu sudah membawa 1 Bintang (★) pembuka. Coba hampiri Gerbang Utama atau klik tombol Tugas di kiri atas.'
-    },
-    {
-      kicker: 'HALAMAN II · PUZZLE & UBIN SEGEL',
-      title: 'Tantangan Match-3 Tanpa Batas',
-      text: 'Klik tombol Main di kanan bawah untuk memulai level puzzle yang rintangannya meningkat bertahap: Kotak Kayu, Es Beku, Rantai, dan Lumut. Saat menyentuh ubin emas bersegel, mengaktifkan booster, atau mengisi nyawa, 1 soal kilat (Bahasa, Sastra, Siber, atau Matematika) akan muncul.',
-      aside: 'Tarik kursor untuk memutar POV, scroll untuk melihat tepi buku, atau tekan [V] untuk POV bebas.'
-    }
-  ];
-
-  function renderW() {
-    const p = pages[step];
-    const last = step >= pages.length - 1;
-    overlayRoot.innerHTML = `
-      <div class="modal-backdrop">
-        <div class="vintage-book" style="max-width:600px;">
-          <div class="vintage-top-row">
-            <span class="vintage-year">${p.kicker}</span>
-            <button class="vintage-skip" id="btn-w-skip" type="button">Lewati</button>
-          </div>
-          <div class="vintage-chapter">${p.title}</div>
-          <p class="vintage-quote">${p.text}</p>
-          <div class="vintage-aside" style="margin-bottom:14px;">${p.aside}</div>
-          <div class="vintage-footer">
-            <span style="font-size:0.78rem; color:#6d4c30; font-weight:700;">${step + 1} / ${pages.length}</span>
-            <button class="rpg-btn primary" id="btn-w-next" type="button">${last ? 'Masuk ke Taman 3D' : 'Berikutnya'}</button>
-          </div>
-        </div>
-      </div>
-    `;
-    document.getElementById('btn-w-skip')?.addEventListener('click', onDone);
-    document.getElementById('btn-w-next')?.addEventListener('click', () => {
-      audio.playClick();
-      if (!last) {
-        step += 1;
-        renderW();
-      } else {
-        onDone();
-      }
-    });
-  }
-  renderW();
-}
-
 // ==========================================
-// 3-STEP REGISTRATION & CHARACTER PICKER
+// DAFTAR AKUN 2 LANGKAH (USERNAME + 3 SOAL, TANPA PILIH KARAKTER!)
 // ==========================================
 const auth = {
   step: 'username',
@@ -871,12 +883,9 @@ const auth = {
   examIdx: 0,
   examTimeLeft: 20,
   examTimerId: null,
-  examPassed: false,
   rejectReason: '',
-  rejectRoast: '',
   cooldownLeft: 0,
-  cooldownTimerId: null,
-  selectedClass: 'detektif'
+  cooldownTimerId: null
 };
 
 function clearAuthTimers() {
@@ -892,42 +901,31 @@ function clearAuthTimers() {
 
 function syncFromSave() {
   player.x = save.x || 700;
-  player.y = save.y || 700;
-  player.facing = save.facing || 'down';
-  player.characterClass = save.characterClass || 'detektif';
+  player.y = save.y || 760;
+  player.facing = save.facing || 'up';
   player.walkTarget = null;
-  ciko.x = player.x - 30;
-  ciko.y = player.y - 22;
   audio.setMuted(save.muted);
-  garden.syncRenovations(save.renovations || {});
   refreshHud();
 }
 
 function enterGarden(account, isNew = false) {
   clearAuthTimers();
   save = account;
+  save.prologueSeen = true;
+  persistGardenSave(save);
   syncFromSave();
   titleOverlay.classList.add('hidden');
   hudLayer.classList.remove('hidden');
   audio.playWaypoint();
-
-  if (!save.prologueSeen) {
-    openShortWelcome(() => {
-      save.prologueSeen = true;
-      persistGardenSave(save);
-      closeOverlay();
-      showBanner(`MUSIM ${save.season || 1}`, isNew ? `Selamat datang, @${save.username}` : 'Taman Kronik');
-    });
-  } else {
-    showBanner(`MUSIM ${save.season || 1}`, `Level ${save.level} · @${save.username}`);
-  }
+  // Tunjukkan sapuan panorama taman agar semua area terkunci & posisi kamu langsung terlihat!
+  garden.playIntroSweep();
+  showBanner(`MUSIM ${save.season || 1}`, isNew ? `@${save.username}` : `Level ${save.level}`);
 }
 
 function openAuthFlow(step = 'username') {
   clearAuthTimers();
   auth.step = step;
   auth.errorMsg = '';
-  auth.examPassed = false;
   titleOverlay.classList.remove('hidden');
   renderAuthCard();
 }
@@ -935,13 +933,8 @@ function openAuthFlow(step = 'username') {
 function renderStepper(num) {
   return `
     <div class="auth-stepper">
-      ${[
-        [1, '1. Username'],
-        [2, '2. Seleksi'],
-        [3, '3. Karakter']
-      ]
-        .map(([n, l]) => `<span class="step-pill ${n < num ? 'done' : n === num ? 'active' : ''}">${l}</span>`)
-        .join('')}
+      <span class="step-pill ${num > 1 ? 'done' : 'active'}">1. Username</span>
+      <span class="step-pill ${num === 2 ? 'active' : ''}">2. Verifikasi</span>
     </div>
   `;
 }
@@ -951,18 +944,14 @@ function renderAuthCard() {
     const saved = listGardenAccounts();
     authCardRoot.innerHTML = `
       ${renderStepper(1)}
-      <div class="title-kicker">PUZZLE MATCH-3 & RENOVASI TAMAN 3D</div>
       <h1 class="title-logo">TAMAN KRONIK</h1>
-      <p class="title-desc">
-        Buat <strong>username</strong>, lulus <strong>3 soal seleksi singkat</strong>, lalu jelajahi taman 3D dalam buku dan taklukkan level puzzle bertingkat.
-      </p>
+      <p class="title-desc">Buat username lalu selesaikan 3 soal singkat.</p>
 
-      <div class="title-form" style="max-width:400px;">
-        <label class="title-label" for="input-username">Username (3 sampai 16 karakter)</label>
+      <div class="title-form" style="max-width:380px;">
         <div class="username-row">
           <div class="username-wrap">
             <span class="username-at">@</span>
-            <input id="input-username" class="rpg-input" type="text" maxlength="16" autocomplete="off" placeholder="contoh: pembaca_malam" value="${escapeHtml(auth.pendingUsername)}" />
+            <input id="input-username" class="rpg-input" type="text" maxlength="16" autocomplete="off" placeholder="username" value="${escapeHtml(auth.pendingUsername)}" />
           </div>
           <button class="rpg-btn ghost" id="btn-random-user" type="button" style="padding:11px 14px; font-size:0.82rem;">Acak</button>
         </div>
@@ -970,14 +959,14 @@ function renderAuthCard() {
       </div>
 
       <div class="title-actions">
-        <button class="rpg-btn primary" id="btn-start-exam" type="button">Mulai 3 Uji Seleksi</button>
+        <button class="rpg-btn primary" id="btn-start-exam" type="button">Lanjut</button>
       </div>
 
       ${
         saved.length > 0
           ? `
         <div class="saved-accounts-box">
-          <div class="title-label" style="margin-bottom:2px;">Lanjutkan akun tersimpan:</div>
+          <div class="title-label" style="margin-bottom:4px;">Akun tersimpan</div>
           <div class="saved-accounts-list">
             ${saved
               .map(
@@ -985,7 +974,6 @@ function renderAuthCard() {
               <button class="account-chip" data-login-user="${escapeHtml(acc.username)}" type="button">
                 <span>@${escapeHtml(acc.username)}</span>
                 <span style="color:var(--gold);">Lv.${acc.level}</span>
-                <span style="color:var(--muted);">${acc.stars || 0} ★</span>
               </button>
             `
               )
@@ -1010,8 +998,8 @@ function renderAuthCard() {
     document.getElementById('btn-random-user')?.addEventListener('click', () => {
       audio.playClick();
       const existing = listGardenAccounts().map((a) => a.username.toLowerCase());
-      const avail = FUNNY_USERNAMES.filter((u) => !existing.includes(u.toLowerCase()));
-      auth.pendingUsername = avail.length ? avail[Math.floor(Math.random() * avail.length)] : `pembaca_${Math.floor(100 + Math.random() * 899)}`;
+      const avail = SUGGESTED_USERNAMES.filter((u) => !existing.includes(u.toLowerCase()));
+      auth.pendingUsername = avail.length ? avail[Math.floor(Math.random() * avail.length)] : `akun_${Math.floor(100 + Math.random() * 899)}`;
       renderAuthCard();
     });
     document.getElementById('btn-start-exam')?.addEventListener('click', proceedToExam);
@@ -1029,18 +1017,12 @@ function renderAuthCard() {
     const pct = Math.max(0, Math.round((auth.examTimeLeft / 20) * 100));
     authCardRoot.innerHTML = `
       ${renderStepper(2)}
-      <div class="exam-head">
-        <div class="portrait-box" style="width:60px; height:60px;">${renderCharacterSVG('orwell', 'idle')}</div>
-        <div style="flex:1;">
-          <div class="title-kicker" style="margin-bottom:2px;">SELEKSI MASUK · @${escapeHtml(auth.pendingUsername)}</div>
-          <div style="font-weight:800; font-size:0.94rem; color:var(--paper);">
-            ${escapeHtml(q.tag)} · <span id="exam-timer-txt" style="color:var(--gold);">${auth.examTimeLeft} dtk</span>
-          </div>
-          <div style="font-size:0.76rem; color:var(--muted);">Jawab 3 soal beruntun dengan tepat.</div>
-        </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <strong style="font-size:0.9rem; color:var(--paper);">${escapeHtml(q.tag)}</strong>
+        <span id="exam-timer-txt" style="font-size:0.86rem; font-weight:800; color:var(--gold);">${auth.examTimeLeft} dtk</span>
       </div>
       <div class="exam-timer-track"><div class="exam-timer-fill ${auth.examTimeLeft <= 5 ? 'urgent' : ''}" id="exam-timer-fill" style="width:${pct}%"></div></div>
-      <div class="math-q-box" style="text-align:left;"><p class="math-q-text" style="font-size:1rem;">${escapeHtml(q.q)}</p></div>
+      <div class="math-q-box" style="text-align:left;"><p class="math-q-text" style="font-size:0.98rem;">${escapeHtml(q.q)}</p></div>
       <div class="choice-grid">
         ${q.options
           .map(
@@ -1066,74 +1048,19 @@ function renderAuthCard() {
       ${renderStepper(2)}
       <div class="stamp-banner rejected">BELUM LOLOS</div>
       <div class="insight-box" style="text-align:left; margin:8px 0 16px;">
-        <p>${escapeHtml(auth.rejectRoast)}</p>
-        <p>${escapeHtml(auth.rejectReason)}</p>
+        <p style="margin:0;">${escapeHtml(auth.rejectReason)}</p>
       </div>
       <div class="title-actions" style="margin-bottom:0;">
         <button class="rpg-btn primary" id="btn-retry-exam" type="button" ${waitLocked ? 'disabled style="opacity:0.55;"' : ''}>
-          ${waitLocked ? `Tunggu ${auth.cooldownLeft} dtk` : 'Coba Ulang (Soal Baru)'}
+          ${waitLocked ? `Tunggu ${auth.cooldownLeft} dtk` : 'Coba Ulang'}
         </button>
-        <button class="rpg-btn ghost" id="btn-back-username" type="button">Ganti Username</button>
+        <button class="rpg-btn ghost" id="btn-back-username" type="button">Ubah Username</button>
       </div>
     `;
     document.getElementById('btn-retry-exam')?.addEventListener('click', () => {
       if (auth.cooldownLeft <= 0) startGatekeeperExam();
     });
     document.getElementById('btn-back-username')?.addEventListener('click', () => openAuthFlow('username'));
-    return;
-  }
-
-  if (auth.step === 'approved') {
-    authCardRoot.innerHTML = `
-      ${renderStepper(2)}
-      <div class="stamp-banner approved">SELEKSI LULUS</div>
-      <p style="margin:0 0 16px; color:var(--paper);">@${escapeHtml(auth.pendingUsername)} lolos 3/3 soal. Pilih tampilan karaktermu di taman 3D.</p>
-      <button class="rpg-btn gold" id="btn-go-character" type="button">Pilih Karakter</button>
-    `;
-    document.getElementById('btn-go-character')?.addEventListener('click', () => {
-      audio.playClick();
-      auth.step = 'character';
-      renderAuthCard();
-    });
-    return;
-  }
-
-  if (auth.step === 'character') {
-    if (!auth.examPassed) {
-      openAuthFlow('username');
-      return;
-    }
-    const picked = getCharacterClass(auth.selectedClass);
-    authCardRoot.innerHTML = `
-      ${renderStepper(3)}
-      <div class="title-kicker">PILIH KARAKTER · @${escapeHtml(auth.pendingUsername)}</div>
-      <div class="char-pick-grid">
-        ${CHARACTER_CLASSES.map(
-          (c) => `
-          <button class="char-pick-card ${auth.selectedClass === c.id ? 'selected' : ''}" data-pick-cls="${c.id}" type="button">
-            <div class="char-pick-portrait">${renderCharacterSVG(c.portraitKey, 'idle')}</div>
-            <div>
-              <div class="char-pick-name">${escapeHtml(c.name)}</div>
-              <div class="char-pick-vibe">${escapeHtml(c.vibe)}</div>
-            </div>
-          </button>
-        `
-        ).join('')}
-      </div>
-      <button class="rpg-btn primary" id="btn-confirm-create" type="button">Masuk sebagai @${escapeHtml(auth.pendingUsername)} (${escapeHtml(picked.name)})</button>
-    `;
-    document.querySelectorAll('[data-pick-cls]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        audio.playClick();
-        auth.selectedClass = btn.dataset.pickCls;
-        player.characterClass = auth.selectedClass;
-        renderAuthCard();
-      });
-    });
-    document.getElementById('btn-confirm-create')?.addEventListener('click', () => {
-      const created = registerGardenAccount(auth.pendingUsername, auth.selectedClass);
-      enterGarden(created, true);
-    });
   }
 }
 
@@ -1156,7 +1083,6 @@ function startGatekeeperExam() {
   audio.playDialogueOpen();
   auth.examQuestions = buildRegistrationExam();
   auth.examIdx = 0;
-  auth.examPassed = false;
   auth.step = 'exam';
   startExamTimer();
   renderAuthCard();
@@ -1192,13 +1118,12 @@ function handleExamAnswer(idx) {
       renderAuthCard();
     } else {
       clearAuthTimers();
-      auth.examPassed = true;
-      auth.step = 'approved';
       audio.playVictory();
-      renderAuthCard();
+      const created = registerGardenAccount(auth.pendingUsername, 'default');
+      enterGarden(created, true);
     }
   } else {
-    failExam(`Jawaban keliru. ${q.explain}`);
+    failExam(q.explain);
   }
 }
 
@@ -1207,7 +1132,6 @@ function failExam(reason) {
   audio.playWrong();
   auth.step = 'rejected';
   auth.rejectReason = reason;
-  auth.rejectRoast = REJECT_ROASTS[Math.floor(Math.random() * REJECT_ROASTS.length)];
   auth.cooldownLeft = 5;
   renderAuthCard();
 
@@ -1219,7 +1143,7 @@ function failExam(reason) {
       else {
         btn.disabled = false;
         btn.removeAttribute('style');
-        btn.textContent = 'Coba Ulang (Soal Baru)';
+        btn.textContent = 'Coba Ulang';
       }
     }
     if (auth.cooldownLeft <= 0) clearAuthTimers();
@@ -1227,22 +1151,25 @@ function failExam(reason) {
 }
 
 // ==========================================
-// INPUTS: KEYBOARD, CURSOR POV DRAG, ZOOM, [V] FREE POV
+// INPUT: KEYBOARD, POV KURSOR LANGSUNG, ZOOM, [V] FREE POV
 // ==========================================
 window.addEventListener('keydown', (e) => {
   const tag = e.target?.tagName;
   if (tag === 'INPUT' || tag === 'TEXTAREA') return;
   const k = e.key.toLowerCase();
+  if (k === 'enter' && tag === 'BUTTON') return;
 
   if (k === 'escape') {
     if (freeLookMode) {
       exitPointerLockSafe();
-      showToast('Mode POV bebas dimatikan.');
+      showToast('POV bebas nonaktif.');
     }
-    if (modalOpen) closeOverlay();
+    if (modalOpen || previewOpen) closeOverlay();
     return;
   }
   if (!titleOverlay.classList.contains('hidden') || modalOpen) return;
+
+  if (previewOpen) return;
 
   if (['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'shift'].includes(k)) {
     keys.add(k);
@@ -1259,7 +1186,7 @@ window.addEventListener('keydown', (e) => {
   } else if (k === 'v') {
     if (freeLookMode || document.pointerLockElement === worldCanvas) {
       exitPointerLockSafe();
-      showToast('Mode POV bebas dimatikan.');
+      showToast('POV bebas nonaktif.');
     } else {
       freeLookMode = true;
       freeLookLastX = null;
@@ -1270,7 +1197,7 @@ window.addEventListener('keydown', (e) => {
       } catch {
         // Fallback otomatis tanpa pointer lock
       }
-      showToast('Mode POV bebas aktif. Gerakkan kursor langsung (Esc / V keluar).');
+      showToast('POV bebas aktif (Esc / V keluar).');
     }
   }
 });
@@ -1332,11 +1259,19 @@ window.addEventListener('pointerup', (e) => {
   ptrDragged = false;
   worldCanvas.style.cursor = 'grab';
 
-  if (!wasDrag && btn === 0 && !modalOpen && titleOverlay.classList.contains('hidden')) {
+  if (!wasDrag && btn === 0 && !modalOpen && !previewOpen && titleOverlay.classList.contains('hidden')) {
     const pos = garden.screenToWorld(e.clientX, e.clientY);
     if (!pos) return;
     const clampedX = Math.max(60, Math.min(GARDEN_W - 60, pos.x));
     const clampedY = Math.max(60, Math.min(GARDEN_H - 60, pos.y));
+
+    // Jika klik dekat salah satu area renovasi, langsung buka pratinjau 3D-nya!
+    const clickedSite = RESTORATION_TASKS.find((t) => Math.hypot(t.x - clampedX, t.y - clampedY) < 72);
+    if (clickedSite) {
+      openRenovationPreview(clickedSite);
+      return;
+    }
+
     player.walkTarget = { x: clampedX, y: clampedY };
     player.autoInteract = true;
     garden.setClickTarget(clampedX, clampedY);
@@ -1354,7 +1289,7 @@ worldCanvas.addEventListener(
   { passive: false }
 );
 
-// Touch D-Pad
+// Mobile Touch D-Pad
 document.querySelectorAll('.dpad-btn').forEach((btn) => {
   const dir = btn.dataset.dir;
   const down = (e) => {
@@ -1377,7 +1312,11 @@ document.getElementById('btn-touch-play')?.addEventListener('click', openCurrent
 
 // HUD Buttons
 btnInteract.addEventListener('click', triggerNearestInteraction);
-playBtn.addEventListener('click', openCurrentPuzzle);
+playBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
+playBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  openCurrentPuzzle();
+});
 document.getElementById('btn-open-tasks')?.addEventListener('click', openTasksModal);
 document.getElementById('btn-open-study')?.addEventListener('click', openStudyHubModal);
 document.getElementById('btn-open-profile')?.addEventListener('click', openProfileModal);
@@ -1401,12 +1340,12 @@ function tick(ts) {
   lastTs = ts;
   updateGarden(dt);
   garden.update(dt);
-  garden.render(ts / 1000, { player, ciko, nearestInteract });
+  garden.render(ts / 1000, { player, nearestInteract });
   requestAnimationFrame(tick);
 }
 
 function updateGarden(dt) {
-  const canMove = !modalOpen && titleOverlay.classList.contains('hidden');
+  const canMove = !modalOpen && !previewOpen && titleOverlay.classList.contains('hidden');
   let vx = 0;
   let vy = 0;
 
@@ -1453,6 +1392,7 @@ function updateGarden(dt) {
     player.x = Math.max(56, Math.min(GARDEN_W - 56, player.x + nx * speed * dt));
     player.y = Math.max(56, Math.min(GARDEN_H - 56, player.y + ny * speed * dt));
     audio.playFootstep(player.sprinting);
+    updateMinimapPlayer();
 
     saveCooldown -= dt;
     if (saveCooldown <= 0) {
@@ -1463,10 +1403,6 @@ function updateGarden(dt) {
       saveCooldown = 1.2;
     }
   }
-
-  const offX = player.facing === 'right' ? -28 : 28;
-  ciko.x += (player.x + offX - ciko.x) * Math.min(1, dt * 5);
-  ciko.y += (player.y - 16 - ciko.y) * Math.min(1, dt * 5);
 
   if (canMove) {
     nearestInteract = findNearestInteractable();

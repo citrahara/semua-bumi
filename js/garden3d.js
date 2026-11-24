@@ -6,9 +6,68 @@
 import * as THREE from '../vendor/three.module.min.js';
 import { GARDEN_W, GARDEN_H, RESTORATION_TASKS, GARDEN_NPCS } from './garden_data.js';
 import { CAST } from './characters.js';
-import { getCharacterClass } from './data/registration.js';
 
-const S = 0.05; // 20px = 1 meter 3D -> 70m x 55m taman bangsawan
+const S = 0.05; // 20px = 1 meter 3D -> 70m x 55m taman
+
+function makeLockPinTexture(starCost, ready) {
+  const c = document.createElement('canvas');
+  c.width = 144;
+  c.height = 144;
+  const ctx = c.getContext('2d');
+
+  // Badge bundar bersih dengan ikon gembok / bintang vektor
+  ctx.beginPath();
+  ctx.arc(72, 66, 46, 0, Math.PI * 2);
+  ctx.fillStyle = ready ? 'rgba(34, 27, 19, 0.92)' : 'rgba(24, 28, 33, 0.86)';
+  ctx.fill();
+  ctx.lineWidth = ready ? 5 : 4;
+  ctx.strokeStyle = ready ? '#D9B466' : '#7B8794';
+  ctx.stroke();
+
+  if (ready) {
+    // Ikon bintang emas siap bangun
+    ctx.fillStyle = '#F2CA72';
+    ctx.beginPath();
+    for (let i = 0; i < 5; i++) {
+      const a = -Math.PI / 2 + (i * 2 * Math.PI) / 5;
+      const b = a + Math.PI / 5;
+      const x1 = 72 + Math.cos(a) * 18;
+      const y1 = 54 + Math.sin(a) * 18;
+      const x2 = 72 + Math.cos(b) * 7.5;
+      const y2 = 54 + Math.sin(b) * 7.5;
+      if (i === 0) ctx.moveTo(x1, y1);
+      else ctx.lineTo(x1, y1);
+      ctx.lineTo(x2, y2);
+    }
+    ctx.closePath();
+    ctx.fill();
+  } else {
+    // Ikon gembok minimalis
+    ctx.strokeStyle = '#B8C2CC';
+    ctx.lineWidth = 4.5;
+    ctx.beginPath();
+    ctx.arc(72, 48, 10, Math.PI, 0);
+    ctx.stroke();
+    ctx.fillStyle = '#9AA5B1';
+    ctx.beginPath();
+    ctx.roundRect(57, 48, 30, 22, 5);
+    ctx.fill();
+    ctx.fillStyle = '#1C2026';
+    ctx.beginPath();
+    ctx.arc(72, 59, 3.4, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.font = '800 22px "Plus Jakarta Sans", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = ready ? '#FFE299' : '#CBD5E1';
+  ctx.fillText(`${starCost} ★`, 72, 91);
+
+  const tex = new THREE.CanvasTexture(c);
+  tex.needsUpdate = true;
+  return tex;
+}
 
 function makeCleanLabel(text, border = '#D9B466') {
   const c = document.createElement('canvas');
@@ -73,16 +132,21 @@ export class GardenWorld3D {
     this.siteContainers = new Map();
     this.siteBuiltState = new Map();
     this.siteBounce = new Map();
+    this.lockPins = new Map();
     this.npcRigs = new Map();
     this.proximityLabels = [];
     this._tmpVec = new THREE.Vector3();
     this.heroYaw = 0;
-    this.currentHeroClass = null;
+    this.focusOverride = null;
+    this.camLookX = 700 * S;
+    this.camLookZ = 700 * S;
+    this.latestStars = 1;
+    this.previewSiteId = null;
 
     this.setupLighting();
     this.buildBookBaseAndEstate();
     this.buildNpcs();
-    this.buildHeroAndCiko();
+    this.buildHero();
     this.buildRings();
     this.resize();
   }
@@ -290,7 +354,21 @@ export class GardenWorld3D {
 
       const modelRoot = new THREE.Group();
       container.add(modelRoot);
-      this.siteContainers.set(task.id, { container, modelRoot, task, label: lbl });
+
+      // Pin gembok / bintang terlihat dari jauh pada area yang belum dibuka
+      const pinMat = new THREE.SpriteMaterial({
+        map: makeLockPinTexture(task.starCost, false),
+        transparent: true,
+        opacity: 0.94,
+        depthTest: false
+      });
+      const pin = new THREE.Sprite(pinMat);
+      pin.scale.set(2.15, 2.15, 1);
+      pin.position.set(0, 3.0, 0);
+      container.add(pin);
+      this.lockPins.set(task.id, { sprite: pin, baseY: 3.0, ready: null, task });
+
+      this.siteContainers.set(task.id, { container, modelRoot, task, label: lbl, pin });
     }
     this.syncRenovations({});
   }
@@ -331,15 +409,32 @@ export class GardenWorld3D {
     return g;
   }
 
-  // Bangun ulang model 3D untuk setiap area renovasi yang berubah (rusak vs 3 gaya pilihan!)
-  syncRenovations(renovations = {}, animateId = null) {
+  // Bangun ulang model 3D untuk setiap area renovasi yang berubah (terkunci vs 3 gaya pilihan)
+  syncRenovations(renovations = {}, animateId = null, stars = this.latestStars) {
+    this.latestStars = stars;
     for (const task of RESTORATION_TASKS) {
       const styleIdx = typeof renovations[task.id] === 'number' ? renovations[task.id] : -1;
+      const entry = this.siteContainers.get(task.id);
+      if (!entry) continue;
+
+      const pinEntry = this.lockPins.get(task.id);
+      if (pinEntry) {
+        const isLocked = styleIdx < 0 && this.previewSiteId !== task.id;
+        pinEntry.sprite.visible = isLocked;
+        if (isLocked) {
+          const ready = stars >= task.starCost;
+          if (pinEntry.ready !== ready) {
+            pinEntry.ready = ready;
+            if (pinEntry.sprite.material.map) pinEntry.sprite.material.map.dispose();
+            pinEntry.sprite.material.map = makeLockPinTexture(task.starCost, ready);
+            pinEntry.sprite.material.needsUpdate = true;
+          }
+        }
+      }
+
       if (this.siteBuiltState.get(task.id) === styleIdx) continue;
       this.siteBuiltState.set(task.id, styleIdx);
 
-      const entry = this.siteContainers.get(task.id);
-      if (!entry) continue;
       const root = entry.modelRoot;
       while (root.children.length > 0) root.remove(root.children[0]);
 
@@ -348,6 +443,15 @@ export class GardenWorld3D {
       } else {
         const st = task.styles[styleIdx] || task.styles[0];
         this.buildRestoredSite(task.id, st, root);
+        // Hamparan rumput cerah halus di bawah bangunan yang sudah terbuka
+        const glowPad = new THREE.Mesh(
+          new THREE.CircleGeometry(3.2, 24),
+          new THREE.MeshBasicMaterial({ color: 0x7bc268, transparent: true, opacity: 0.24 })
+        );
+        glowPad.rotation.x = -Math.PI / 2;
+        glowPad.position.y = 0.08;
+        root.add(glowPad);
+
         if (animateId === task.id) {
           this.siteBounce.set(task.id, 0.01);
           this.spawnBurst(task.x, task.y, '#D9B466', 28);
@@ -356,13 +460,72 @@ export class GardenWorld3D {
     }
   }
 
-  buildRuinedSite(id, root) {
-    const rubbleMat = new THREE.MeshStandardMaterial({ color: 0x7c766d, roughness: 0.94, flatShading: true });
-    const weedMat = new THREE.MeshStandardMaterial({ color: 0x4f6b3e, roughness: 0.92, flatShading: true });
-    const woodMat = new THREE.MeshStandardMaterial({ color: 0x5c4636, roughness: 0.95 });
+  // Pratinjau 3D langsung saat pemain memilih salah satu dari 3 gaya sebelum memasang!
+  previewSiteStyle(taskId, styleIdx) {
+    const entry = this.siteContainers.get(taskId);
+    if (!entry) return;
+    this.previewSiteId = taskId;
+    const pinEntry = this.lockPins.get(taskId);
+    if (pinEntry) pinEntry.sprite.visible = false;
 
-    // Bongkahan batu lapuk + semak liar + penanda renovasi redup
-    const base = new THREE.Mesh(new THREE.CylinderGeometry(1.8, 2.1, 0.22, 8), rubbleMat);
+    const root = entry.modelRoot;
+    while (root.children.length > 0) root.remove(root.children[0]);
+    const st = entry.task.styles[styleIdx] || entry.task.styles[0];
+    this.buildRestoredSite(taskId, st, root);
+
+    // Ring pratinjau emas halus agar bentuk 3D terlihat jelas
+    const ring = new THREE.Mesh(
+      new THREE.RingGeometry(2.7, 3.0, 32),
+      new THREE.MeshBasicMaterial({ color: 0xd9b466, side: THREE.DoubleSide, transparent: true, opacity: 0.65 })
+    );
+    ring.rotation.x = -Math.PI / 2;
+    ring.position.y = 0.14;
+    root.add(ring);
+
+    this.siteBuiltState.set(taskId, `preview_${styleIdx}`);
+    this.siteBounce.set(taskId, 0.01);
+  }
+
+  clearPreview(renovations = {}, stars = this.latestStars) {
+    this.previewSiteId = null;
+    this.clearCameraFocus();
+    this.syncRenovations(renovations, null, stars);
+  }
+
+  setCameraFocus(x, y, dist = 12.6, pitch = 0.44) {
+    this.focusOverride = { x: x * S, z: y * S };
+    this.targetDist = dist;
+    this.targetPitch = pitch;
+  }
+
+  clearCameraFocus() {
+    this.focusOverride = null;
+    this.targetDist = 17.5;
+    this.targetPitch = 0.52;
+  }
+
+  playIntroSweep() {
+    this.cameraDist = 36;
+    this.cameraPitch = 0.78;
+    this.targetDist = 18;
+    this.targetPitch = 0.52;
+  }
+
+  buildRuinedSite(id, root) {
+    const rubbleMat = new THREE.MeshStandardMaterial({ color: 0x6f6b64, roughness: 0.94, flatShading: true });
+    const weedMat = new THREE.MeshStandardMaterial({ color: 0x455e3c, roughness: 0.92, flatShading: true });
+    const woodMat = new THREE.MeshStandardMaterial({ color: 0x574335, roughness: 0.95 });
+
+    // Zona terkunci redup (kabut batu melingkar) agar langsung terlihat mana yang belum dibuka
+    const lockedDisk = new THREE.Mesh(
+      new THREE.CircleGeometry(3.3, 24),
+      new THREE.MeshBasicMaterial({ color: 0x262d33, transparent: true, opacity: 0.34 })
+    );
+    lockedDisk.rotation.x = -Math.PI / 2;
+    lockedDisk.position.y = 0.09;
+    root.add(lockedDisk);
+
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(1.75, 2.05, 0.22, 8), rubbleMat);
     base.position.y = 0.11;
     root.add(base);
 
@@ -379,13 +542,12 @@ export class GardenWorld3D {
     plank.rotation.set(0.18, 0.45, -0.2);
     root.add(plank);
 
-    // Lingkaran tanda tugas halus di permukaan tanah
     const ring = new THREE.Mesh(
-      new THREE.RingGeometry(1.9, 2.15, 24),
-      new THREE.MeshBasicMaterial({ color: 0xd9b466, side: THREE.DoubleSide, transparent: true, opacity: 0.45 })
+      new THREE.RingGeometry(3.15, 3.38, 28),
+      new THREE.MeshBasicMaterial({ color: 0x94a3b8, side: THREE.DoubleSide, transparent: true, opacity: 0.48 })
     );
     ring.rotation.x = -Math.PI / 2;
-    ring.position.y = 0.14;
+    ring.position.y = 0.13;
     root.add(ring);
   }
 
@@ -643,38 +805,11 @@ export class GardenWorld3D {
     }
   }
 
-  buildHeroAndCiko() {
+  buildHero() {
     this.heroGroup = new THREE.Group();
     this.scene.add(this.heroGroup);
-    this.rebuildHeroMesh('detektif');
 
-    // Ciko 3D (pendamping kalem melayang)
-    this.cikoGroup = new THREE.Group();
-    const cup = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.32, 0.26, 0.52, 12),
-      new THREE.MeshStandardMaterial({ color: 0xfbf6ec, roughness: 0.3 })
-    );
-    const coffee = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.28, 0.28, 0.05, 12),
-      new THREE.MeshStandardMaterial({ color: 0x3b2114, roughness: 0.2 })
-    );
-    coffee.position.y = 0.24;
-    const halo = new THREE.Mesh(
-      new THREE.TorusGeometry(0.34, 0.04, 8, 20),
-      new THREE.MeshStandardMaterial({ color: 0xd9b466, emissive: 0xd9b466, emissiveIntensity: 0.45 })
-    );
-    halo.rotation.x = Math.PI / 2;
-    halo.position.y = 0.52;
-    this.cikoGroup.add(cup, coffee, halo);
-    this.scene.add(this.cikoGroup);
-  }
-
-  rebuildHeroMesh(classId) {
-    if (this.currentHeroClass === classId) return;
-    this.currentHeroClass = classId;
-    while (this.heroGroup.children.length > 0) this.heroGroup.remove(this.heroGroup.children[0]);
-
-    const cls = getCharacterClass(classId);
+    // Satu tokoh penjelajah taman yang tenang (mantel krem-kopi + syal hijau botani)
     const legMat = new THREE.MeshStandardMaterial({ color: 0x2a201a, roughness: 0.8 });
     this.leftLeg = new THREE.Mesh(new THREE.CapsuleGeometry(0.13, 0.32, 4, 8), legMat);
     this.leftLeg.position.set(-0.19, 0.28, 0);
@@ -682,30 +817,25 @@ export class GardenWorld3D {
     this.rightLeg.position.x = 0.19;
 
     this.heroBody = new THREE.Group();
-    const cloakMat = new THREE.MeshStandardMaterial({ color: cls.cloakColor, roughness: 0.65 });
+    const cloakMat = new THREE.MeshStandardMaterial({ color: 0x5c4636, roughness: 0.65 });
+    const trimMat = new THREE.MeshStandardMaterial({ color: 0x3f7a5c, roughness: 0.55, side: THREE.DoubleSide });
     const cloak = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.49, 0.92, 12), cloakMat);
     cloak.position.y = 0.8;
     cloak.castShadow = true;
 
-    const capeGeo = new THREE.BoxGeometry(0.7, 0.86, 0.07);
-    capeGeo.translate(0, -0.42, 0);
-    this.capeMesh = new THREE.Mesh(
-      capeGeo,
-      new THREE.MeshStandardMaterial({ color: cls.trimColor, roughness: 0.6, side: THREE.DoubleSide })
-    );
+    const capeGeo = new THREE.BoxGeometry(0.68, 0.84, 0.06);
+    capeGeo.translate(0, -0.41, 0);
+    this.capeMesh = new THREE.Mesh(capeGeo, trimMat);
     this.capeMesh.position.set(0, 1.2, -0.32);
-    this.capeMesh.rotation.x = 0.2;
+    this.capeMesh.rotation.x = 0.18;
 
-    const scarf = new THREE.Mesh(
-      new THREE.TorusGeometry(0.34, 0.095, 8, 16),
-      new THREE.MeshStandardMaterial({ color: cls.trimColor, roughness: 0.45 })
-    );
+    const scarf = new THREE.Mesh(new THREE.TorusGeometry(0.34, 0.09, 8, 16), trimMat);
     scarf.rotation.x = Math.PI / 2;
     scarf.position.y = 1.2;
 
     const head = new THREE.Mesh(
       new THREE.SphereGeometry(0.4, 14, 12),
-      new THREE.MeshStandardMaterial({ color: 0xe0ac84, roughness: 0.68 })
+      new THREE.MeshStandardMaterial({ color: 0xe2b18b, roughness: 0.68 })
     );
     head.position.y = 1.56;
     head.castShadow = true;
@@ -723,6 +853,12 @@ export class GardenWorld3D {
     this.rightEye = this.leftEye.clone();
     this.rightEye.position.x = 0.14;
 
+    const hair = new THREE.Mesh(
+      new THREE.SphereGeometry(0.425, 14, 10, 0, Math.PI * 2, 0, Math.PI * 0.48),
+      new THREE.MeshStandardMaterial({ color: 0x261c17, roughness: 0.85 })
+    );
+    hair.position.y = 1.62;
+
     const makeArm = (side) => {
       const grp = new THREE.Group();
       grp.position.set(side * 0.45, 1.12, 0);
@@ -730,7 +866,7 @@ export class GardenWorld3D {
       sleeve.position.y = -0.2;
       const hand = new THREE.Mesh(
         new THREE.SphereGeometry(0.11, 8, 8),
-        new THREE.MeshStandardMaterial({ color: 0xe0ac84, roughness: 0.68 })
+        new THREE.MeshStandardMaterial({ color: 0xe2b18b, roughness: 0.68 })
       );
       hand.position.y = -0.43;
       grp.add(sleeve, hand);
@@ -739,30 +875,7 @@ export class GardenWorld3D {
     this.leftArm = makeArm(-1);
     this.rightArm = makeArm(1);
 
-    this.heroBody.add(cloak, this.capeMesh, scarf, head, this.leftEye, this.rightEye, this.leftArm, this.rightArm);
-
-    if (cls.hatStyle === 'fedora') {
-      const brim = new THREE.Mesh(new THREE.CylinderGeometry(0.64, 0.64, 0.07, 16), new THREE.MeshStandardMaterial({ color: 0x4d3623 }));
-      brim.position.y = 1.86;
-      const crown = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.4, 0.38, 14), new THREE.MeshStandardMaterial({ color: 0x4d3623 }));
-      crown.position.y = 2.05;
-      const band = new THREE.Mesh(new THREE.CylinderGeometry(0.41, 0.41, 0.09, 14), new THREE.MeshStandardMaterial({ color: 0x57b4c9 }));
-      band.position.y = 1.92;
-      this.heroBody.add(brim, crown, band);
-    } else if (cls.hatStyle === 'beret') {
-      const beret = new THREE.Mesh(new THREE.CylinderGeometry(0.52, 0.42, 0.22, 14), new THREE.MeshStandardMaterial({ color: 0x4a172b }));
-      beret.position.set(0.08, 1.96, 0);
-      beret.rotation.z = -0.18;
-      this.heroBody.add(beret);
-    } else {
-      const hair = new THREE.Mesh(
-        new THREE.SphereGeometry(0.42, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.44),
-        new THREE.MeshStandardMaterial({ color: 0x241b17 })
-      );
-      hair.position.y = 1.63;
-      this.heroBody.add(hair);
-    }
-
+    this.heroBody.add(cloak, this.capeMesh, scarf, head, hair, this.leftEye, this.rightEye, this.leftArm, this.rightArm);
     this.heroGroup.add(this.leftLeg, this.rightLeg, this.heroBody);
   }
 
@@ -895,8 +1008,7 @@ export class GardenWorld3D {
   }
 
   render(nowSec, state) {
-    const { player, ciko, nearestInteract } = state;
-    this.rebuildHeroMesh(player.characterClass || 'detektif');
+    const { player, nearestInteract } = state;
 
     const hx = player.x * S;
     const hz = player.y * S;
@@ -940,10 +1052,16 @@ export class GardenWorld3D {
       this.heroBody.position.y = Math.sin(nowSec * 2.4) * 0.04;
     }
 
-    this.cikoGroup.position.set(ciko.x * S, 1.75 + Math.sin(nowSec * 3.8) * 0.2, ciko.y * S);
-    this.cikoGroup.rotation.y = nowSec * 0.8;
+    // Animasi halus pin gembok / bintang pada area terkunci
+    let idx = 0;
+    for (const [, p] of this.lockPins) {
+      if (p.sprite.visible) {
+        p.sprite.position.y = p.baseY + Math.sin(nowSec * 2.4 + idx * 0.7) * 0.18;
+      }
+      idx++;
+    }
 
-    if (nearestInteract) {
+    if (nearestInteract && !this.focusOverride) {
       this.interactRingMesh.visible = true;
       this.interactRingMesh.position.set(nearestInteract.x * S, 0.16, nearestInteract.y * S);
       const p = 0.94 + Math.sin(nowSec * 4.5) * 0.1;
@@ -979,8 +1097,12 @@ export class GardenWorld3D {
       }
     }
 
-    // Label 3D hanya memudar muncul saat dekat (bebas tumpukan teks!)
+    // Label 3D hanya muncul halus saat dekat dan tersembunyi saat mode pratinjau
     for (const sp of this.proximityLabels) {
+      if (this.focusOverride) {
+        sp.visible = false;
+        continue;
+      }
       sp.getWorldPosition(this._tmpVec);
       const d = Math.hypot(this._tmpVec.x - hx, this._tmpVec.z - hz);
       const maxR = 9.5;
@@ -992,15 +1114,20 @@ export class GardenWorld3D {
       }
     }
 
+    const wantX = this.focusOverride ? this.focusOverride.x : hx;
+    const wantZ = this.focusOverride ? this.focusOverride.z : hz;
+    this.camLookX += (wantX - this.camLookX) * 0.12;
+    this.camLookZ += (wantZ - this.camLookZ) * 0.12;
+
     const horizDist = this.cameraDist * Math.cos(this.cameraPitch);
     const camOffX = Math.sin(this.cameraYaw) * horizDist;
     const camOffZ = Math.cos(this.cameraYaw) * horizDist;
     const camHeight = this.cameraDist * Math.sin(this.cameraPitch) + 1.8;
 
-    this.camera.position.set(hx + camOffX, camHeight, hz + camOffZ);
-    this.camera.lookAt(hx, 1.25, hz);
-    this.sun.position.set(hx + 16, 26, hz + 14);
-    this.sun.target.position.set(hx, 0, hz);
+    this.camera.position.set(this.camLookX + camOffX, camHeight, this.camLookZ + camOffZ);
+    this.camera.lookAt(this.camLookX, this.focusOverride ? 1.5 : 1.25, this.camLookZ);
+    this.sun.position.set(this.camLookX + 16, 26, this.camLookZ + 14);
+    this.sun.target.position.set(this.camLookX, 0, this.camLookZ);
 
     this.renderer.render(this.scene, this.camera);
   }

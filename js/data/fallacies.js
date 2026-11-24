@@ -1,421 +1,196 @@
-// Bank konten Babak 3: Duel Sesat Pikir & Comeback Warkop
-// Melatih ketajaman logika, deteksi logical fallacy, dan cara membalas obrolan yang elegan tanpa memancing ribut.
+// Bank logika dan sesat pikir (16 entri ringkas).
 
 export const FALLACIES_BANK = [
   {
     id: 'fall-01',
-    speaker: 'budi',
     fallacyName: 'Ad Hominem',
-    attack: '"Ah, kamu kan belum nikah dan masih muda, nggak usah ikut kasih saran soal cara mengatur keuangan rumah tangga!"',
+    attack: '"Kamu masih terlalu muda untuk memberi saran soal pengelolaan anggaran." Pernyataan ini mengandung sesat pikir apa?',
     options: [
-      {
-        text: '"Itu namanya ad hominem, Pak. Argumen diuji dari hitung-hitungannya, bukan dari status KTP yang bicara."',
-        correct: true,
-        reaction: 'KELASSS! Seisi warkop tepuk tangan, Pak Budi langsung menyeruput kopi pelan-pelan.'
-      },
-      {
-        text: '"Bapak juga dulu muda kok, berarti dulu Bapak nggak boleh ngomong dong!"',
-        correct: false,
-        reaction: 'Malah jadi perang usia, bukan membedah inti hitung-hitungannya.'
-      },
-      {
-        text: '"Ya sudah Pak, saya diam saja sampai punya KTP status kawin."',
-        correct: false,
-        reaction: 'Kok langsung mundur? Padahal hitung-hitunganmu sudah benar lho!'
-      }
+      { text: 'Ad Hominem (menyerang pribadi, bukan argumennya)', correct: true },
+      { text: 'Strawman (memelintir pernyataan)', correct: false },
+      { text: 'Slippery Slope (lompatan sebab-akibat ekstrem)', correct: false }
     ],
-    meaning: 'Ad Hominem: menyerang pribadi, usia, latar belakang, atau karakter pembicara alih-alih menanggapi argumennya.',
-    pitfall: 'Paling sering muncul di kolom komentar maupun rapat saat lawan debat kehabisan data.',
-    usage: 'Jurusan balasan tenang: "Kita fokus ke datanya dulu yuk, terlepas dari siapa yang menyampaikan."'
+    meaning: 'Ad Hominem: menyerang usia, latar belakang, atau pribadi pembicara alih-alih menanggapi isi argumennya.',
+    usage: 'Uji perhitungannya, bukan siapa yang menyampaikannya.'
   },
   {
     id: 'fall-02',
-    speaker: 'fikri',
-    fallacyName: 'Strawman (Orang-Orangan Sawah)',
-    attack: 'Kamu bilang: "Menurutku jam kerja lembur sebaiknya dibatasi biar tim tetap sehat." Mas Fikri langsung nyeletuk: "Oh, jadi menurutmu kita semua harus malas-malasan dan nggak usah kerja keras ya?"',
+    fallacyName: 'Strawman',
+    attack: 'Usulan membatasi jam lembur dibalas: "Jadi kamu ingin semua orang bermalas-malasan?" Ini contoh apa?',
     options: [
-      {
-        text: '"Eits, itu strawman, Mas. Membatasi lembur biar produktif bukan berarti menyuruh orang malas."',
-        correct: true,
-        reaction: 'Tepat di ulu hati logika! Mas Fikri sampai salah pegang sedotan es teh.'
-      },
-      {
-        text: '"Iya deh, mending kita nggak usah kerja sekalian saja."',
-        correct: false,
-        reaction: 'Jangan terpancing masuk perangkap! Kamu malah membenarkan versi melintirnya.'
-      },
-      {
-        text: '"Mas Fikri kayaknya kurang tidur nih."',
-        correct: false,
-        reaction: 'Hati-hati, itu malah balik jadi ad hominem!'
-      }
+      { text: 'Strawman (memelintir argumen menjadi ekstrem)', correct: true },
+      { text: 'Bandwagon (ikut mayoritas)', correct: false },
+      { text: 'Post Hoc (kebetulan dianggap sebab)', correct: false }
     ],
-    meaning: 'Strawman: memelintir atau melebih-lebihkan pernyataan lawan menjadi versi ekstrem supaya mudah diserang.',
-    pitfall: 'Kalau tidak segera diluruskan, kamu bakal sibuk membela pendapat yang sebenarnya tidak pernah kamu ucapkan.',
-    usage: 'Jurus balasan tenang: "Bukan itu yang saya katakan. Poin saya sebenarnya adalah..."'
+    meaning: 'Strawman: memelintir pernyataan lawan menjadi versi ekstrem agar mudah diserang.',
+    usage: 'Luruskan kembali pokok pernyataan sebelum melanjutkan diskusi.'
   },
   {
     id: 'fall-03',
-    speaker: 'budi',
     fallacyName: 'Whataboutism',
-    attack: 'Kamu mengingatkan: "Pak, selokan depan warung mampet gara-gara plastik dibuang sembarangan." Pak Budi menjawab: "Lha, pabrik besar di kota sana polusinya jauh lebih parah, kenapa nggak protes ke sana dulu?"',
+    attack: 'Kritik soal sampah lingkungan dijawab: "Mengapa tidak memprotes polusi pabrik besar lebih dulu?" Ini contoh apa?',
     options: [
-      {
-        text: '"Itu whataboutism, Pak. Polusi pabrik memang salah, tapi bukan berarti plastik di selokan sini jadi boleh dibiarkan."',
-        correct: true,
-        reaction: 'Sapu bersih! Dua-duanya didudukkan pada tempatnya tanpa bikin suasana panas.'
-      },
-      {
-        text: '"Oh iya juga ya, ayo kita demo ke pabrik dulu, selokannya nanti saja."',
-        correct: false,
-        reaction: 'Selokannya keburu banjir nih!'
-      },
-      {
-        text: '"Bapak jangan mengalihkan pembicaraan terus dari kemarin!"',
-        correct: false,
-        reaction: 'Emosinya dapat, tapi penjelasan logikanya belum keluar.'
-      }
+      { text: 'Whataboutism (menangkis kritik dengan menunjuk masalah lain)', correct: true },
+      { text: 'Circular Reasoning (penalaran melingkar)', correct: false },
+      { text: 'False Dilemma (hanya dua pilihan)', correct: false }
     ],
-    meaning: 'Whataboutism: menangkis kritik dengan menunjuk kesalahan pihak lain tanpa menjawab pokok masalah yang sedang dibahas.',
-    pitfall: 'Dua kesalahan tidak pernah saling menghapus. Masalah besar di tempat lain bukan alasan mengabaikan masalah di depan mata.',
-    usage: 'Jurus balasan tenang: "Itu juga masalah penting, tapi kita selesaikan satu per satu mulai dari yang di depan mata dulu."'
+    meaning: 'Whataboutism: mengalihkan kritik dengan menunjuk kesalahan pihak lain tanpa menjawab pokok persoalan.',
+    usage: 'Masalah lain tetap penting, tetapi persoalan di depan mata tetap perlu diselesaikan.'
   },
   {
     id: 'fall-04',
-    speaker: 'fikri',
-    fallacyName: 'Slippery Slope (Lereng Licin)',
-    attack: '"Kalau hari ini kita izinkan anak-anak main game satu jam setelah PR selesai, besok mereka pasti kecanduan, minggu depan bolos sekolah, dan masa depannya hancur!"',
+    fallacyName: 'Slippery Slope',
+    attack: '"Jika aturan diperlonggar sekali saja, seluruh sistem pasti runtuh dalam sebulan." Ini contoh apa?',
     options: [
-      {
-        text: '"Pelan-pelan, Mas, itu slippery slope. Dari main satu jam ke masa depan hancur butuh banyak lompatan tanpa bukti."',
-        correct: true,
-        reaction: 'Rem darurat berhasil! Penonton warkop ngakak sambil bilang: "Jauh amat loncatnya, Mas!"'
-      },
-      {
-        text: '"Benar juga, langsung buang semua gawai ke laut saja."',
-        correct: false,
-        reaction: 'Lah, malah ikut-ikutan skenario kiamat!'
-      },
-      {
-        text: '"Main game 12 jam sehari malah bikin jenius kok."',
-        correct: false,
-        reaction: 'Terlalu ekstrem ke arah sebaliknya!'
-      }
+      { text: 'Slippery Slope (rantai akibat ekstrem tanpa bukti)', correct: true },
+      { text: 'Tu Quoque (menunjuk balik)', correct: false },
+      { text: 'Confirmation Bias (bias konfirmasi)', correct: false }
     ],
-    meaning: 'Slippery Slope: mengklaim satu langkah kecil pasti memicu rentetan bencana ekstrem tanpa menjelaskan bukti hubungan sebab-akibatnya.',
-    pitfall: 'Sering terdengar dramatis dan menakutkan, padahal rantai akibatnya cuma asumsi.',
-    usage: 'Jurus balasan tenang: "Kita bisa pasang batas yang jelas, nggak otomatis berujung skenario terburuk."'
+    meaning: 'Slippery Slope: mengklaim satu langkah kecil pasti memicu bencana besar tanpa bukti hubungan sebab-akibat.',
+    usage: 'Periksa setiap mata rantai akibatnya alih-alih melompat ke skenario terburuk.'
   },
   {
     id: 'fall-05',
-    speaker: 'siska',
-    fallacyName: 'Bandwagon (Ikut-Ikutan Mayoritas)',
-    attack: '"Pokoknya strategi investasi koin ini pasti benar! Lihat dong, jutaan orang di media sosial lagi beli semua!"',
+    fallacyName: 'Bandwagon',
+    attack: '"Strategi investasi ini pasti aman karena jutaan orang sedang membelinya." Ini contoh apa?',
     options: [
-      {
-        text: '"Hati-hati jebakan bandwagon, Mbak. Populer dan ramai dibeli belum tentu aman atau benar secara hitungan."',
-        correct: true,
-        reaction: 'Dompet seisi warkop terselamatkan! Mbak Siska langsung cek ulang grafiknya.'
-      },
-      {
-        text: '"Kalau jutaan orang beli, aku langsung jual motor buat ikut beli juga!"',
-        correct: false,
-        reaction: 'Aduh, nanti Bang Jaja kasih utang kopi buat bertahan hidup!'
-      },
-      {
-        text: '"Pokoknya apa pun yang populer itu pasti selalu salah."',
-        correct: false,
-        reaction: 'Kebalikannya juga keliru; yang benar adalah periksa buktinya, bukan sekadar ikut atau anti keramaian.'
-      }
+      { text: 'Bandwagon (menganggap populer berarti benar)', correct: true },
+      { text: 'Red Herring (pengalihan isu)', correct: false },
+      { text: 'Ad Hominem (menyerang pribadi)', correct: false }
     ],
-    meaning: 'Bandwagon (Argumentum ad Populum): menganggap sesuatu pasti benar atau bagus semata-mata karena banyak orang melakukannya.',
-    pitfall: 'Sejarah penuh contoh ide populer yang belakangan terbukti keliru (termasuk gelembung finansial dan hoaks viral).',
-    usage: 'Jurus balasan tenang: "Ramai itu sinyal untuk meneliti lebih cermat, bukan jaminan kebenaran."'
+    meaning: 'Bandwagon: menganggap sesuatu benar atau aman semata-mata karena banyak orang melakukannya.',
+    usage: 'Popularitas adalah alasan untuk meneliti lebih cermat, bukan jaminan keamanan.'
   },
   {
     id: 'fall-06',
-    speaker: 'fikri',
-    fallacyName: 'False Dilemma (Dilema Palsu)',
-    attack: '"Hidup itu cuma ada dua pilihan: kamu kerja sampai lupa waktu demi sukses, atau kamu santai dan siap hidup melarat selamanya!"',
+    fallacyName: 'False Dilemma',
+    attack: '"Hanya ada dua pilihan: bekerja tanpa istirahat atau hidup gagal selamanya." Ini contoh apa?',
     options: [
-      {
-        text: '"Itu false dilemma, Mas. Masih ada jalan tengah: kerja fokus dan terukur, istirahat juga dijaga."',
-        correct: true,
-        reaction: 'Adem dan tajam! Mas Fikri baru sadar hidup nggak cuma dua tombol.'
-      },
-      {
-        text: '"Kalau cuma dua itu, saya pilih melarat yang penting tidur siang."',
-        correct: false,
-        reaction: 'Lucu sih, tapi kamu masuk ke bingkai sempit yang cuma dua pilihan itu.'
-      },
-      {
-        text: '"Iya benar, tidur itu musuh kesuksesan!"',
-        correct: false,
-        reaction: 'Kurang tidur justru menurunkan daya ingat dan keputusan lho!'
-      }
+      { text: 'False Dilemma (memaksa dua kutub ekstrem)', correct: true },
+      { text: 'Cherry Picking (memilih sebagian data)', correct: false },
+      { text: 'No True Scotsman (menggeser definisi)', correct: false }
     ],
-    meaning: 'False Dilemma: memaksa lawan bicara memilih di antara dua kutub ekstrem seolah tidak ada opsi ketiga atau jalan tengah.',
-    pitfall: 'Banyak kalimat persuasif dan iklan memakai jebakan ini untuk memburu-buru keputusanmu.',
-    usage: 'Jurus balasan tenang: "Kenapa opsinya cuma dua? Bagaimana kalau kita gabungkan keunggulan keduanya?"'
+    meaning: 'False Dilemma: menyempitkan pilihan menjadi dua kutub ekstrem seolah tidak ada jalan tengah.',
+    usage: 'Selalu cari opsi ketiga yang memadukan fokus kerja dan jeda terukur.'
   },
   {
     id: 'fall-07',
-    speaker: 'deden',
-    fallacyName: 'Post Hoc (Kebetulan Dikira Sebab)',
-    attack: '"Setiap kali aku pakai kaus kaki bolong warna kuning pas nonton bola, tim favoritku selalu menang. Jadi kaus kaki ini pembawa hoki beneran!"',
+    fallacyName: 'Post Hoc',
+    attack: '"Setiap saya memakai jaket biru, hujan selalu turun. Berarti jaket ini mengundang hujan." Ini contoh apa?',
     options: [
-      {
-        text: '"Itu post hoc, Kang. Dua kejadian yang kebetulan berurutan bukan berarti saling menyebabkan."',
-        correct: true,
-        reaction: 'Gacor! Kang Deden akhirnya rela mencuci kaus kaki kuningnya.'
-      },
-      {
-        text: '"Tolong pinjamkan kaus kakinya buat ujian besok, Kang!"',
-        correct: false,
-        reaction: 'Aduh, nanti satu ruangan pingsan duluan sebelum soal dibagikan!'
-      },
-      {
-        text: '"Berarti kalau pakai kaus kaki baru timnya pasti kalah telak."',
-        correct: false,
-        reaction: 'Itu malah meneruskan logika kebetulan yang sama!'
-      }
+      { text: 'Post Hoc (urutan waktu dianggap sebab-akibat)', correct: true },
+      { text: 'Whataboutism (menunjuk kesalahan lain)', correct: false },
+      { text: 'Strawman (memelintir argumen)', correct: false }
     ],
-    meaning: 'Post Hoc Ergo Propter Hoc ("setelah ini, maka karena ini"): menyimpulkan A menyebabkan B hanya karena A terjadi lebih dulu daripada B.',
-    pitfall: 'Korelasi atau urutan waktu tidak otomatis membuktikan hubungan sebab-akibat.',
-    usage: 'Jurus balasan tenang: "Kebetulan berbarengan belum tentu sebab-akibat, kita perlu cek faktor lain."'
+    meaning: 'Post Hoc Ergo Propter Hoc: menyimpulkan A menyebabkan B hanya karena A terjadi sebelum B.',
+    usage: 'Dua peristiwa yang berurutan belum tentu memiliki hubungan sebab-akibat.'
   },
   {
     id: 'fall-08',
-    speaker: 'budi',
-    fallacyName: 'Appeal to Authority (Salah Pakar)',
-    attack: '"Suplemen ajaib ini dijamin menyembuhkan segala penyakit! Soalnya yang mempromosikan adalah aktor laga pemenang piala festival film!"',
+    fallacyName: 'False Appeal to Authority',
+    attack: '"Suplemen ini pasti mujarab karena dipromosikan oleh aktor peraih piala film." Ini contoh apa?',
     options: [
-      {
-        text: '"Itu sesat pikir otoritas keliru, Pak. Jago akting di film bukan berarti punya kompetensi uji klinis medis."',
-        correct: true,
-        reaction: 'Presisi! Pak Budi langsung mengecek nomor izin BPOM di kemasan.'
-      },
-      {
-        text: '"Wah, kalau bintang film yang bilang pasti manjur, beli tiga dus Pak!"',
-        correct: false,
-        reaction: 'Jangan mudah terpesona poster selebritas, cek bukti klinisnya!'
-      },
-      {
-        text: '"Semua dokter juga nggak perlu didengar, pokoknya ikut firasat saja."',
-        correct: false,
-        reaction: 'Lho, merujuk pakar di bidang yang tepat justru penting; yang keliru adalah memakai pakar beda bidang.'
-      }
+      { text: 'False Appeal to Authority (merujuk pakar di luar bidangnya)', correct: true },
+      { text: 'Sunk Cost Fallacy (terjebak biaya lalu)', correct: false },
+      { text: 'False Dilemma (dua kutub ekstrem)', correct: false }
     ],
-    meaning: 'False Appeal to Authority: mengutip tokoh terkenal atau ahli dari bidang lain sebagai bukti mutlak di bidang yang bukan keahliannya.',
-    pitfall: 'Otoritas baru kuat bila sesuai bidang keahliannya dan didukung bukti yang bisa diuji ulang.',
-    usage: 'Jurus balasan tenang: "Beliau memang hebat di bidang film, tapi untuk kesehatan lebih aman cek riset medisnya."'
+    meaning: 'False Appeal to Authority: menjadikan tokoh dari bidang lain sebagai bukti mutlak di luar keahliannya.',
+    usage: 'Klaim medis perlu diperiksa lewat uji klinis dan otoritas kesehatan.'
   },
   {
     id: 'fall-09',
-    speaker: 'fikri',
-    fallacyName: 'Hasty Generalization (Pukul Rata)',
-    attack: '"Kemarin aku ketemu dua pengendara dari kota X yang ngebut di gang. Fix, semua orang kota X pasti nggak tahu aturan jalan!"',
+    fallacyName: 'Hasty Generalization',
+    attack: '"Dua pengunjung dari kota X terlambat; berarti semua warga kota X tidak disiplin." Ini contoh apa?',
     options: [
-      {
-        text: '"Itu hasty generalization, Mas. Dua orang nggak cukup buat memukul rata jutaan penduduk satu kota."',
-        correct: true,
-        reaction: 'Jempolan! Satu warung langsung mengangguk setuju.'
-      },
-      {
-        text: '"Betul, berarti kita harus tutup gerbang warkop untuk semua orang dari kota X!"',
-        correct: false,
-        reaction: 'Wah, Bang Jaja bisa rugi kehilangan separuh pelanggan nih!'
-      },
-      {
-        text: '"Kalau ketemu tiga orang baru boleh pukul rata."',
-        correct: false,
-        reaction: 'Tiga orang tetap sampel mini dibandingkan jutaan orang!'
-      }
+      { text: 'Hasty Generalization (generalisasi dari sampel terlalu kecil)', correct: true },
+      { text: 'Circular Reasoning (argumen melingkar)', correct: false },
+      { text: 'Slippery Slope (lereng licin)', correct: false }
     ],
-    meaning: 'Hasty Generalization: menarik kesimpulan besar mengenai seluruh kelompok hanya dari segelintir contoh kecil.',
-    pitfall: 'Akar dari banyak stereotip dan prasangka dalam obrolan sehari-hari.',
-    usage: 'Jurus balasan tenang: "Pengalaman itu memang bikin kesal, tapi itu perilaku oknumnya, belum mewakili semuanya."'
+    meaning: 'Hasty Generalization: menarik kesimpulan besar mengenai seluruh kelompok dari segelintir contoh.',
+    usage: 'Perilaku dua individu tidak mewakili jutaan orang.'
   },
   {
     id: 'fall-10',
-    speaker: 'siska',
     fallacyName: 'Sunk Cost Fallacy',
-    attack: '"Aplikasi ini fiturnya memang bikin pengguna bingung dan rugi tiap bulan, tapi kita sudah telanjur habis banyak biaya bikinnya. Harus tetap dilanjutkan tanpa diubah!"',
+    attack: '"Proyek ini terus merugi, tetapi harus dilanjutkan karena kita sudah menghabiskan banyak biaya." Ini contoh apa?',
     options: [
-      {
-        text: '"Hati-hati sunk cost fallacy, Mbak. Biaya masa lalu sudah lewat, keputusan hari ini harus dihitung dari manfaat ke depan."',
-        correct: true,
-        reaction: 'Mental CEO tajam! Mbak Siska langsung buka papan tulis buat evaluasi ulang.'
-      },
-      {
-        text: '"Setuju, sekalian tambah anggaran dua kali lipat biar makin kerasa perjuangannya."',
-        correct: false,
-        reaction: 'Malah makin dalam jebakannya!'
-      },
-      {
-        text: '"Jangan pernah investasi apa pun sejak awal biar nggak rugi."',
-        correct: false,
-        reaction: 'Bukan takut mencoba, melainkan berani mengevaluasi ulang saat data sudah jelas.'
-      }
+      { text: 'Sunk Cost Fallacy (terjebak biaya yang sudah keluar)', correct: true },
+      { text: 'Bandwagon (ikut mayoritas)', correct: false },
+      { text: 'Red Herring (pengalihan topik)', correct: false }
     ],
-    meaning: 'Sunk Cost Fallacy: terus mempertahankan pilihan yang merugikan hanya karena sudah terlanjur mengeluarkan waktu, tenaga, atau uang sebelumnya.',
-    pitfall: 'Sering terjadi pada proyek, hubungan, sampai nonton film membosankan cuma gara-gara sudah beli tiket.',
-    usage: 'Jurus balasan tenang: "Yang sudah keluar biar jadi biaya belajar; pertanyaannya sekarang, ke depan masih layak dilanjutkan?"'
+    meaning: 'Sunk Cost Fallacy: mempertahankan pilihan merugikan hanya karena sudah terlanjur mengeluarkan biaya sebelumnya.',
+    usage: 'Keputusan hari ini dihitung dari manfaat ke depan, bukan biaya yang tak bisa kembali.'
   },
   {
     id: 'fall-11',
-    speaker: 'budi',
-    fallacyName: 'Tu Quoque (Menunjuk Balik)',
-    attack: 'Kamu menasihati: "Pak, merokok di dekat bayi berbahaya buat paru-parunya." Pak Budi menyahut: "Halah, kamu sendiri dulu waktu kuliah pernah begadang tiap malam, nggak usah ceramahi soal kesehatan!"',
+    fallacyName: 'Tu Quoque',
+    attack: 'Saran berhenti merokok di dekat bayi dibalas: "Kamu sendiri dulu sering begadang." Ini contoh apa?',
     options: [
-      {
-        text: '"Itu tu quoque, Pak. Kebiasaan burukku dulu nggak membuat asap rokok tiba-tiba jadi aman buat bayi."',
-        correct: true,
-        reaction: 'Tepat dan kalem! Pak Budi langsung geser jauh dari dekat bayi.'
-      },
-      {
-        text: '"Maaf Pak, karena dulu saya pernah begadang, silakan lanjut merokok di sini."',
-        correct: false,
-        reaction: 'Kasihan bayinya dong! Fakta medis tidak berubah gara-gara masa lalu orang lain.'
-      },
-      {
-        text: '"Begadang itu keren, beda sama rokok!"',
-        correct: false,
-        reaction: 'Kurang tidur juga nggak sehat, dan malah keluar dari pokok masalah.'
-      }
+      { text: 'Tu Quoque (menolak fakta dengan menunjuk kekurangan penyampainya)', correct: true },
+      { text: 'Post Hoc (kebetulan dikira sebab)', correct: false },
+      { text: 'Cherry Picking (pilih data sepihak)', correct: false }
     ],
-    meaning: 'Tu Quoque ("kamu juga"): menolak kebenaran saran atau fakta dengan menuduh si penyampai juga tidak sempurna.',
-    pitfall: 'Saran tetap bisa benar secara faktual meskipun yang menyampaikan pernah membuat kesalahan di masa lalu.',
-    usage: 'Jurus balasan tenang: "Benar, saya juga masih belajar hidup sehat, tapi fakta risikonya buat bayi tetap nyata."'
+    meaning: 'Tu Quoque: menolak kebenaran suatu fakta dengan menuduh si penyampai juga tidak sempurna.',
+    usage: 'Risiko medis tetap berlaku terlepas dari kebiasaan masa lalu pemberi saran.'
   },
   {
     id: 'fall-12',
-    speaker: 'deden',
-    fallacyName: 'Cherry Picking (Pilih Data Suka-Suka)',
-    attack: '"Lihat nih! Bulan Juli kemarin cuma hujan dua kali, berarti isu perubahan iklim dan cuaca ekstrem itu bohong!"',
+    fallacyName: 'Cherry Picking',
+    attack: '"Bulan Juli lalu hanya hujan dua kali, jadi data perubahan iklim jangka panjang tidak benar." Ini contoh apa?',
     options: [
-      {
-        text: '"Itu cherry picking, Kang. Mengambil satu bulan kering sambil mengabaikan data tren puluhan tahun bukan bukti ilmiah."',
-        correct: true,
-        reaction: 'Data jangka panjang menang telak! Kang Deden langsung garuk-garuk kepala.'
-      },
-      {
-        text: '"Oh iya, cuaca hari ini cerah berarti seluruh planet lagi adem."',
-        correct: false,
-        reaction: 'Cuaca satu hari itu beda dengan iklim jangka panjang!'
-      },
-      {
-        text: '"Bulan Juli memang nggak boleh dijadikan contoh apa pun."',
-        correct: false,
-        reaction: 'Bukan bulan Julinya yang salah, melainkan teknik memetik data sepihak.'
-      }
+      { text: 'Cherry Picking (memetik satu data yang cocok sambil mengabaikan tren)', correct: true },
+      { text: 'No True Scotsman (menggeser definisi)', correct: false },
+      { text: 'Ad Hominem (menyerang pribadi)', correct: false }
     ],
-    meaning: 'Cherry Picking: memilih hanya sebagian kecil data yang mendukung pendapat sendiri sambil menyembunyikan bukti besar yang bertentangan.',
-    pitfall: 'Sering dipakai di grafik menyesatkan dan testimoni sepihak.',
-    usage: 'Jurus balasan tenang: "Kita lihat gambar besarnya dan seluruh datanya dulu, jangan cuma satu potongan."'
+    meaning: 'Cherry Picking: memilih hanya sebagian kecil data yang mendukung klaim sambil mengabaikan bukti utama.',
+    usage: 'Bandingkan seluruh rentang data sebelum menarik kesimpulan.'
   },
   {
     id: 'fall-13',
-    speaker: 'fikri',
-    fallacyName: 'Red Herring (Pengalihan Isu)',
-    attack: 'Kamu bertanya: "Mas, kenapa laporan kas komunitas bulan ini selisih 500 ribu?" Mas Fikri menjawab: "Eh, ngomong-ngomong, kalian tahu nggak sih betapa susahnya cari tukang parkir jujur zaman sekarang?"',
+    fallacyName: 'Red Herring',
+    attack: 'Pertanyaan soal selisih laporan kas dijawab dengan keluhan soal tarif parkir. Ini contoh apa?',
     options: [
-      {
-        text: '"Eits, itu red herring, Mas. Urusan parkir kita bahas nanti, sekarang balik dulu ke selisih kas 500 ribu."',
-        correct: true,
-        reaction: 'Nggak bisa kabur! Satu warkop langsung kompak bilang: "Cek nota dulu, Mas!"'
-      },
-      {
-        text: '"Wah bener banget! Kemarin aku juga kena parkir 10 ribu di minimarket!"',
-        correct: false,
-        reaction: 'Lah, kamu malah sukses dialihkan! Uang kasnya lupa dibahas!'
-      },
-      {
-        text: '"Mas Fikri tukang parkir ya?"',
-        correct: false,
-        reaction: 'Makin melenceng dari topik laporan kas!'
-      }
+      { text: 'Red Herring (melempar topik sampingan untuk mengalihkan fokus)', correct: true },
+      { text: 'False Dilemma (dua pilihan ekstrem)', correct: false },
+      { text: 'Sunk Cost Fallacy (biaya lalu)', correct: false }
     ],
-    meaning: 'Red Herring: melempar topik sampingan yang menarik atau emosional untuk mengalihkan perhatian dari pertanyaan utama.',
-    pitfall: 'Pembicara yang tangkas selalu mencatat topik sampingan itu lalu menarik diskusi kembali ke inti.',
-    usage: 'Jurus balasan tenang: "Topik itu menarik, tapi kita bereskan dulu pertanyaan utama tadi ya."'
+    meaning: 'Red Herring: mengangkat isu sampingan yang menarik emosi untuk mengalihkan perhatian dari inti pertanyaan.',
+    usage: 'Catat isu sampingan itu, lalu kembalikan pembahasan ke pertanyaan semula.'
   },
   {
     id: 'fall-14',
-    speaker: 'rina',
-    fallacyName: 'Circular Reasoning (Argumen Melingkar)',
-    attack: '"Aturan baru ini sudah pasti adil dan terbaik, karena semua aturan yang dibuat panitia ini selalu adil!"',
+    fallacyName: 'Circular Reasoning',
+    attack: '"Aturan ini pasti adil karena setiap aturan yang dibuat panitia ini selalu adil." Ini contoh apa?',
     options: [
-      {
-        text: '"Itu circular reasoning, Teh. Kesimpulannya cuma mengulang klaim awal tanpa bukti independen."',
-        correct: true,
-        reaction: 'Teh Rina senyum puas: "Nah, akhirnya ada yang jeli melihat logika muter-muter!"'
-      },
-      {
-        text: '"Oh masuk akal banget, soalnya memang terbukti dari kalimat keduanya!"',
-        correct: false,
-        reaction: 'Kalimat keduanya cuma mengulang kalimat pertama dengan baju baru!'
-      },
-      {
-        text: '"Berarti panitia tidak boleh bikin aturan lagi."',
-        correct: false,
-        reaction: 'Boleh bikin aturan, asal dijelaskan dasar objektif dan ukurannya.'
-      }
+      { text: 'Circular Reasoning (kesimpulan dipakai sebagai bukti dirinya sendiri)', correct: true },
+      { text: 'Whataboutism (menunjuk pihak lain)', correct: false },
+      { text: 'Post Hoc (kebetulan)', correct: false }
     ],
-    meaning: 'Circular Reasoning (Penalaran Melingkar): memakai kesimpulan itu sendiri sebagai alasan untuk membuktikan kebenarannya.',
-    pitfall: 'Kedengarannya meyakinkan kalau diucapkan cepat, padahal kosong bukti.',
-    usage: 'Jurus balasan tenang: "Indikator objektif yang bikin aturan ini adil apa saja?"'
+    meaning: 'Circular Reasoning: memakai kesimpulan yang sama sebagai alasan untuk membuktikan kebenarannya.',
+    usage: 'Minta ukuran objektif yang berdiri terpisah dari klaim awalnya.'
   },
   {
     id: 'fall-15',
-    speaker: 'fikri',
     fallacyName: 'No True Scotsman',
-    attack: 'Mas Fikri bilang: "Pencinta kopi sejati pasti minum kopi hitam tanpa gula." Pas tahu barista juara dunia suka es kopi susu, Mas Fikri nyeletuk: "Berarti dia bukan pencinta kopi sejati!"',
+    attack: 'Saat contoh pengecualian muncul, klaim dipertahankan dengan berkata: "Berarti dia bukan anggota sejati." Ini contoh apa?',
     options: [
-      {
-        text: '"Itu jebakan No True Scotsman, Mas: menggeser definisi seenaknya tiap kali ketemu contoh yang membantah klaimmu."',
-        correct: true,
-        reaction: 'Skakmat! Bang Jaja langsung buatin es kopi susu sambil ketawa.'
-      },
-      {
-        text: '"Iya benar, juara dunia juga belum tentu ngerti kopi dibanding Mas Fikri."',
-        correct: false,
-        reaction: 'Mas Fikri langsung makin gede kepala tuh!'
-      },
-      {
-        text: '"Semua kopi hitam itu pahit dan nggak enak."',
-        correct: false,
-        reaction: 'Itu cuma soal selera pribadi, bukan membedah cacat logikanya.'
-      }
+      { text: 'No True Scotsman (menggeser definisi sepihak saat terbantah)', correct: true },
+      { text: 'Strawman (memelintir argumen)', correct: false },
+      { text: 'Bandwagon (ikut ramai)', correct: false }
     ],
-    meaning: 'No True Scotsman: melindungi klaim generalisasi dengan mengubah definisi "anggota sejati" secara sepihak setiap ada contoh pengecualian.',
-    pitfall: 'Sering muncul dalam obrolan hobi, musik, fandom, dan identitas kelompok.',
-    usage: 'Jurus balasan tenang: "Kalau definisinya digeser terus tiap ada pengecualian, klaimnya jadi nggak bisa diuji."'
+    meaning: 'No True Scotsman: melindungi generalisasi dengan mengubah definisi secara sepihak setiap ada pengecualian.',
+    usage: 'Tetapkan definisi yang konsisten sebelum menguji klaim.'
   },
   {
     id: 'fall-16',
-    speaker: 'siska',
-    fallacyName: 'Confirmation Bias (Bias Konfirmasi)',
-    attack: '"Aku cuma mau baca artikel dan tonton video yang setuju sama pendapatku. Yang beda pendapat langsung aku tutup karena bikin pusing."',
+    fallacyName: 'Confirmation Bias',
+    attack: 'Hanya membaca artikel yang sepaham dan langsung menutup sumber yang berbeda pandangan. Ini contoh apa?',
     options: [
-      {
-        text: '"Hati-hati bias konfirmasi, Mbak. Kalau cuma cari pembenaran, titik buta kita nggak akan pernah kelihatan."',
-        correct: true,
-        reaction: 'Tajam tapi ramah! Mbak Siska akhirnya buka artikel pembanding.'
-      },
-      {
-        text: '"Keren, itu tanda prinsip yang kuat dan anti goyah!"',
-        correct: false,
-        reaction: 'Prinsip kuat diuji lewat argumen tandingan, bukan dengan menutup telinga.'
-      },
-      {
-        text: '"Jangan pernah baca artikel apa pun biar netral."',
-        correct: false,
-        reaction: 'Lha kalau nggak baca sama sekali nanti malah nggak punya bahan!'
-      }
+      { text: 'Confirmation Bias (mencari pembenaran atas keyakinan awal)', correct: true },
+      { text: 'Slippery Slope (lereng licin)', correct: false },
+      { text: 'Tu Quoque (menunjuk balik)', correct: false }
     ],
-    meaning: 'Confirmation Bias: kecenderungan mencari, mengingat, dan menafsirkan informasi hanya yang menguatkan keyakinan awal kita.',
-    pitfall: 'Algoritma media sosial sangat memperkuat bias ini; pembicara gacor rajin membaca sudut pandang lawan yang paling kuat.',
-    usage: 'Jurus balasan tenang: "Coba kita cek juga argumen terbaik dari sisi seberang biar keputusan kita makin kokoh."'
+    meaning: 'Confirmation Bias: kecenderungan mencari dan menafsirkan informasi hanya yang menguatkan keyakinan awal.',
+    usage: 'Membaca argumen tandingan terkuat membantu mengenali titik buta.'
   }
 ];

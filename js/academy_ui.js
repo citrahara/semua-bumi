@@ -60,9 +60,9 @@ export function openKoreanAcademy({ overlayRoot, save, onComplete, onClose }) {
           <p style="margin:0 0 14px; font-size:0.9rem; color:var(--muted);">${escapeHtml(KOREAN_ACADEMY.intro)}</p>
 
           <div class="codex-bar">
-            <button class="filter-chip ${tab === 'hangul' ? 'active' : ''}" data-ktab="hangul" type="button">1. Belajar Hangul</button>
-            <button class="filter-chip ${tab === 'phrases' ? 'active' : ''}" data-ktab="phrases" type="button">2. Frasa & Suara Korea</button>
-            <button class="filter-chip ${tab === 'practice' ? 'active' : ''}" data-ktab="practice" type="button">3. Praktik Kafe Seoul</button>
+            <button class="filter-chip ${tab === 'hangul' ? 'active' : ''}" data-ktab="hangul" type="button">1. Hangul</button>
+            <button class="filter-chip ${tab === 'phrases' ? 'active' : ''}" data-ktab="phrases" type="button">2. Frasa & Suara</button>
+            <button class="filter-chip ${tab === 'practice' ? 'active' : ''}" data-ktab="practice" type="button">3. Latihan</button>
           </div>
 
           ${
@@ -106,7 +106,7 @@ export function openKoreanAcademy({ overlayRoot, save, onComplete, onClose }) {
                     .join('')}
                 </div>
                 <div style="margin-top:16px; text-align:right;">
-                  <button class="rpg-btn primary" id="btn-go-practice" type="button">Coba Praktik Kafe Seoul (Raih Lencana!)</button>
+                  <button class="rpg-btn primary" id="btn-go-practice" type="button">Mulai Latihan</button>
                 </div>
               `
               : renderKoreanPractice()
@@ -177,7 +177,7 @@ export function openKoreanAcademy({ overlayRoot, save, onComplete, onClose }) {
     const item = KOREAN_ACADEMY.practice[pIdx];
     return `
       <div class="math-q-box">
-        <span class="math-tag">Simulasi Kafe Seoul · Langkah ${pIdx + 1}/${KOREAN_ACADEMY.practice.length}</span>
+        <span class="math-tag">Latihan · ${pIdx + 1}/${KOREAN_ACADEMY.practice.length}</span>
         <p class="math-q-text">${escapeHtml(item.scene)}</p>
       </div>
       <div class="choice-grid">
@@ -433,7 +433,6 @@ export function openCyberLab({ overlayRoot, save, onUnlockIntel, onComplete, onC
             <div style="display:flex; align-items:center; gap:14px;">
               <div class="portrait-box" style="width:64px; height:64px;">${renderCharacterSVG('vega', 'idle')}</div>
               <div>
-                <div class="title-kicker">DISTRIK SIBER · AI & IIV/CII GLOBAL</div>
                 <h2>${escapeHtml(CYBER_LAB.title)}</h2>
               </div>
             </div>
