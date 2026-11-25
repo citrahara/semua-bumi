@@ -130,28 +130,26 @@ select:focus-visible {
   z-index: 2;
 }
 
-.globe-country-label .label-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: rgba(178, 214, 255, 0.8);
+.globe-country-label .label-flag {
+  width: 16px;
+  height: 11px;
+  border-radius: 2px;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.25);
   flex-shrink: 0;
+  display: block;
 }
 
-.globe-country-label.is-visited .label-dot {
-  background: var(--gold);
+.globe-country-label.is-visited {
+  border-color: rgba(240, 201, 117, 0.45);
 }
 
 .globe-country-label.is-active {
-  background: rgba(240, 201, 117, 0.24);
+  background: rgba(240, 201, 117, 0.26);
   border-color: var(--gold);
   color: var(--gold-bright);
   font-weight: 700;
   z-index: 3;
-}
-
-.globe-country-label.is-active .label-dot {
-  background: var(--fish-aqua);
 }
 
 /* Lapisan HUD Mengambang */
@@ -557,9 +555,26 @@ select:focus-visible {
 
 .country-title-wrap {
   display: flex;
-  align-items: baseline;
-  gap: 10px;
+  align-items: center;
+  gap: 11px;
   flex-wrap: wrap;
+}
+
+.country-flag {
+  width: 38px;
+  height: 26px;
+  border-radius: 5px;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.26);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35);
+  flex-shrink: 0;
+  display: block;
+}
+
+.country-heading-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
 }
 
 .country-name {
@@ -569,6 +584,7 @@ select:focus-visible {
   font-weight: 800;
   letter-spacing: -0.02em;
   color: var(--ink-main);
+  line-height: 1.12;
 }
 
 .country-place-meta {
@@ -1402,15 +1418,33 @@ select:focus-visible {
   background: rgba(240, 201, 117, 0.12);
 }
 
-/* Atlas Koleksi Negeri */
+/* Atlas Koleksi 195 Negeri */
+.atlas-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.atlas-search {
+  flex: 1;
+  min-width: 190px;
+  padding: 9px 13px;
+  border-radius: var(--radius-pill);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(5, 12, 23, 0.85);
+  color: var(--ink-main);
+  font-size: 0.84rem;
+}
+
 .collection-list {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 10px;
+  gap: 9px;
 }
 
 .collection-item {
-  padding: 12px 14px;
+  padding: 11px 13px;
   border-radius: 13px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(255, 255, 255, 0.04);
@@ -1424,6 +1458,23 @@ select:focus-visible {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+}
+
+.collection-title-group {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+
+.collection-flag {
+  width: 26px;
+  height: 18px;
+  border-radius: 3px;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  flex-shrink: 0;
+  display: block;
 }
 
 .collection-item-title {

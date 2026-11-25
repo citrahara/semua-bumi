@@ -2,7 +2,12 @@
 // Bola bumi 3D berlabel 30 negara (SDA, buku, film, karya), tokoh 3D Beliau bersama ikan julung-julung terbang,
 // Bus Damri 3D yang mengorbit bumi sekaligus menjadi teman obrolan offline, serta 3 mode tantangan opsional.
 
-import { WORLD_COUNTRIES, getCountryById, findNearestCountry } from './world_atlas.js';
+import {
+  WORLD_COUNTRIES,
+  loadWorldCountries,
+  getCountryById,
+  findNearestCountry
+} from './world_atlas.js';
 import {
   CATEGORIES,
   ATLAS_PIN_ROUNDS,
@@ -27,9 +32,12 @@ import {
 } from './atlas_storage.js';
 import { audio } from './audio.js';
 
-const TOTAL_COUNTRIES = WORLD_COUNTRIES.length;
 const TOTAL_CHALLENGES =
   ATLAS_PIN_ROUNDS.length + TIMELINE_DUELS.length + CONNECTION_ROUNDS.length;
+
+function getTotalCountries() {
+  return WORLD_COUNTRIES.length || 195;
+}
 
 const VERIFICATION_QUESTIONS = [
   {
@@ -248,7 +256,7 @@ function updateHud() {
 
   const isExplore = (acc.selectedMode || 'explore') === 'explore';
   els.hudInitial.textContent = (acc.username || 'S').slice(0, 1).toUpperCase();
-  els.hudVisited.textContent = `${(acc.visitedCountryIds || []).length}/${TOTAL_COUNTRIES} Negeri`;
+  els.hudVisited.textContent = `${(acc.visitedCountryIds || []).length}/${getTotalCountries()} Negeri`;
   els.hudScore.textContent = formatNumber(acc.score);
   els.hudEncounters.textContent = String(acc.busEncounters || 0);
   els.btnSound.textContent = acc.muted ? 'Bisukan' : 'Suara';
@@ -338,8 +346,11 @@ function renderExploreCard() {
   els.roundCard.innerHTML = `
     <div class="country-head">
       <div class="country-title-wrap">
-        <h2 class="country-name">${escapeHtml(country.name)}</h2>
-        <span class="country-place-meta">${escapeHtml(country.region)} · Ibu kota ${escapeHtml(country.capital)}</span>
+        <img class="country-flag" src="${escapeHtml(country.flag)}" alt="Bendera ${escapeHtml(country.name)}" width="38" height="26" />
+        <div class="country-heading-text">
+          <h2 class="country-name">${escapeHtml(country.name)}</h2>
+          <span class="country-place-meta">${escapeHtml(country.region)} · Ibu kota ${escapeHtml(country.capital)}${country.languages ? ` · ${escapeHtml(country.languages)}` : ''}</span>
+        </div>
       </div>
       <button class="btn-ghost" id="btn-focus-beliau" type="button">Arahkan ke Beliau</button>
     </div>
@@ -1039,50 +1050,103 @@ function openCollectionModal() {
   const acc = state.account;
   if (!acc) return;
   const visitedSet = new Set(acc.visitedCountryIds || []);
-  const visitedCountries = WORLD_COUNTRIES.filter((c) => visitedSet.has(c.id));
+  let filterMode = 'all'; // 'all' | 'visited'
+  let searchQuery = '';
 
-  const listHtml = visitedCountries
-    .map(
-      (c) => `
-      <div class="collection-item">
-        <div class="collection-item-head">
-          <div class="collection-item-title">${escapeHtml(c.name)} · ${escapeHtml(c.region)}</div>
-          <button class="btn-secondary btn-fly-country" data-country-id="${c.id}" type="button">
-            Kunjungi
-          </button>
+  const renderModalBody = () => {
+    const q = searchQuery.trim().toLowerCase();
+    const list = WORLD_COUNTRIES.filter((c) => {
+      if (filterMode === 'visited' && !visitedSet.has(c.id)) return false;
+      if (!q) return true;
+      return (
+        c.name.toLowerCase().includes(q) ||
+        c.capital.toLowerCase().includes(q) ||
+        c.region.toLowerCase().includes(q)
+      );
+    });
+
+    const listEl = document.getElementById('atlas-collection-list');
+    if (!listEl) return;
+
+    if (!list.length) {
+      listEl.innerHTML = '<p class="modal-sub">Tidak ada negara yang cocok dengan pencarian tersebut.</p>';
+      return;
+    }
+
+    listEl.innerHTML = list
+      .slice(0, 80)
+      .map(
+        (c) => `
+        <div class="collection-item">
+          <div class="collection-item-head">
+            <div class="collection-title-group">
+              <img class="collection-flag" src="${escapeHtml(c.flag)}" alt="" width="26" height="18" loading="lazy" />
+              <div class="collection-item-title">${escapeHtml(c.name)} · ${escapeHtml(c.region)}${visitedSet.has(c.id) ? ' · Sudah disinggahi' : ''}</div>
+            </div>
+            <button class="btn-secondary btn-fly-country" data-country-id="${c.id}" type="button">
+              Kunjungi
+            </button>
+          </div>
+          <p class="collection-item-text"><strong>SDA:</strong> ${escapeHtml(c.sda[0])}</p>
+          <p class="collection-item-text"><strong>Buku:</strong> ${escapeHtml(c.book.title)}</p>
         </div>
-        <p class="collection-item-text"><strong>SDA:</strong> ${escapeHtml(c.sda[0])}</p>
-        <p class="collection-item-text"><strong>Buku:</strong> ${escapeHtml(c.book.title)} · <strong>Film:</strong> ${escapeHtml(c.film.title)}</p>
-      </div>
-    `
-    )
-    .join('');
+      `
+      )
+      .join('') +
+      (list.length > 80
+        ? `<p class="modal-sub">Menampilkan 80 dari ${list.length} negara. Ketik nama negara atau kawasan di kotak pencarian untuk menyaring lebih cepat.</p>`
+        : '');
+
+    listEl.querySelectorAll('.btn-fly-country').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const c = getCountryById(btn.dataset.countryId);
+        closeModal();
+        if (c) {
+          switchMode('explore');
+          selectExploreCountry(c, { flyCamera: true, showBeliau: true });
+        }
+      });
+    });
+  };
 
   els.modalOverlay.classList.remove('hidden');
   els.modalOverlay.innerHTML = `
     <div class="modal-card wide">
       <div class="modal-header">
         <div>
-          <h2 class="modal-title">Atlas Negeri (${visitedCountries.length}/${TOTAL_COUNTRIES})</h2>
+          <h2 class="modal-title">Atlas ${getTotalCountries()} Negeri (${visitedSet.size}/${getTotalCountries()})</h2>
           <p class="modal-sub">Tantangan terbuka: ${(acc.unlockedIds || []).length}/${TOTAL_CHALLENGES} · Pertemuan Bus Damri: ${acc.busEncounters || 0} kali</p>
         </div>
         <button class="icon-close-btn" id="btn-close-modal" type="button">Tutup</button>
       </div>
-      <div class="collection-list">${listHtml}</div>
+      <div class="atlas-toolbar">
+        <input id="atlas-search-input" class="atlas-search" type="search" placeholder="Cari dari 195 negara, ibu kota, atau kawasan..." />
+        <div class="explore-tabs">
+          <button class="explore-tab active" data-atlas-filter="all" type="button">Semua (${getTotalCountries()})</button>
+          <button class="explore-tab" data-atlas-filter="visited" type="button">Dijelajahi (${visitedSet.size})</button>
+        </div>
+      </div>
+      <div class="collection-list" id="atlas-collection-list"></div>
     </div>
   `;
 
   document.getElementById('btn-close-modal').addEventListener('click', closeModal);
-  els.modalOverlay.querySelectorAll('.btn-fly-country').forEach((btn) => {
+  const searchInput = document.getElementById('atlas-search-input');
+  searchInput.addEventListener('input', () => {
+    searchQuery = searchInput.value;
+    renderModalBody();
+  });
+  els.modalOverlay.querySelectorAll('[data-atlas-filter]').forEach((btn) => {
     btn.addEventListener('click', () => {
-      const c = getCountryById(btn.dataset.countryId);
-      closeModal();
-      if (c) {
-        switchMode('explore');
-        selectExploreCountry(c, { flyCamera: true, showBeliau: true });
-      }
+      filterMode = btn.dataset.atlasFilter;
+      els.modalOverlay.querySelectorAll('[data-atlas-filter]').forEach((b) => {
+        b.classList.toggle('active', b === btn);
+      });
+      renderModalBody();
     });
   });
+
+  renderModalBody();
 }
 
 function openProfileModal() {
@@ -1099,7 +1163,7 @@ function openProfileModal() {
             (o) => `
           <button class="saved-account-btn" data-switch="${escapeHtml(o.username)}" type="button">
             <strong>@${escapeHtml(o.username)}</strong>
-            <span>${(o.visitedCountryIds || []).length}/${TOTAL_COUNTRIES} negeri · ${formatNumber(o.score)} poin</span>
+            <span>${(o.visitedCountryIds || []).length}/${getTotalCountries()} negeri · ${formatNumber(o.score)} poin</span>
           </button>
         `
           )
@@ -1119,7 +1183,7 @@ function openProfileModal() {
         <button class="icon-close-btn" id="btn-close-modal" type="button">Tutup</button>
       </div>
       <p class="modal-sub">
-        ${(acc.visitedCountryIds || []).length} dari ${TOTAL_COUNTRIES} negeri dijelajahi · Skor ${formatNumber(acc.score)} · ${acc.busEncounters || 0} pertemuan dengan Bus Damri di langit.
+        ${(acc.visitedCountryIds || []).length} dari ${getTotalCountries()} negeri dijelajahi · Skor ${formatNumber(acc.score)} · ${acc.busEncounters || 0} pertemuan dengan Bus Damri di langit.
       </p>
       <div class="action-row">
         <button class="btn-secondary" id="btn-new-account" type="button">Buat Akun Baru</button>
@@ -1174,7 +1238,7 @@ function openAuthStep1() {
             (a) => `
           <button class="saved-account-btn" data-login="${escapeHtml(a.username)}" type="button">
             <strong>@${escapeHtml(a.username)}</strong>
-            <span>${(a.visitedCountryIds || []).length}/${TOTAL_COUNTRIES} negeri · ${formatNumber(a.score)} poin</span>
+            <span>${(a.visitedCountryIds || []).length}/${getTotalCountries()} negeri · ${formatNumber(a.score)} poin</span>
           </button>
         `
           )
@@ -1439,7 +1503,12 @@ function bindGlobalEvents() {
   });
 }
 
-function bootstrap() {
+async function bootstrap() {
+  try {
+    await loadWorldCountries();
+  } catch {
+    showToast('Gagal memuat daftar negara. Coba muat ulang halaman.');
+  }
   populateSelectMenus();
   initBusChips();
   bindGlobalEvents();

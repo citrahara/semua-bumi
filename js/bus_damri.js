@@ -20,10 +20,14 @@ function findMentionedCountry(lowerText) {
     if (lowerText.includes(c.name.toLowerCase())) return c;
     if (c.capital && lowerText.includes(c.capital.toLowerCase())) return c;
   }
-  if (lowerText.includes('amerika')) return WORLD_COUNTRIES.find((c) => c.id === 'amerika-serikat');
-  if (lowerText.includes('korea')) return WORLD_COUNTRIES.find((c) => c.id === 'korea-selatan');
-  if (lowerText.includes('selandia')) return WORLD_COUNTRIES.find((c) => c.id === 'selandia-baru');
-  if (lowerText.includes('arab')) return WORLD_COUNTRIES.find((c) => c.id === 'arab-saudi');
+  if (lowerText.includes('amerika')) return WORLD_COUNTRIES.find((c) => c.code === 'us');
+  if (lowerText.includes('korea selatan') || lowerText === 'korea') return WORLD_COUNTRIES.find((c) => c.code === 'kr');
+  if (lowerText.includes('selandia')) return WORLD_COUNTRIES.find((c) => c.code === 'nz');
+  if (lowerText.includes('arab')) return WORLD_COUNTRIES.find((c) => c.code === 'sa');
+  if (lowerText.includes('uea') || lowerText.includes('dubai')) return WORLD_COUNTRIES.find((c) => c.code === 'ae');
+  if (lowerText.includes('vatikan')) return WORLD_COUNTRIES.find((c) => c.code === 'va');
+  if (lowerText.includes('palestina')) return WORLD_COUNTRIES.find((c) => c.code === 'ps');
+  if (lowerText.includes('kongo')) return WORLD_COUNTRIES.find((c) => c.code === 'cd');
   return null;
 }
 
