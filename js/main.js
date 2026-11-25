@@ -1,5 +1,8 @@
-// Pengendali utama Atlas Bumi 3D: 3 mode wawasan interaktif, bola bumi 3D, koleksi bintang, dan Ramyeon offline.
+// Pengendali utama Semua Bumi:
+// Bola bumi 3D berlabel 30 negara (SDA, buku, film, karya), tokoh 3D Beliau bersama ikan julung-julung terbang,
+// Bus Damri 3D yang mengorbit bumi sekaligus menjadi teman obrolan offline, serta 3 mode tantangan opsional.
 
+import { WORLD_COUNTRIES, getCountryById, findNearestCountry } from './world_atlas.js';
 import {
   CATEGORIES,
   ATLAS_PIN_ROUNDS,
@@ -8,7 +11,12 @@ import {
   getCategoryMeta
 } from './atlas_data.js';
 import { AtlasGlobe3D, haversineKm, formatCoord } from './globe3d.js';
-import { RAMYEON_QUICK_PROMPTS, getRoundAdviceText, replyToRamyeon } from './ramyeon.js';
+import {
+  BUS_QUICK_PROMPTS,
+  getBusContextNote,
+  pickNextCountrySuggestion,
+  replyFromBusDamri
+} from './bus_damri.js';
 import {
   listAtlasAccounts,
   getActiveAtlasAccount,
@@ -19,10 +27,21 @@ import {
 } from './atlas_storage.js';
 import { audio } from './audio.js';
 
-const TOTAL_DISCOVERIES =
+const TOTAL_COUNTRIES = WORLD_COUNTRIES.length;
+const TOTAL_CHALLENGES =
   ATLAS_PIN_ROUNDS.length + TIMELINE_DUELS.length + CONNECTION_ROUNDS.length;
 
 const VERIFICATION_QUESTIONS = [
+  {
+    q: 'Dalam novel Semua Ikan di Langit karya Ziggy, siapa narator yang berkeliling semesta bersama Beliau dan kawanan ikan julung-julung?',
+    options: [
+      'Bus Damri trayek Dipatiukur-Leuwipanjang',
+      'Kapal layar dari Pelabuhan Sunda Kelapa',
+      'Kereta api malam lintas pegunungan'
+    ],
+    answer: 0,
+    tip: 'Narator dalam novel tersebut adalah "Saya", sebuah Bus Damri kota yang menemani Beliau melintasi semesta.'
+  },
   {
     q: 'Dari mana lebih dari 98 persen data internet antarbenua mengalir hari ini?',
     options: [
@@ -31,63 +50,64 @@ const VERIFICATION_QUESTIONS = [
       'Menara pemancar di puncak pegunungan'
     ],
     answer: 0,
-    tip: 'Hampir seluruh lalu lintas data global sebenarnya melesat lewat kabel serat optik bawah laut.'
+    tip: 'Hampir seluruh lalu lintas data antarbenua melesat lewat ratusan kabel serat optik di dasar laut.'
   },
   {
-    q: 'Mana yang berdiri lebih dahulu dalam sejarah dunia?',
+    q: 'Pulau kecil di Maluku mana yang pada 1667 pernah ditukar dengan Pulau Manhattan di New York demi rempah pala?',
     options: [
-      'Universitas Oxford di Inggris (1096)',
-      'Ibu kota Kekaisaran Aztek di Meksiko (1325)',
-      'Mesin cetak Gutenberg di Jerman (1450)'
+      'Pulau Run di Kepulauan Banda',
+      'Pulau Samosir di Sumatera Utara',
+      'Pulau Komodo di Nusa Tenggara Timur'
     ],
     answer: 0,
-    tip: 'Universitas Oxford mulai mengajar sekitar 1096, lebih dari dua abad sebelum Tenochtitlan berdiri.'
-  },
-  {
-    q: 'Novel klasik mana yang konsepnya lahir saat hujan gelap akibat abu letusan Gunung Tambora 1815?',
-    options: [
-      'Frankenstein karya Mary Shelley',
-      'Sherlock Holmes karya Arthur Conan Doyle',
-      'The Great Gatsby karya F. Scott Fitzgerald'
-    ],
-    answer: 0,
-    tip: 'Letusan Tambora memicu Tahun Tanpa Musim Panas 1816 di Eropa saat Mary Shelley mengarang Frankenstein.'
+    tip: 'Dalam Perjanjian Breda 1667, Belanda menukar New Amsterdam (Manhattan) dengan Pulau Run demi monopoli pala.'
   }
 ];
-
-const MIX_SEQUENCE = ['pin', 'duel', 'pin', 'connect'];
 
 const state = {
   account: null,
   globe: null,
-  mixIndex: 0,
+  activeCountryId: 'indonesia',
+  exploreTab: 'sda', // 'sda' | 'book' | 'film' | 'work'
   lastRoundId: null,
-  ramyeonOpen: false,
-  round: null, // { mode, data, revealed, guess, guessYear, duelSwapped, duelPicked, selectedCardIds, shuffledCards, wrongNote, result }
-  toastTimer: null
+  busOpen: false,
+  round: null,
+  toastTimer: null,
+  beliauTimer: null,
+  busLocInterval: null
 };
 
 const els = {
   canvas: document.getElementById('globe-canvas'),
+  labelsLayer: document.getElementById('globe-labels-layer'),
   hudLayer: document.getElementById('hud-layer'),
   hudInitial: document.getElementById('hud-initial'),
+  hudVisited: document.getElementById('hud-visited'),
   hudScore: document.getElementById('hud-score'),
-  hudStreak: document.getElementById('hud-streak'),
-  hudCollection: document.getElementById('hud-collection'),
+  hudEncounters: document.getElementById('hud-encounters'),
+  countryJumpSelect: document.getElementById('country-jump-select'),
   categorySelect: document.getElementById('category-select'),
   hoverPill: document.getElementById('globe-hover-pill'),
   modeTabs: Array.from(document.querySelectorAll('.mode-tab')),
   btnProfile: document.getElementById('btn-open-profile'),
   btnCollection: document.getElementById('btn-open-collection'),
   btnSound: document.getElementById('btn-toggle-sound'),
-  btnToggleRamyeon: document.getElementById('btn-toggle-ramyeon'),
-  btnCloseRamyeon: document.getElementById('btn-close-ramyeon'),
+  btnToggleBus: document.getElementById('btn-toggle-bus'),
+  btnCloseBus: document.getElementById('btn-close-bus'),
+  btnFollowBus: document.getElementById('btn-follow-bus'),
+  beliauPopup: document.getElementById('beliau-popup'),
+  beliauTitle: document.getElementById('beliau-title'),
+  beliauText: document.getElementById('beliau-text'),
+  beliauActions: document.getElementById('beliau-actions'),
+  btnCloseBeliau: document.getElementById('btn-close-beliau'),
+  btnBeliauGreetBus: document.getElementById('btn-beliau-greet-bus'),
   roundCard: document.getElementById('round-card'),
-  ramyeonDrawer: document.getElementById('ramyeon-drawer'),
-  ramyeonMessages: document.getElementById('ramyeon-messages'),
-  ramyeonChips: document.getElementById('ramyeon-chips'),
-  ramyeonForm: document.getElementById('ramyeon-form'),
-  ramyeonInput: document.getElementById('ramyeon-input'),
+  busDrawer: document.getElementById('bus-drawer'),
+  busLocationSub: document.getElementById('bus-location-sub'),
+  busMessages: document.getElementById('bus-messages'),
+  busChips: document.getElementById('bus-chips'),
+  busForm: document.getElementById('bus-form'),
+  busInput: document.getElementById('bus-input'),
   toast: document.getElementById('toast'),
   authOverlay: document.getElementById('auth-overlay'),
   modalOverlay: document.getElementById('modal-overlay')
@@ -121,11 +141,30 @@ function showToast(msg) {
   clearTimeout(state.toastTimer);
   state.toastTimer = setTimeout(() => {
     els.toast.classList.remove('show');
-  }, 2500);
+  }, 2800);
 }
 
-// Katalog lengkap untuk referensi koleksi dan pin permanen di bola bumi
-function getAllDiscoveryEntries() {
+// Pop-up halus Beliau bersama kawanan ikan julung-julung
+function showBeliauPopup(title, text, options = {}) {
+  if (!els.beliauPopup) return;
+  els.beliauTitle.textContent = title;
+  els.beliauText.textContent = text;
+  els.beliauActions.classList.toggle('hidden', !options.showGreetBus);
+  els.beliauPopup.classList.remove('hidden');
+
+  clearTimeout(state.beliauTimer);
+  const duration = options.duration || 8500;
+  state.beliauTimer = setTimeout(() => {
+    els.beliauPopup.classList.add('hidden');
+  }, duration);
+}
+
+function hideBeliauPopup() {
+  clearTimeout(state.beliauTimer);
+  if (els.beliauPopup) els.beliauPopup.classList.add('hidden');
+}
+
+function getAllChallengeEntries() {
   const entries = [];
   ATLAS_PIN_ROUNDS.forEach((r) => {
     entries.push({
@@ -167,44 +206,191 @@ function getAllDiscoveryEntries() {
   return entries;
 }
 
-const ALL_ENTRIES = getAllDiscoveryEntries();
+const ALL_CHALLENGES = getAllChallengeEntries();
 
-function syncUnlockedLandmarks() {
+function syncEarthStarsAndLabels() {
   if (!state.globe || !state.account) return;
-  const set = new Set(state.account.unlockedIds || []);
-  const unlockedPins = ALL_ENTRIES.filter((e) => set.has(e.id) && e.mode === 'pin');
-  state.globe.syncUnlockedPins(unlockedPins);
-}
+  const visitedSet = new Set(state.account.visitedCountryIds || []);
+  const unlockedSet = new Set(state.account.unlockedIds || []);
 
-function unlockDiscovery(id) {
-  if (!state.account) return false;
-  if (!state.account.unlockedIds) state.account.unlockedIds = [];
-  if (!state.account.unlockedIds.includes(id)) {
-    state.account.unlockedIds.push(id);
-    syncUnlockedLandmarks();
-    return true;
-  }
-  return false;
+  // Gabungkan bintang negeri yang sudah dijelajahi + titik tantangan terbuka
+  const starItems = [];
+  WORLD_COUNTRIES.forEach((c) => {
+    if (visitedSet.has(c.id)) {
+      starItems.push({
+        id: c.id,
+        kind: 'country',
+        countryId: c.id,
+        title: c.name,
+        place: `${c.region} · Ibu kota ${c.capital}`,
+        wowFact: c.wowFact,
+        lat: c.lat,
+        lon: c.lon
+      });
+    }
+  });
+  ALL_CHALLENGES.forEach((e) => {
+    if (unlockedSet.has(e.id) && e.mode === 'pin') {
+      starItems.push({ ...e, kind: 'challenge' });
+    }
+  });
+
+  state.globe.syncUnlockedPins(starItems);
+  state.globe.updateCountryLabelStates(
+    visitedSet,
+    state.account.selectedMode === 'explore' ? state.activeCountryId : null
+  );
 }
 
 function updateHud() {
   const acc = state.account;
   if (!acc) return;
 
-  els.hudInitial.textContent = (acc.username || 'A').slice(0, 1).toUpperCase();
+  const isExplore = (acc.selectedMode || 'explore') === 'explore';
+  els.hudInitial.textContent = (acc.username || 'S').slice(0, 1).toUpperCase();
+  els.hudVisited.textContent = `${(acc.visitedCountryIds || []).length}/${TOTAL_COUNTRIES} Negeri`;
   els.hudScore.textContent = formatNumber(acc.score);
-  els.hudStreak.textContent = String(acc.streak || 0);
-  els.hudCollection.textContent = `${(acc.unlockedIds || []).length}/${TOTAL_DISCOVERIES}`;
-  els.categorySelect.value = acc.selectedCategory || 'all';
+  els.hudEncounters.textContent = String(acc.busEncounters || 0);
   els.btnSound.textContent = acc.muted ? 'Bisukan' : 'Suara';
 
+  els.countryJumpSelect.classList.toggle('hidden', !isExplore);
+  els.categorySelect.classList.toggle('hidden', isExplore);
+  els.countryJumpSelect.value = state.activeCountryId;
+  els.categorySelect.value = acc.selectedCategory || 'all';
+
   els.modeTabs.forEach((tab) => {
-    tab.classList.toggle('active', tab.dataset.mode === (acc.selectedMode || 'mix'));
+    tab.classList.toggle('active', tab.dataset.mode === (acc.selectedMode || 'explore'));
   });
 }
 
 // ==========================================
-// PEMILIHAN RONDE & LOGIKA 3 MODE
+// MODE UTAMA: JELAJAH BUMI BERLABEL
+// ==========================================
+
+function selectExploreCountry(country, options = {}) {
+  if (!country || !state.account) return;
+  const { flyCamera = true, showBeliau = true } = options;
+
+  state.activeCountryId = country.id;
+  state.exploreTab = 'sda';
+  state.round = null;
+
+  if (!state.account.visitedCountryIds) state.account.visitedCountryIds = [];
+  const isNew = !state.account.visitedCountryIds.includes(country.id);
+  if (isNew) {
+    state.account.visitedCountryIds.push(country.id);
+    state.account.score += 250;
+    audio.playDialogueOpen();
+    showToast(`${country.name} terbuka (+250 poin)`);
+  } else {
+    audio.playClick();
+  }
+
+  persistAtlasSave(state.account);
+  state.globe.clearRoundVisuals();
+  state.globe.setPinMode(false);
+  state.globe.setLabelsVisible(true);
+  state.globe.flyBeliauTo(country.lat, country.lon);
+
+  if (flyCamera) {
+    state.globe.setAutoRotate(false);
+    state.globe.focusLatLon(country.lat, country.lon, 5.55);
+  }
+
+  syncEarthStarsAndLabels();
+  updateHud();
+  renderExploreCard();
+
+  if (showBeliau) {
+    showBeliauPopup(`Beliau di langit ${country.name}`, country.beliauNote);
+  }
+}
+
+function renderExploreCard() {
+  const country = getCountryById(state.activeCountryId) || WORLD_COUNTRIES[0];
+  const tab = state.exploreTab || 'sda';
+
+  let bodyHtml = '';
+  if (tab === 'sda') {
+    bodyHtml = `
+      <ul class="sda-list">
+        ${country.sda.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}
+      </ul>
+      <p class="explore-wow"><strong>Fakta menarik:</strong> ${escapeHtml(country.wowFact)}</p>
+    `;
+  } else if (tab === 'book') {
+    bodyHtml = `
+      <div class="explore-item-title">${escapeHtml(country.book.title)}</div>
+      <p class="explore-item-note">${escapeHtml(country.book.note)}</p>
+    `;
+  } else if (tab === 'film') {
+    bodyHtml = `
+      <div class="explore-item-title">${escapeHtml(country.film.title)}</div>
+      <p class="explore-item-note">${escapeHtml(country.film.note)}</p>
+    `;
+  } else {
+    bodyHtml = `
+      <div class="explore-item-title">${escapeHtml(country.work.title)}</div>
+      <p class="explore-item-note">${escapeHtml(country.work.note)}</p>
+    `;
+  }
+
+  els.roundCard.innerHTML = `
+    <div class="country-head">
+      <div class="country-title-wrap">
+        <h2 class="country-name">${escapeHtml(country.name)}</h2>
+        <span class="country-place-meta">${escapeHtml(country.region)} · Ibu kota ${escapeHtml(country.capital)}</span>
+      </div>
+      <button class="btn-ghost" id="btn-focus-beliau" type="button">Arahkan ke Beliau</button>
+    </div>
+    <p class="country-tagline">${escapeHtml(country.tagline)}</p>
+    <div class="explore-tabs" role="tablist" aria-label="Kategori informasi negara">
+      <button class="explore-tab ${tab === 'sda' ? 'active' : ''}" data-tab="sda" type="button">Hasil Bumi & SDA</button>
+      <button class="explore-tab ${tab === 'book' ? 'active' : ''}" data-tab="book" type="button">Buku</button>
+      <button class="explore-tab ${tab === 'film' ? 'active' : ''}" data-tab="film" type="button">Film</button>
+      <button class="explore-tab ${tab === 'work' ? 'active' : ''}" data-tab="work" type="button">Karya & Sains</button>
+    </div>
+    <div class="explore-body">${bodyHtml}</div>
+    <div class="action-row">
+      <div class="action-group">
+        <button class="btn-secondary" id="btn-ask-bus-country" type="button">Tanya Bus Damri</button>
+        <button class="btn-secondary" id="btn-summon-bus" type="button">Panggil Bus Mendekat</button>
+      </div>
+      <button class="btn-primary" id="btn-next-country" type="button">Terbang ke Negeri Lain</button>
+    </div>
+  `;
+
+  els.roundCard.querySelectorAll('.explore-tab').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      state.exploreTab = btn.dataset.tab;
+      audio.playClick();
+      renderExploreCard();
+    });
+  });
+
+  document.getElementById('btn-focus-beliau').addEventListener('click', () => {
+    audio.playClick();
+    state.globe.focusBeliau();
+  });
+
+  document.getElementById('btn-ask-bus-country').addEventListener('click', () => {
+    askBusDamriAboutCurrent();
+  });
+
+  document.getElementById('btn-summon-bus').addEventListener('click', () => {
+    audio.playWaypoint();
+    state.globe.summonBusToBeliau();
+    showToast('Bus Damri sedang berbelok mendekati Beliau dan kawanan ikan');
+  });
+
+  document.getElementById('btn-next-country').addEventListener('click', () => {
+    const next = pickNextCountrySuggestion(state.account.visitedCountryIds || [], country.id);
+    selectExploreCountry(next, { flyCamera: true, showBeliau: true });
+  });
+}
+
+// ==========================================
+// MODE TANTANGAN (TANCAP PETA, DUEL TAHUN, BENANG MERAH)
 // ==========================================
 
 function getPoolForMode(mode, category) {
@@ -220,39 +406,23 @@ function getPoolForMode(mode, category) {
   return filtered.length ? filtered : source;
 }
 
-function startNextRound(forcedMode = null) {
+function startChallengeRound(mode) {
   if (!state.account) return;
-
-  const prefMode = forcedMode || state.account.selectedMode || 'mix';
-  let actualMode = prefMode;
-  if (prefMode === 'mix') {
-    actualMode = MIX_SEQUENCE[state.mixIndex % MIX_SEQUENCE.length];
-    state.mixIndex += 1;
-  }
-
   const category = state.account.selectedCategory || 'all';
-  const pool = getPoolForMode(actualMode, category);
+  const pool = getPoolForMode(mode, category);
   const unlockedSet = new Set(state.account.unlockedIds || []);
 
-  // Utamakan fakta yang belum pernah dibuka dan jangan ulang langsung ronde terakhir
   let candidates = pool.filter((item) => !unlockedSet.has(item.id) && item.id !== state.lastRoundId);
-  if (!candidates.length) {
-    candidates = pool.filter((item) => item.id !== state.lastRoundId);
-  }
-  if (!candidates.length) {
-    candidates = pool;
-  }
+  if (!candidates.length) candidates = pool.filter((item) => item.id !== state.lastRoundId);
+  if (!candidates.length) candidates = pool;
 
   const picked = candidates[Math.floor(Math.random() * candidates.length)];
   state.lastRoundId = picked.id;
 
-  const midYear =
-    actualMode === 'pin'
-      ? Math.round((picked.minYear + picked.maxYear) / 2)
-      : null;
+  const midYear = mode === 'pin' ? Math.round((picked.minYear + picked.maxYear) / 2) : null;
 
   state.round = {
-    mode: actualMode,
+    mode,
     data: picked,
     revealed: false,
     guess: null,
@@ -260,17 +430,19 @@ function startNextRound(forcedMode = null) {
     duelSwapped: Math.random() < 0.5,
     duelPicked: null,
     selectedCardIds: [],
-    shuffledCards: actualMode === 'connect' ? shuffleCopy(picked.cards) : [],
+    shuffledCards: mode === 'connect' ? shuffleCopy(picked.cards) : [],
     wrongNote: '',
     result: null
   };
 
   state.globe.clearRoundVisuals();
+  // Sembunyikan label negara saat Tancap Peta agar lokasi tidak bocor sebelum menebak
+  state.globe.setLabelsVisible(mode !== 'pin');
 
-  if (actualMode === 'pin') {
+  if (mode === 'pin') {
     state.globe.setPinMode(true);
     state.globe.setAutoRotate(true);
-  } else if (actualMode === 'duel') {
+  } else if (mode === 'duel') {
     state.globe.setPinMode(false);
     state.globe.setAutoRotate(false);
     state.globe.showDuelMarkers(picked.a, picked.b, null);
@@ -279,7 +451,19 @@ function startNextRound(forcedMode = null) {
     state.globe.setAutoRotate(true);
   }
 
-  renderRoundCard();
+  syncEarthStarsAndLabels();
+  renderChallengeCard();
+}
+
+function unlockChallenge(id) {
+  if (!state.account) return false;
+  if (!state.account.unlockedIds) state.account.unlockedIds = [];
+  if (!state.account.unlockedIds.includes(id)) {
+    state.account.unlockedIds.push(id);
+    syncEarthStarsAndLabels();
+    return true;
+  }
+  return false;
 }
 
 function computePinScore(distKm, yearDelta, minYear, maxYear) {
@@ -287,11 +471,7 @@ function computePinScore(distKm, yearDelta, minYear, maxYear) {
   const span = Math.max(30, maxYear - minYear);
   const yearScore =
     yearDelta === 0 ? 4000 : Math.round(4000 * Math.exp(-yearDelta / (span * 0.22)));
-  return {
-    distScore,
-    yearScore,
-    total: distScore + yearScore
-  };
+  return { distScore, yearScore, total: distScore + yearScore };
 }
 
 function handlePinSubmit() {
@@ -311,6 +491,7 @@ function handlePinSubmit() {
   };
 
   state.globe.setPinMode(false);
+  state.globe.setLabelsVisible(true);
   state.globe.setAutoRotate(false);
   state.globe.revealAnswerArc(r.guess.lat, r.guess.lon, r.data.lat, r.data.lon);
 
@@ -326,13 +507,16 @@ function handlePinSubmit() {
     audio.playDialogueOpen();
   }
 
-  const isNew = unlockDiscovery(r.data.id);
+  const isNew = unlockChallenge(r.data.id);
   persistAtlasSave(state.account);
   updateHud();
-  renderRoundCard();
+  renderChallengeCard();
 
   if (isNew) {
-    showToast(`Bintang baru terpasang di ${r.data.place}`);
+    showBeliauPopup(
+      'Beliau menandai titik baru',
+      `Kawanan ikan julung-julung berputar di atas ${r.data.place}. Fakta tahun ${r.data.year} resmi masuk catatan Semua Bumi.`
+    );
   }
 }
 
@@ -346,11 +530,7 @@ function handleDuelPick(pickedKey) {
 
   r.revealed = true;
   r.duelPicked = pickedKey;
-  r.result = {
-    isCorrect,
-    earlierKey,
-    points
-  };
+  r.result = { isCorrect, earlierKey, points };
 
   state.globe.showDuelMarkers(r.data.a, r.data.b, earlierKey);
 
@@ -365,10 +545,10 @@ function handleDuelPick(pickedKey) {
     audio.playWrong();
   }
 
-  unlockDiscovery(r.data.id);
+  unlockChallenge(r.data.id);
   persistAtlasSave(state.account);
   updateHud();
-  renderRoundCard();
+  renderChallengeCard();
 }
 
 function handleConnectToggle(cardId) {
@@ -379,14 +559,12 @@ function handleConnectToggle(cardId) {
   if (idx >= 0) {
     r.selectedCardIds.splice(idx, 1);
   } else {
-    if (r.selectedCardIds.length >= 3) {
-      r.selectedCardIds.shift();
-    }
+    if (r.selectedCardIds.length >= 3) r.selectedCardIds.shift();
     r.selectedCardIds.push(cardId);
   }
   r.wrongNote = '';
   audio.playClick();
-  renderRoundCard();
+  renderChallengeCard();
 }
 
 function handleConnectSubmit() {
@@ -412,31 +590,27 @@ function handleConnectSubmit() {
     state.account.bestStreak = Math.max(state.account.bestStreak || 0, state.account.streak);
     audio.playGateUnlock();
 
-    unlockDiscovery(r.data.id);
+    unlockChallenge(r.data.id);
     persistAtlasSave(state.account);
     updateHud();
-    renderRoundCard();
+    renderChallengeCard();
     showToast('Rasi benang merah menyala di bola bumi');
   } else {
     audio.playWrong();
     r.wrongNote =
       hits === 2
-        ? '2 dari 3 kartu sudah masuk benang merah. Cek lagi satu kartu yang meleset.'
+        ? '2 dari 3 kartu sudah masuk benang merah. Ganti satu kartu yang meleset.'
         : hits === 1
-          ? 'Baru 1 kartu yang terhubung. Coba cari dua pasangan aslinya.'
-          : 'Belum ada yang cocok. Coba baca ulang petunjuk utamanya atau tanya Ramyeon.';
-    renderRoundCard();
+          ? 'Baru 1 kartu yang terhubung. Cari dua pasangan aslinya.'
+          : 'Belum ada yang cocok. Cek petunjuk utamanya atau tanya Bus Damri.';
+    renderChallengeCard();
     els.roundCard.classList.remove('shake');
     void els.roundCard.offsetWidth;
     els.roundCard.classList.add('shake');
   }
 }
 
-// ==========================================
-// RENDER KARTU RONDE
-// ==========================================
-
-function renderRoundCard() {
+function renderChallengeCard() {
   const r = state.round;
   if (!r) return;
 
@@ -457,11 +631,7 @@ function renderRoundCard() {
         </span>
         <span class="mode-badge">${modeLabel}</span>
       </div>
-      ${
-        !r.revealed
-          ? '<button class="btn-ghost" id="btn-skip-round" type="button">Lewati</button>'
-          : ''
-      }
+      ${!r.revealed ? '<button class="btn-ghost" id="btn-skip-round" type="button">Lewati</button>' : ''}
     </div>
   `;
 
@@ -503,7 +673,7 @@ function renderRoundCard() {
           </div>
         </div>
         <div class="action-row">
-          <button class="btn-secondary" id="btn-ask-hint" type="button">Saran Ramyeon</button>
+          <button class="btn-secondary" id="btn-ask-bus" type="button">Tanya Bus Damri</button>
           <button class="btn-primary" id="btn-lock-pin" type="button" ${r.guess ? '' : 'disabled'}>
             ${r.guess ? 'Kunci Tebakan' : 'Tancap Pin di Bumi Dulu'}
           </button>
@@ -550,7 +720,7 @@ function renderRoundCard() {
           <p class="wow-text">${escapeHtml(r.data.wowFact)}</p>
         </div>
         <div class="action-row">
-          <button class="btn-secondary" id="btn-ask-more" type="button">Cerita Lanjutan dari Ramyeon</button>
+          <button class="btn-secondary" id="btn-ask-bus" type="button">Cerita dari Bus Damri</button>
           <button class="btn-primary" id="btn-next-round" type="button">Ronde Berikutnya</button>
         </div>
       `;
@@ -577,7 +747,7 @@ function renderRoundCard() {
         return `
           <button class="duel-card ${slot.side} ${extraCls}" data-key="${slot.key}" type="button" ${r.revealed ? 'disabled' : ''}>
             <div class="duel-card-top">
-              <span>${tag}</span>
+              <span class="duel-side-dot">${tag}</span>
               <span class="duel-year-pill">${r.revealed ? slot.item.year : '????'}</span>
             </div>
             <div class="duel-card-title">${escapeHtml(slot.item.title)}</div>
@@ -593,8 +763,8 @@ function renderRoundCard() {
         <h2 class="round-title">Mana yang terjadi lebih dahulu?</h2>
         <div class="duel-grid">${cardsHtml}</div>
         <div class="action-row">
-          <button class="btn-secondary" id="btn-ask-hint" type="button">Saran Ramyeon</button>
-          <span class="mode-badge">Lihat lengkung dua titik di bola bumi</span>
+          <button class="btn-secondary" id="btn-ask-bus" type="button">Tanya Bus Damri</button>
+          <span class="mode-badge">Dua titik terhubung di bola bumi</span>
         </div>
       `;
     } else {
@@ -614,7 +784,7 @@ function renderRoundCard() {
           <p class="wow-text">${escapeHtml(r.data.wowFact)}</p>
         </div>
         <div class="action-row">
-          <button class="btn-secondary" id="btn-ask-more" type="button">Tanya Ramyeon</button>
+          <button class="btn-secondary" id="btn-ask-bus" type="button">Cerita dari Bus Damri</button>
           <button class="btn-primary" id="btn-next-round" type="button">Ronde Berikutnya</button>
         </div>
       `;
@@ -624,7 +794,6 @@ function renderRoundCard() {
       btn.addEventListener('click', () => handleDuelPick(btn.dataset.key));
     });
   } else {
-    // Mode 3: Benang Merah
     const answerSet = new Set(r.data.answerIds);
     const chipsHtml = r.shuffledCards
       .map((card) => {
@@ -649,7 +818,7 @@ function renderRoundCard() {
         <div class="connect-grid">${chipsHtml}</div>
         ${r.wrongNote ? `<div class="connect-feedback">${escapeHtml(r.wrongNote)}</div>` : ''}
         <div class="action-row">
-          <button class="btn-secondary" id="btn-ask-hint" type="button">Saran Ramyeon</button>
+          <button class="btn-secondary" id="btn-ask-bus" type="button">Tanya Bus Damri</button>
           <div class="action-group">
             <span class="mode-badge">Terpilih ${r.selectedCardIds.length}/3</span>
             <button class="btn-primary" id="btn-submit-connect" type="button" ${r.selectedCardIds.length === 3 ? '' : 'disabled'}>
@@ -679,19 +848,18 @@ function renderRoundCard() {
           <p class="wow-text">${escapeHtml(r.data.wowFact)}</p>
         </div>
         <div class="action-row">
-          <button class="btn-secondary" id="btn-ask-more" type="button">Tanya Ramyeon</button>
+          <button class="btn-secondary" id="btn-ask-bus" type="button">Cerita dari Bus Damri</button>
           <button class="btn-primary" id="btn-next-round" type="button">Ronde Berikutnya</button>
         </div>
       `;
     }
   }
 
-  // Kaitkan tombol aksi bersama
   const skipBtn = document.getElementById('btn-skip-round');
   if (skipBtn) {
     skipBtn.addEventListener('click', () => {
       audio.playClick();
-      startNextRound();
+      startChallengeRound(r.mode);
     });
   }
 
@@ -699,117 +867,134 @@ function renderRoundCard() {
   if (nextBtn) {
     nextBtn.addEventListener('click', () => {
       audio.playClick();
-      startNextRound();
+      startChallengeRound(r.mode);
     });
   }
 
-  const hintBtn = document.getElementById('btn-ask-hint');
-  if (hintBtn) {
-    hintBtn.addEventListener('click', () => {
-      askRamyeonForRound(false);
-    });
-  }
-
-  const moreBtn = document.getElementById('btn-ask-more');
-  if (moreBtn) {
-    moreBtn.addEventListener('click', () => {
-      askRamyeonForRound(true);
-    });
+  const askBtn = document.getElementById('btn-ask-bus');
+  if (askBtn) {
+    askBtn.addEventListener('click', askBusDamriAboutCurrent);
   }
 }
 
 // ==========================================
-// RAMYEON (TEMAN SARAN & OBROLAN OFFLINE)
+// BUS DAMRI (OBROLAN & PEMANDU 100% OFFLINE)
 // ==========================================
 
-function setRamyeonOpen(open) {
-  state.ramyeonOpen = Boolean(open);
-  els.ramyeonDrawer.classList.toggle('hidden', !state.ramyeonOpen);
-  els.btnToggleRamyeon.classList.toggle('active', state.ramyeonOpen);
-  document.body.classList.toggle('ramyeon-open', state.ramyeonOpen);
-  els.hudLayer.classList.toggle('ramyeon-open', state.ramyeonOpen);
-  if (state.ramyeonOpen) {
-    renderRamyeonMessages();
+function updateBusLiveSubtitle() {
+  if (!state.globe || !els.busLocationSub) return;
+  const loc = state.globe.getBusLocation();
+  if (loc && loc.placeLabel) {
+    els.busLocationSub.textContent = `Di atas ${loc.placeLabel}`;
+  }
+}
+
+function setBusOpen(open) {
+  state.busOpen = Boolean(open);
+  els.busDrawer.classList.toggle('hidden', !state.busOpen);
+  els.btnToggleBus.classList.toggle('active', state.busOpen);
+  document.body.classList.toggle('bus-open', state.busOpen);
+  els.hudLayer.classList.toggle('bus-open', state.busOpen);
+
+  clearInterval(state.busLocInterval);
+  if (state.busOpen) {
+    updateBusLiveSubtitle();
+    renderBusMessages();
+    state.busLocInterval = setInterval(updateBusLiveSubtitle, 1200);
     setTimeout(() => {
-      els.ramyeonMessages.scrollTop = els.ramyeonMessages.scrollHeight;
+      els.busMessages.scrollTop = els.busMessages.scrollHeight;
     }, 30);
   }
 }
 
-function appendRamyeonChat(role, text) {
+function appendBusChat(role, text) {
   if (!state.account) return;
-  if (!state.account.ramyeonHistory) state.account.ramyeonHistory = [];
-  state.account.ramyeonHistory.push({ role, text });
-  if (state.account.ramyeonHistory.length > 26) {
-    state.account.ramyeonHistory = state.account.ramyeonHistory.slice(-26);
+  if (!state.account.busHistory) state.account.busHistory = [];
+  state.account.busHistory.push({ role, text });
+  if (state.account.busHistory.length > 28) {
+    state.account.busHistory = state.account.busHistory.slice(-28);
   }
   persistAtlasSave(state.account);
-  renderRamyeonMessages();
+  renderBusMessages();
 }
 
-function renderRamyeonMessages() {
+function renderBusMessages() {
   if (!state.account) return;
-  const history = state.account.ramyeonHistory || [];
-  els.ramyeonMessages.innerHTML = history
+  const history = state.account.busHistory || [];
+  els.busMessages.innerHTML = history
     .map(
       (msg) =>
-        `<div class="chat-bubble ${msg.role === 'user' ? 'user' : 'ramyeon'}">${escapeHtml(msg.text)}</div>`
+        `<div class="chat-bubble ${msg.role === 'user' ? 'user' : 'bus'}">${escapeHtml(msg.text)}</div>`
     )
     .join('');
-  els.ramyeonMessages.scrollTop = els.ramyeonMessages.scrollHeight;
+  els.busMessages.scrollTop = els.busMessages.scrollHeight;
 }
 
-function askRamyeonForRound(afterReveal = false) {
-  setRamyeonOpen(true);
+function getBusContext() {
+  const mode = state.account ? state.account.selectedMode || 'explore' : 'explore';
+  return {
+    activeMode: mode,
+    activeCountry: getCountryById(state.activeCountryId),
+    activeRound: state.round ? state.round.data : null,
+    revealed: state.round ? state.round.revealed : false,
+    visitedCountryIds: state.account ? state.account.visitedCountryIds || [] : [],
+    busLocation: state.globe ? state.globe.getBusLocation() : null
+  };
+}
+
+function askBusDamriAboutCurrent() {
+  setBusOpen(true);
   audio.playDialogueOpen();
-  const r = state.round;
-  const userLabel = afterReveal ? 'Ada cerita tambahan soal fakta ini?' : 'Minta saran untuk ronde ini.';
-  appendRamyeonChat('user', userLabel);
-  const reply = getRoundAdviceText(r ? r.data : null, r ? r.mode : 'pin', afterReveal);
-  appendRamyeonChat('ramyeon', reply);
+  const ctx = getBusContext();
+  const promptText =
+    ctx.activeMode === 'explore' && ctx.activeCountry
+      ? `Ceritakan tentang ${ctx.activeCountry.name}.`
+      : ctx.revealed
+        ? 'Ada catatan tambahan soal fakta ini?'
+        : 'Minta petunjuk rute untuk tantangan ini.';
+  appendBusChat('user', promptText);
+  appendBusChat('bus', getBusContextNote(ctx));
 }
 
-function handleRamyeonSubmit(text) {
+function handleBusSubmit(text) {
   const clean = (text || '').trim();
   if (!clean || !state.account) return;
 
-  appendRamyeonChat('user', clean);
-  const r = state.round;
-  const reply = replyToRamyeon(clean, {
-    username: state.account.username,
-    activeMode: r ? r.mode : 'pin',
-    activeRound: r ? r.data : null,
-    revealed: r ? r.revealed : false,
-    unlockedCount: (state.account.unlockedIds || []).length,
-    totalCount: TOTAL_DISCOVERIES
-  });
-  appendRamyeonChat('ramyeon', reply);
+  appendBusChat('user', clean);
+  const reply = replyFromBusDamri(clean, getBusContext());
+  appendBusChat('bus', reply);
   audio.playClick();
 }
 
-function initRamyeonChips() {
-  els.ramyeonChips.innerHTML = RAMYEON_QUICK_PROMPTS.map(
-    (chip) => `<button class="ramyeon-chip" data-chip="${chip.id}" type="button">${escapeHtml(chip.label)}</button>`
+function initBusChips() {
+  els.busChips.innerHTML = BUS_QUICK_PROMPTS.map(
+    (chip) => `<button class="bus-chip" data-chip="${chip.id}" type="button">${escapeHtml(chip.label)}</button>`
   ).join('');
 
-  els.ramyeonChips.querySelectorAll('.ramyeon-chip').forEach((btn) => {
+  els.busChips.querySelectorAll('.bus-chip').forEach((btn) => {
     btn.addEventListener('click', () => {
       const id = btn.dataset.chip;
-      if (id === 'hint') {
-        askRamyeonForRound(state.round ? state.round.revealed : false);
-      } else if (id === 'fact') {
-        handleRamyeonSubmit('Kasih satu fakta tak terduga dong');
-      } else if (id === 'movie') {
-        handleRamyeonSubmit('Saran film seru buat ditonton');
-      } else if (id === 'book') {
-        handleRamyeonSubmit('Saran buku menarik buat dibaca');
+      if (id === 'current') {
+        askBusDamriAboutCurrent();
+      } else if (id === 'next-stop') {
+        handleBusSubmit('Saran tujuan negara berikutnya');
+      } else if (id === 'culture') {
+        handleBusSubmit('Saran buku dan film menarik');
+      } else if (id === 'summon') {
+        audio.playWaypoint();
+        state.globe.summonBusToBeliau();
+        appendBusChat('user', 'Bus Damri, melintas ke dekat Beliau dong.');
+        appendBusChat(
+          'bus',
+          'Baik, saya belokkan lintasan mendekati Beliau dan kawanan ikan julung-julung. Sebentar lagi lampu depan saya tampak di sisinya.'
+        );
       }
     });
   });
 }
 
 // ==========================================
-// MODAL KOLEKSI PENEMUAN & PROFIL AKUN
+// MODAL ATLAS NEGERI & PROFIL
 // ==========================================
 
 function closeModal() {
@@ -818,14 +1003,22 @@ function closeModal() {
 }
 
 function openDiscoveryDetailModal(item) {
+  if (item.kind === 'country') {
+    const c = getCountryById(item.countryId);
+    if (c) {
+      switchMode('explore');
+      selectExploreCountry(c, { flyCamera: true, showBeliau: true });
+      return;
+    }
+  }
   const cat = getCategoryMeta(item.category);
   els.modalOverlay.classList.remove('hidden');
   els.modalOverlay.innerHTML = `
     <div class="modal-card">
       <div class="modal-header">
         <div>
-          <div class="modal-kicker">${escapeHtml(cat.name)} · ${escapeHtml(item.place)}</div>
           <h2 class="modal-title">${escapeHtml(item.title)}</h2>
+          <p class="modal-sub">${escapeHtml(cat.name)} · ${escapeHtml(item.place)}</p>
         </div>
         <button class="icon-close-btn" id="btn-close-modal" type="button">Tutup</button>
       </div>
@@ -837,7 +1030,7 @@ function openDiscoveryDetailModal(item) {
   `;
   document.getElementById('btn-close-modal').addEventListener('click', closeModal);
   document.getElementById('btn-focus-globe').addEventListener('click', () => {
-    state.globe.focusLatLon(item.lat, item.lon, 5.2);
+    state.globe.focusLatLon(item.lat, item.lon, 5.15);
     closeModal();
   });
 }
@@ -845,39 +1038,33 @@ function openDiscoveryDetailModal(item) {
 function openCollectionModal() {
   const acc = state.account;
   if (!acc) return;
-  const unlockedSet = new Set(acc.unlockedIds || []);
-  const unlockedItems = ALL_ENTRIES.filter((e) => unlockedSet.has(e.id));
+  const visitedSet = new Set(acc.visitedCountryIds || []);
+  const visitedCountries = WORLD_COUNTRIES.filter((c) => visitedSet.has(c.id));
 
-  const listHtml = unlockedItems.length
-    ? unlockedItems
-        .map((item) => {
-          const cat = getCategoryMeta(item.category);
-          return `
-            <div class="collection-item">
-              <div class="collection-item-head">
-                <span class="cat-badge">
-                  <span class="cat-dot" style="background:${cat.color}"></span>
-                  ${escapeHtml(cat.name)}
-                </span>
-                <button class="btn-secondary btn-fly-item" data-lat="${item.lat}" data-lon="${item.lon}" type="button">
-                  Lihat di Bumi
-                </button>
-              </div>
-              <div class="collection-item-title">${escapeHtml(item.title)} · ${escapeHtml(item.place)}</div>
-              <p class="collection-item-text">${escapeHtml(item.wowFact)}</p>
-            </div>
-          `;
-        })
-        .join('')
-    : '<p class="modal-sub">Belum ada bintang yang terbuka. Selesaikan satu ronde di bola bumi untuk mulai mengisi atlas pribadimu.</p>';
+  const listHtml = visitedCountries
+    .map(
+      (c) => `
+      <div class="collection-item">
+        <div class="collection-item-head">
+          <div class="collection-item-title">${escapeHtml(c.name)} · ${escapeHtml(c.region)}</div>
+          <button class="btn-secondary btn-fly-country" data-country-id="${c.id}" type="button">
+            Kunjungi
+          </button>
+        </div>
+        <p class="collection-item-text"><strong>SDA:</strong> ${escapeHtml(c.sda[0])}</p>
+        <p class="collection-item-text"><strong>Buku:</strong> ${escapeHtml(c.book.title)} · <strong>Film:</strong> ${escapeHtml(c.film.title)}</p>
+      </div>
+    `
+    )
+    .join('');
 
   els.modalOverlay.classList.remove('hidden');
   els.modalOverlay.innerHTML = `
     <div class="modal-card wide">
       <div class="modal-header">
         <div>
-          <div class="modal-kicker">Atlas Penemuan</div>
-          <h2 class="modal-title">${unlockedItems.length} dari ${TOTAL_DISCOVERIES} Fakta Terbuka</h2>
+          <h2 class="modal-title">Atlas Negeri (${visitedCountries.length}/${TOTAL_COUNTRIES})</h2>
+          <p class="modal-sub">Tantangan terbuka: ${(acc.unlockedIds || []).length}/${TOTAL_CHALLENGES} · Pertemuan Bus Damri: ${acc.busEncounters || 0} kali</p>
         </div>
         <button class="icon-close-btn" id="btn-close-modal" type="button">Tutup</button>
       </div>
@@ -886,14 +1073,14 @@ function openCollectionModal() {
   `;
 
   document.getElementById('btn-close-modal').addEventListener('click', closeModal);
-  els.modalOverlay.querySelectorAll('.btn-fly-item').forEach((btn) => {
+  els.modalOverlay.querySelectorAll('.btn-fly-country').forEach((btn) => {
     btn.addEventListener('click', () => {
-      const lat = Number(btn.dataset.lat);
-      const lon = Number(btn.dataset.lon);
+      const c = getCountryById(btn.dataset.countryId);
       closeModal();
-      state.globe.setAutoRotate(false);
-      state.globe.focusLatLon(lat, lon, 5.1);
-      showToast('Kamera diarahkan ke titik penemuan');
+      if (c) {
+        switchMode('explore');
+        selectExploreCountry(c, { flyCamera: true, showBeliau: true });
+      }
     });
   });
 }
@@ -906,13 +1093,13 @@ function openProfileModal() {
   const othersHtml = others.length
     ? `
       <div class="saved-accounts">
-        <div class="modal-kicker">Ganti Akun Tersimpan</div>
+        <div class="saved-label">Ganti Akun Tersimpan</div>
         ${others
           .map(
             (o) => `
           <button class="saved-account-btn" data-switch="${escapeHtml(o.username)}" type="button">
             <strong>@${escapeHtml(o.username)}</strong>
-            <span>${formatNumber(o.score)} poin · ${(o.unlockedIds || []).length}/${TOTAL_DISCOVERIES}</span>
+            <span>${(o.visitedCountryIds || []).length}/${TOTAL_COUNTRIES} negeri · ${formatNumber(o.score)} poin</span>
           </button>
         `
           )
@@ -926,13 +1113,13 @@ function openProfileModal() {
     <div class="modal-card">
       <div class="modal-header">
         <div>
-          <div class="modal-kicker">Profil Penjelajah</div>
           <h2 class="modal-title">@${escapeHtml(acc.username)}</h2>
+          <p class="modal-sub">Penjelajah Semua Bumi</p>
         </div>
         <button class="icon-close-btn" id="btn-close-modal" type="button">Tutup</button>
       </div>
       <p class="modal-sub">
-        Skor total ${formatNumber(acc.score)} · Rekor streak ${acc.bestStreak || 0} · ${(acc.unlockedIds || []).length}/${TOTAL_DISCOVERIES} penemuan terbuka.
+        ${(acc.visitedCountryIds || []).length} dari ${TOTAL_COUNTRIES} negeri dijelajahi · Skor ${formatNumber(acc.score)} · ${acc.busEncounters || 0} pertemuan dengan Bus Damri di langit.
       </p>
       <div class="action-row">
         <button class="btn-secondary" id="btn-new-account" type="button">Buat Akun Baru</button>
@@ -949,11 +1136,12 @@ function openProfileModal() {
   });
   document.getElementById('btn-reset-progress').addEventListener('click', () => {
     state.account = resetAtlasAccount(acc);
-    syncUnlockedLandmarks();
+    state.activeCountryId = 'indonesia';
+    syncEarthStarsAndLabels();
     updateHud();
-    renderRamyeonMessages();
+    renderBusMessages();
     closeModal();
-    startNextRound();
+    switchMode('explore');
     showToast('Progres akun dikembalikan ke awal');
   });
   els.modalOverlay.querySelectorAll('[data-switch]').forEach((btn) => {
@@ -968,24 +1156,25 @@ function openProfileModal() {
 }
 
 // ==========================================
-// PENDAFTARAN 2 LANGKAH (USERNAME + TES 3 SOAL)
+// PENDAFTARAN AKUN & VERIFIKASI (BERSIH)
 // ==========================================
 
 function openAuthStep1() {
   const saved = listAtlasAccounts();
   els.hudLayer.classList.add('hidden');
+  state.globe.setLabelsVisible(false);
   els.authOverlay.classList.remove('hidden');
 
   const savedHtml = saved.length
     ? `
       <div class="saved-accounts">
-        <div class="modal-kicker">Lanjutkan Akun Tersimpan</div>
+        <div class="saved-label">Lanjutkan Akun Tersimpan</div>
         ${saved
           .map(
             (a) => `
           <button class="saved-account-btn" data-login="${escapeHtml(a.username)}" type="button">
             <strong>@${escapeHtml(a.username)}</strong>
-            <span>${formatNumber(a.score)} poin · ${(a.unlockedIds || []).length}/${TOTAL_DISCOVERIES}</span>
+            <span>${(a.visitedCountryIds || []).length}/${TOTAL_COUNTRIES} negeri · ${formatNumber(a.score)} poin</span>
           </button>
         `
           )
@@ -997,12 +1186,11 @@ function openAuthStep1() {
   els.authOverlay.innerHTML = `
     <div class="modal-card">
       <div>
-        <div class="modal-kicker">Langkah 1 dari 2</div>
-        <h1 class="modal-title">Atlas Bumi 3D</h1>
+        <h1 class="modal-title">Semua Bumi</h1>
+        <p class="modal-sub" style="margin-top:6px;">
+          Kelilingi bumi 3D berlabel bersama Beliau, kawanan ikan julung-julung terbang, dan Bus Damri untuk mengenal hasil bumi, buku, film, dan karya tiap negeri.
+        </p>
       </div>
-      <p class="modal-sub">
-        Putar bola bumi, tebak lokasi dan tahunnya, lalu kumpulkan hal-hal tak terduga dari film, buku, sejarah, sains, teknologi, dan seni.
-      </p>
       <form id="auth-user-form">
         <input
           id="auth-username"
@@ -1013,9 +1201,8 @@ function openAuthStep1() {
           placeholder="Buat username (3-20 huruf/angka)"
         />
         <div class="error-msg" id="auth-error"></div>
-        <div class="action-row" style="margin-top:6px;">
-          <span class="mode-badge">Tanpa pilih karakter · Langsung main</span>
-          <button class="btn-primary" type="submit">Lanjut</button>
+        <div class="action-row" style="margin-top:6px; justify-content:flex-end;">
+          <button class="btn-primary" type="submit">Lanjut ke Verifikasi</button>
         </div>
       </form>
       ${savedHtml}
@@ -1065,9 +1252,11 @@ function openAuthStep2(username, qIndex) {
 
   els.authOverlay.innerHTML = `
     <div class="modal-card">
-      <div>
-        <div class="modal-kicker">Langkah 2 dari 2 · Verifikasi Singkat (${qIndex + 1}/3)</div>
-        <h2 class="modal-title">Pemanasan untuk @${escapeHtml(username)}</h2>
+      <div class="modal-header">
+        <div>
+          <h2 class="modal-title">Verifikasi Akun @${escapeHtml(username)}</h2>
+        </div>
+        <span class="step-progress">${qIndex + 1} / 3</span>
       </div>
       <p class="quiz-q">${escapeHtml(item.q)}</p>
       <div class="quiz-options">
@@ -1102,6 +1291,24 @@ function openAuthStep2(username, qIndex) {
   });
 }
 
+// ==========================================
+// PERPINDAHAN MODE & INISIALISASI
+// ==========================================
+
+function switchMode(mode) {
+  if (!state.account) return;
+  state.account.selectedMode = mode;
+  persistAtlasSave(state.account);
+  updateHud();
+
+  if (mode === 'explore') {
+    const c = getCountryById(state.activeCountryId) || WORLD_COUNTRIES[0];
+    selectExploreCountry(c, { flyCamera: true, showBeliau: false });
+  } else {
+    startChallengeRound(mode);
+  }
+}
+
 function enterGame(account) {
   state.account = account;
   audio.setMuted(Boolean(account.muted));
@@ -1109,41 +1316,63 @@ function enterGame(account) {
   els.authOverlay.innerHTML = '';
   els.hudLayer.classList.remove('hidden');
 
+  const visitedSet = new Set(account.visitedCountryIds || ['indonesia']);
+  state.activeCountryId = account.visitedCountryIds && account.visitedCountryIds.length
+    ? account.visitedCountryIds[account.visitedCountryIds.length - 1]
+    : 'indonesia';
+
+  state.globe.setCountryLabels(WORLD_COUNTRIES, visitedSet, state.activeCountryId);
+  syncEarthStarsAndLabels();
   updateHud();
-  syncUnlockedLandmarks();
-  renderRamyeonMessages();
-  setRamyeonOpen(false);
-  startNextRound();
+  renderBusMessages();
+  setBusOpen(false);
+
+  const initialMode = account.selectedMode || 'explore';
+  if (initialMode === 'explore') {
+    const startCountry = getCountryById(state.activeCountryId) || WORLD_COUNTRIES[0];
+    selectExploreCountry(startCountry, { flyCamera: true, showBeliau: false });
+    showBeliauPopup(
+      'Beliau & Ikan Julung-Julung',
+      `Beliau melayang tenang di atas ${startCountry.name} ditemani kawanan ikan terbang. Di kejauhan, lampu Bus Damri ikut berputar mengelilingi bumi.`
+    );
+  } else {
+    startChallengeRound(initialMode);
+  }
 }
 
-// ==========================================
-// INISIALISASI UTAMA
-// ==========================================
+function populateSelectMenus() {
+  const sortedCountries = [...WORLD_COUNTRIES].sort((a, b) => a.name.localeCompare(b.name, 'id'));
+  els.countryJumpSelect.innerHTML = sortedCountries
+    .map((c) => `<option value="${c.id}">${escapeHtml(c.name)} (${escapeHtml(c.region)})</option>`)
+    .join('');
 
-function populateCategoryFilter() {
   els.categorySelect.innerHTML = CATEGORIES.map(
     (c) => `<option value="${c.id}">${escapeHtml(c.name)}</option>`
   ).join('');
 }
 
 function bindGlobalEvents() {
+  els.countryJumpSelect.addEventListener('change', () => {
+    const picked = getCountryById(els.countryJumpSelect.value);
+    if (picked) {
+      selectExploreCountry(picked, { flyCamera: true, showBeliau: true });
+    }
+  });
+
   els.categorySelect.addEventListener('change', () => {
     if (!state.account) return;
     state.account.selectedCategory = els.categorySelect.value;
     persistAtlasSave(state.account);
     audio.playClick();
-    startNextRound();
+    if (state.account.selectedMode !== 'explore') {
+      startChallengeRound(state.account.selectedMode);
+    }
   });
 
   els.modeTabs.forEach((tab) => {
     tab.addEventListener('click', () => {
-      if (!state.account) return;
-      const nextMode = tab.dataset.mode;
-      state.account.selectedMode = nextMode;
-      persistAtlasSave(state.account);
-      updateHud();
       audio.playClick();
-      startNextRound(nextMode);
+      switchMode(tab.dataset.mode);
     });
   });
 
@@ -1156,22 +1385,43 @@ function bindGlobalEvents() {
     if (!state.account.muted) audio.playClick();
   });
 
-  els.btnToggleRamyeon.addEventListener('click', () => {
+  els.btnToggleBus.addEventListener('click', () => {
     audio.playClick();
-    setRamyeonOpen(!state.ramyeonOpen);
+    setBusOpen(!state.busOpen);
   });
 
-  els.btnCloseRamyeon.addEventListener('click', () => {
+  els.btnCloseBus.addEventListener('click', () => {
     audio.playClick();
-    setRamyeonOpen(false);
+    setBusOpen(false);
   });
 
-  els.ramyeonForm.addEventListener('submit', (e) => {
+  els.btnFollowBus.addEventListener('click', () => {
+    audio.playClick();
+    state.globe.focusBusDamri();
+    const loc = state.globe.getBusLocation();
+    showToast(`Kamera mengikuti Bus Damri di atas ${loc.placeLabel}`);
+  });
+
+  els.btnCloseBeliau.addEventListener('click', hideBeliauPopup);
+
+  els.btnBeliauGreetBus.addEventListener('click', () => {
+    hideBeliauPopup();
+    setBusOpen(true);
+    audio.playDialogueOpen();
+    const loc = state.globe.getBusLocation();
+    appendBusChat('user', 'Halo Bus Damri, senang berpapasan di langit.');
+    appendBusChat(
+      'bus',
+      `Senang bertemu lagi dengan Beliau dan kawanan ikan julung-julung di atas ${loc.placeLabel}. Mau saya ceritakan negeri di bawah kita atau memilih tujuan berikutnya?`
+    );
+  });
+
+  els.busForm.addEventListener('submit', (e) => {
     e.preventDefault();
-    const val = els.ramyeonInput.value;
+    const val = els.busInput.value;
     if (!val.trim()) return;
-    els.ramyeonInput.value = '';
-    handleRamyeonSubmit(val);
+    els.busInput.value = '';
+    handleBusSubmit(val);
   });
 
   els.btnCollection.addEventListener('click', () => {
@@ -1190,30 +1440,92 @@ function bindGlobalEvents() {
 }
 
 function bootstrap() {
-  populateCategoryFilter();
-  initRamyeonChips();
+  populateSelectMenus();
+  initBusChips();
   bindGlobalEvents();
 
   state.globe = new AtlasGlobe3D(els.canvas, {
+    labelsContainer: els.labelsLayer,
     onHover: (hit) => {
       if (!hit) {
-        els.hoverPill.textContent = 'Geser untuk memutar bumi · Gulir untuk memperbesar';
+        els.hoverPill.textContent = 'Geser untuk memutar bumi · Ketuk label negara untuk menjelajah';
+        return;
+      }
+      if (hit.specialLabel) {
+        els.hoverPill.textContent = hit.specialLabel;
         return;
       }
       els.hoverPill.textContent = `${hit.placeLabel} · ${formatCoord(hit.lat, hit.lon)}`;
     },
+    onCountryLabelClick: (country) => {
+      if (!state.account) return;
+      if (state.account.selectedMode !== 'explore') {
+        state.account.selectedMode = 'explore';
+        persistAtlasSave(state.account);
+      }
+      selectExploreCountry(country, { flyCamera: true, showBeliau: true });
+    },
     onGlobeClick: (hit) => {
-      const r = state.round;
-      if (!r || r.mode !== 'pin' || r.revealed) return;
-      r.guess = {
-        lat: hit.lat,
-        lon: hit.lon,
-        placeLabel: hit.placeLabel
-      };
-      state.globe.setAutoRotate(false);
-      state.globe.setGuessPin(hit.lat, hit.lon);
-      audio.playClick();
-      renderRoundCard();
+      if (!state.account) return;
+      // Mode Tancap Peta: tanam pin tebakan
+      if (state.round && state.round.mode === 'pin' && !state.round.revealed) {
+        state.round.guess = {
+          lat: hit.lat,
+          lon: hit.lon,
+          placeLabel: hit.placeLabel
+        };
+        state.globe.setAutoRotate(false);
+        state.globe.setGuessPin(hit.lat, hit.lon);
+        audio.playClick();
+        renderChallengeCard();
+        return;
+      }
+      // Mode Jelajah: ketuk daratan dekat salah satu dari 30 negara langsung menerbangkan Beliau ke sana
+      if ((state.account.selectedMode || 'explore') === 'explore') {
+        const nearest = findNearestCountry(hit.lat, hit.lon, 14);
+        if (nearest) {
+          selectExploreCountry(nearest, { flyCamera: true, showBeliau: true });
+        } else {
+          state.globe.flyBeliauTo(hit.lat, hit.lon);
+          showBeliauPopup(
+            'Beliau & Ikan Terbang',
+            `Beliau melintasi ${hit.placeLabel} (${formatCoord(hit.lat, hit.lon)}). Kawanan ikan julung-julung melesat ringan di atas arus udara.`
+          );
+        }
+      }
+    },
+    onBeliauClick: () => {
+      if (!state.account) return;
+      audio.playDialogueOpen();
+      const c = getCountryById(state.activeCountryId);
+      const text = c
+        ? c.beliauNote
+        : 'Beliau hanya tersenyum tenang sambil membiarkan ikan-ikan julung-julung menari di atas kepalanya.';
+      showBeliauPopup('Beliau & Ikan Julung-Julung', text, { duration: 7500 });
+    },
+    onBusClick: (loc) => {
+      if (!state.account) return;
+      audio.playDialogueOpen();
+      setBusOpen(true);
+      appendBusChat(
+        'bus',
+        `Halo, kamu baru saja mengetuk atap saya di atas ${loc.placeLabel}. Mau tahu hasil bumi, buku, atau film dari negeri di bawah sana?`
+      );
+    },
+    onBusEncounter: (info) => {
+      if (!state.account || els.hudLayer.classList.contains('hidden')) return;
+      state.account.busEncounters = (state.account.busEncounters || 0) + 1;
+      state.account.score += 300;
+      persistAtlasSave(state.account);
+      updateHud();
+      audio.playWaypoint();
+
+      const msg = `Bus Damri berpapasan tepat di samping Beliau dan kawanan ikan julung-julung di atas ${info.placeLabel} (+300 poin).`;
+      showBeliauPopup('Pertemuan di Langit', msg, { showGreetBus: true, duration: 10500 });
+      appendBusChat(
+        'bus',
+        `Saya baru saja berpapasan dengan Beliau dan kawanan ikan terbang di atas ${info.placeLabel}. Lampu kabin sempat saya kedipkan sebagai tanda sapa.`
+      );
     },
     onUnlockedPinClick: (item) => {
       audio.playDialogueOpen();
@@ -1221,8 +1533,7 @@ function bootstrap() {
     }
   });
 
-  // Ekspos handle ringan untuk inspeksi uji otomatis
-  window.__atlasApp = { state };
+  window.__semuaBumi = { state };
 
   const active = getActiveAtlasAccount();
   if (active) {

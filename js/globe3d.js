@@ -1,5 +1,6 @@
-// Mesin Bola Bumi 3D Interaktif (Three.js r160) untuk Atlas Bumi 3D.
-// Presisi pemetaan UV SphereGeometry, raycast tancap pin, lengkung jarak 3D, duel dua titik, dan rasi benang merah.
+// Mesin Bola Bumi 3D Interaktif (Three.js r160) untuk Semua Bumi.
+// Memuat bumi berlabel 3D, tokoh 3D Beliau bersama kawanan ikan julung-julung terbang,
+// Bus Damri 3D yang ikut mengorbit dan berpapasan di langit, serta pin dan lengkung jarak 3D.
 
 import * as THREE from '../vendor/three.module.min.js';
 
@@ -53,7 +54,11 @@ function clamp(v, min, max) {
   return Math.max(min, Math.min(max, v));
 }
 
-// Konversi tepat yang selaras 1:1 dengan UV Three.js SphereGeometry dan earth_atlas.png
+function shortestLonDelta(fromLon, toLon) {
+  return ((((toLon - fromLon) % 360) + 540) % 360) - 180;
+}
+
+// Konversi koordinat yang selaras 1:1 dengan UV Three.js SphereGeometry dan earth_atlas.png
 export function latLonToVec3(lat, lon, radius = EARTH_RADIUS) {
   const theta = ((90 - lat) * Math.PI) / 180;
   const phi = ((lon + 180) * Math.PI) / 180;
@@ -119,21 +124,48 @@ function disposeGroupChildren(group) {
 export class AtlasGlobe3D {
   constructor(canvas, options = {}) {
     this.canvas = canvas;
+    this.labelsContainer = options.labelsContainer || null;
     this.onGlobeClick = options.onGlobeClick || null;
     this.onHover = options.onHover || null;
     this.onUnlockedPinClick = options.onUnlockedPinClick || null;
+    this.onCountryLabelClick = options.onCountryLabelClick || null;
+    this.onBeliauClick = options.onBeliauClick || null;
+    this.onBusClick = options.onBusClick || null;
+    this.onBusEncounter = options.onBusEncounter || null;
 
     this.countriesMeta = [];
-    this.interactivePinMode = true;
+    this.countryLabels = [];
+    this.labelsVisible = true;
+    this.activeCountryId = null;
+
+    this.interactivePinMode = false;
     this.autoRotate = true;
 
-    // Kamera dalam koordinat geografi langsung agar nol gimbal-lock
-    this.camLat = 12;
-    this.camLon = 108; // Membuka tepat di Asia Tenggara / Nusantara
-    this.camDist = 6.35;
-    this.targetLat = 12;
-    this.targetLon = 108;
-    this.targetDist = 6.35;
+    // Kamera dalam koordinat geografi langsung (membuka tepat di Indonesia)
+    this.camLat = 4;
+    this.camLon = 114;
+    this.camDist = 6.2;
+    this.targetLat = 4;
+    this.targetLon = 114;
+    this.targetDist = 6.2;
+
+    // Posisi 3D Beliau dan kawanan ikan julung-julung terbang
+    this.beliauLat = -2.2;
+    this.beliauLon = 117.5;
+    this.targetBeliauLat = -2.2;
+    this.targetBeliauLon = 117.5;
+    this.beliauFlyingFish = [];
+
+    // Orbit 3D Bus Damri ("Saya") yang ikut berputar mengelilingi bumi
+    this.busLat = -6.9;
+    this.busLon = 86.0;
+    this.busOrbitAngle = 1.48;
+    this.busOrbitPrecession = 0.0;
+    this.busOrbitInclination = 0.56; // ~32 derajat sehingga menyapu lintas benua
+    this.busEncounterCooldown = 0;
+    this.busEncounterTimer = 0;
+    this.busSummonTarget = null;
+    this.busWakeDots = [];
 
     this.dragging = false;
     this.dragDist = 0;
@@ -150,6 +182,8 @@ export class AtlasGlobe3D {
     this.raycaster = new THREE.Raycaster();
     this.pointerNDC = new THREE.Vector2();
     this.clock = new THREE.Clock();
+    this._projVec = new THREE.Vector3();
+    this._basisMat = new THREE.Matrix4();
 
     this.initScene();
     this.loadCountriesMeta();
@@ -175,25 +209,25 @@ export class AtlasGlobe3D {
 
     this.camera = new THREE.PerspectiveCamera(40, 16 / 10, 0.1, 140);
 
-    // Pencahayaan hangat mengikuti sudut kamera agar belahan yang ditatap selalu jelas
-    this.ambientLight = new THREE.AmbientLight(0xd7e6ff, 0.92);
+    this.ambientLight = new THREE.AmbientLight(0xd7e6ff, 0.96);
     this.scene.add(this.ambientLight);
 
-    this.hemiLight = new THREE.HemisphereLight(0xaad2ff, 0x1e2c44, 0.42);
+    this.hemiLight = new THREE.HemisphereLight(0xb2d8ff, 0x1e2c44, 0.44);
     this.scene.add(this.hemiLight);
 
     this.sunLight = new THREE.DirectionalLight(0xfff5e4, 1.38);
     this.sunLight.position.set(8, 6, 9);
     this.scene.add(this.sunLight);
 
-    this.rimLight = new THREE.DirectionalLight(0x52a6ff, 0.52);
+    this.rimLight = new THREE.DirectionalLight(0x52a6ff, 0.54);
     this.rimLight.position.set(-10, -4, -8);
     this.scene.add(this.rimLight);
 
     this.buildStarfield();
     this.buildEarth();
+    this.buildBeliauAndFish();
+    this.buildBusDamri();
 
-    // Grup pin & lengkungan aktif
     this.guessGroup = new THREE.Group();
     this.revealGroup = new THREE.Group();
     this.unlockedGroup = new THREE.Group();
@@ -238,7 +272,7 @@ export class AtlasGlobe3D {
       size: 0.14,
       vertexColors: true,
       transparent: true,
-      opacity: 0.85,
+      opacity: 0.86,
       sizeAttenuation: true,
       depthWrite: false
     });
@@ -263,14 +297,13 @@ export class AtlasGlobe3D {
     this.earthMesh = new THREE.Mesh(earthGeo, earthMat);
     this.scene.add(this.earthMesh);
 
-    // Lapisan awan tipis berotasi pelan
     const cloudsTex = loader.load('assets/earth_clouds.png');
     cloudsTex.colorSpace = THREE.SRGBColorSpace;
     const cloudsGeo = new THREE.SphereGeometry(EARTH_RADIUS + 0.028, 56, 40);
     const cloudsMat = new THREE.MeshStandardMaterial({
       map: cloudsTex,
       transparent: true,
-      opacity: 0.36,
+      opacity: 0.34,
       roughness: 0.95,
       metalness: 0.0,
       depthWrite: false
@@ -278,7 +311,6 @@ export class AtlasGlobe3D {
     this.cloudsMesh = new THREE.Mesh(cloudsGeo, cloudsMat);
     this.scene.add(this.cloudsMesh);
 
-    // Halo atmosfer Fresnel bercahaya lembut di tepi bola bumi
     const atmoGeo = new THREE.SphereGeometry(EARTH_RADIUS + 0.24, 56, 40);
     const atmoMat = new THREE.ShaderMaterial({
       transparent: true,
@@ -313,6 +345,289 @@ export class AtlasGlobe3D {
     this.scene.add(this.atmoMesh);
   }
 
+  // Tokoh 3D Beliau + kawanan 6 ikan julung-julung terbang di sekitar kepala Beliau
+  buildBeliauAndFish() {
+    this.beliauAnchor = new THREE.Group();
+    this.beliauBody = new THREE.Group();
+    this.beliauAnchor.add(this.beliauBody);
+
+    // Alas cahaya lembut di bawah kaki Beliau
+    const haloGeo = new THREE.RingGeometry(0.085, 0.13, 28);
+    const haloMat = new THREE.MeshBasicMaterial({
+      color: 0xf7dc92,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.72,
+      depthWrite: false
+    });
+    this.beliauHalo = new THREE.Mesh(haloGeo, haloMat);
+    this.beliauHalo.rotation.x = -Math.PI / 2;
+    this.beliauHalo.position.set(0, 0.01, 0);
+    this.beliauBody.add(this.beliauHalo);
+
+    // Jubah biru langit malam yang bersih dan elegan
+    const cloakGeo = new THREE.ConeGeometry(0.088, 0.21, 18);
+    const cloakMat = new THREE.MeshStandardMaterial({
+      color: 0x244a84,
+      emissive: 0x102749,
+      emissiveIntensity: 0.42,
+      roughness: 0.42,
+      metalness: 0.12
+    });
+    const cloak = new THREE.Mesh(cloakGeo, cloakMat);
+    cloak.position.set(0, 0.125, 0);
+    this.beliauBody.add(cloak);
+
+    // Kerah syal krem hangat
+    const scarfGeo = new THREE.TorusGeometry(0.044, 0.015, 10, 20);
+    const scarfMat = new THREE.MeshStandardMaterial({
+      color: 0xf6dfaa,
+      emissive: 0x8f6b2c,
+      emissiveIntensity: 0.28,
+      roughness: 0.5
+    });
+    const scarf = new THREE.Mesh(scarfGeo, scarfMat);
+    scarf.rotation.x = Math.PI / 2;
+    scarf.position.set(0, 0.22, 0);
+    this.beliauBody.add(scarf);
+
+    // Kepala Beliau
+    const headGeo = new THREE.SphereGeometry(0.062, 20, 16);
+    const headMat = new THREE.MeshStandardMaterial({
+      color: 0xf9e5cc,
+      roughness: 0.48,
+      metalness: 0.05
+    });
+    const head = new THREE.Mesh(headGeo, headMat);
+    head.position.set(0, 0.275, 0);
+    this.beliauBody.add(head);
+
+    // Rambut pendek gelap lembut
+    const hairGeo = new THREE.SphereGeometry(0.066, 18, 12, 0, Math.PI * 2, 0, Math.PI * 0.58);
+    const hairMat = new THREE.MeshStandardMaterial({
+      color: 0x192338,
+      roughness: 0.65
+    });
+    const hair = new THREE.Mesh(hairGeo, hairMat);
+    hair.position.set(0, 0.282, -0.004);
+    this.beliauBody.add(hair);
+
+    // Lentera kecil bercahaya hangat di sisi Beliau
+    const orbGeo = new THREE.SphereGeometry(0.022, 12, 10);
+    const orbMat = new THREE.MeshBasicMaterial({ color: 0xffebb0 });
+    this.beliauOrb = new THREE.Mesh(orbGeo, orbMat);
+    this.beliauOrb.position.set(0.105, 0.19, 0.045);
+    this.beliauBody.add(this.beliauOrb);
+
+    // Kawanan 6 ikan julung-julung terbang (paruh lancip khas + sirip sayap tipis berkilau)
+    const fishPalette = [0x8ee7ff, 0xf8dc8d, 0x73d4f8, 0xbef5ff, 0xffe4a1, 0x62c4f5];
+    this.beliauFlyingFish = [];
+    for (let i = 0; i < 6; i++) {
+      const fish = this.createFlyingFishMesh(fishPalette[i % fishPalette.length]);
+      this.beliauAnchor.add(fish.group);
+      this.beliauFlyingFish.push({
+        group: fish.group,
+        wingL: fish.wingL,
+        wingR: fish.wingR,
+        tail: fish.tail,
+        radius: 0.2 + (i % 3) * 0.055,
+        baseHeight: 0.28 + (i % 3) * 0.075,
+        speed: 1.05 + (i % 4) * 0.22,
+        phase: (i / 6) * Math.PI * 2,
+        tilt: (i % 2 === 0 ? 1 : -1) * (0.04 + (i % 3) * 0.02)
+      });
+    }
+
+    // Cincin cahaya pertemuan tipis dan lembut di sekitar Beliau
+    const meetGeo = new THREE.RingGeometry(0.165, 0.184, 48);
+    const meetMat = new THREE.MeshBasicMaterial({
+      color: 0xffe49e,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0,
+      depthWrite: false
+    });
+    this.encounterRing = new THREE.Mesh(meetGeo, meetMat);
+    this.encounterRing.rotation.x = -Math.PI / 2;
+    this.encounterRing.position.set(0, 0.14, 0);
+    this.beliauAnchor.add(this.encounterRing);
+
+    // Hitbox tak kasat mata agar Beliau mudah diklik di bola bumi
+    const hitGeo = new THREE.SphereGeometry(0.24, 12, 10);
+    const hitMat = new THREE.MeshBasicMaterial({ visible: false });
+    this.beliauHitMesh = new THREE.Mesh(hitGeo, hitMat);
+    this.beliauHitMesh.position.set(0, 0.22, 0);
+    this.beliauAnchor.add(this.beliauHitMesh);
+
+    this.scene.add(this.beliauAnchor);
+  }
+
+  createFlyingFishMesh(tintHex) {
+    const group = new THREE.Group();
+
+    // Tubuh ramping ikan julung-julung (mengarah ke +Z)
+    const bodyGeo = new THREE.ConeGeometry(0.018, 0.105, 8);
+    bodyGeo.rotateX(Math.PI / 2);
+    const bodyMat = new THREE.MeshStandardMaterial({
+      color: tintHex,
+      emissive: tintHex,
+      emissiveIntensity: 0.52,
+      roughness: 0.2,
+      metalness: 0.45
+    });
+    const body = new THREE.Mesh(bodyGeo, bodyMat);
+    group.add(body);
+
+    // Paruh bawah tipis memanjang khas ikan julung-julung
+    const beakGeo = new THREE.CylinderGeometry(0.002, 0.005, 0.045, 6);
+    beakGeo.rotateX(Math.PI / 2);
+    const beak = new THREE.Mesh(beakGeo, bodyMat);
+    beak.position.set(0, -0.002, 0.068);
+    group.add(beak);
+
+    // Sepasang sirip sayap transparan untuk terbang di langit
+    const wingGeo = new THREE.PlaneGeometry(0.068, 0.032);
+    const wingMat = new THREE.MeshBasicMaterial({
+      color: 0xe6f8ff,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.78
+    });
+    const wingL = new THREE.Mesh(wingGeo, wingMat);
+    wingL.rotation.x = -Math.PI / 2;
+    wingL.position.set(-0.034, 0.004, 0.01);
+    group.add(wingL);
+
+    const wingR = new THREE.Mesh(wingGeo, wingMat);
+    wingR.rotation.x = -Math.PI / 2;
+    wingR.position.set(0.034, 0.004, 0.01);
+    group.add(wingR);
+
+    // Sirip ekor bercabang halus
+    const tailGeo = new THREE.ConeGeometry(0.016, 0.034, 4);
+    tailGeo.rotateX(-Math.PI / 2);
+    const tail = new THREE.Mesh(tailGeo, wingMat);
+    tail.position.set(0, 0, -0.06);
+    group.add(tail);
+
+    return { group, wingL, wingR, tail };
+  }
+
+  // Model 3D Bus Damri ("Saya") dengan corak putih, biru Damri, garis emas, dan lampu hangat
+  buildBusDamri() {
+    this.busAnchor = new THREE.Group();
+    this.busModel = new THREE.Group();
+    this.busAnchor.add(this.busModel);
+
+    // Badan atas putih gading (+Z = arah maju bus)
+    const upperGeo = new THREE.BoxGeometry(0.145, 0.078, 0.34);
+    const upperMat = new THREE.MeshStandardMaterial({
+      color: 0xf4f7fc,
+      emissive: 0x35496b,
+      emissiveIntensity: 0.25,
+      roughness: 0.32,
+      metalness: 0.14
+    });
+    const upper = new THREE.Mesh(upperGeo, upperMat);
+    upper.position.set(0, 0.11, 0);
+    this.busModel.add(upper);
+
+    // Bagian bawah biru kobalt khas Damri
+    const lowerGeo = new THREE.BoxGeometry(0.149, 0.056, 0.346);
+    const lowerMat = new THREE.MeshStandardMaterial({
+      color: 0x1a58bd,
+      emissive: 0x0d2d66,
+      emissiveIntensity: 0.42,
+      roughness: 0.35,
+      metalness: 0.22
+    });
+    const lower = new THREE.Mesh(lowerGeo, lowerMat);
+    lower.position.set(0, 0.048, 0);
+    this.busModel.add(lower);
+
+    // Garis sabuk emas kuning Damri
+    const stripeGeo = new THREE.BoxGeometry(0.153, 0.014, 0.348);
+    const stripeMat = new THREE.MeshBasicMaterial({ color: 0xf5c45e });
+    const stripe = new THREE.Mesh(stripeGeo, stripeMat);
+    stripe.position.set(0, 0.076, 0);
+    this.busModel.add(stripe);
+
+    // Deretan jendela kabin hangat bercahaya
+    const sideWinGeo = new THREE.BoxGeometry(0.151, 0.036, 0.255);
+    const winMat = new THREE.MeshBasicMaterial({ color: 0xffe8a3 });
+    const sideWin = new THREE.Mesh(sideWinGeo, winMat);
+    sideWin.position.set(0, 0.114, -0.01);
+    this.busModel.add(sideWin);
+
+    // Kaca depan + papan trayek emas bercahaya
+    const frontWinGeo = new THREE.BoxGeometry(0.125, 0.044, 0.012);
+    const frontWin = new THREE.Mesh(frontWinGeo, winMat);
+    frontWin.position.set(0, 0.106, 0.17);
+    this.busModel.add(frontWin);
+
+    const boardGeo = new THREE.BoxGeometry(0.092, 0.014, 0.014);
+    const boardMat = new THREE.MeshBasicMaterial({ color: 0xf8cf6a });
+    const board = new THREE.Mesh(boardGeo, boardMat);
+    board.position.set(0, 0.138, 0.17);
+    this.busModel.add(board);
+
+    // Sepasang lampu depan hangat & lampu belakang merah
+    const headLightGeo = new THREE.SphereGeometry(0.014, 10, 8);
+    const headLightMat = new THREE.MeshBasicMaterial({ color: 0xfff5cb });
+    const hlL = new THREE.Mesh(headLightGeo, headLightMat);
+    hlL.position.set(-0.046, 0.052, 0.176);
+    const hlR = new THREE.Mesh(headLightGeo, headLightMat);
+    hlR.position.set(0.046, 0.052, 0.176);
+    this.busModel.add(hlL, hlR);
+
+    const tailLightMat = new THREE.MeshBasicMaterial({ color: 0xff6b5c });
+    const tlL = new THREE.Mesh(headLightGeo, tailLightMat);
+    tlL.scale.set(0.75, 0.75, 0.75);
+    tlL.position.set(-0.048, 0.054, -0.176);
+    const tlR = tlL.clone();
+    tlR.position.set(0.048, 0.054, -0.176);
+    this.busModel.add(tlL, tlR);
+
+    // Empat roda bundar
+    const wheelGeo = new THREE.CylinderGeometry(0.026, 0.026, 0.02, 12);
+    wheelGeo.rotateZ(Math.PI / 2);
+    const wheelMat = new THREE.MeshStandardMaterial({ color: 0x161c28, roughness: 0.85 });
+    const wheelCoords = [
+      [-0.072, 0.022, 0.1],
+      [0.072, 0.022, 0.1],
+      [-0.072, 0.022, -0.1],
+      [0.072, 0.022, -0.1]
+    ];
+    wheelCoords.forEach(([wx, wy, wz]) => {
+      const w = new THREE.Mesh(wheelGeo, wheelMat);
+      w.position.set(wx, wy, wz);
+      this.busModel.add(w);
+    });
+
+    // Jejak debu bintang lembut di belakang Bus Damri
+    const wakeGeo = new THREE.SphereGeometry(0.012, 8, 8);
+    for (let i = 0; i < 4; i++) {
+      const wakeMat = new THREE.MeshBasicMaterial({
+        color: 0xf7db91,
+        transparent: true,
+        opacity: 0.55 - i * 0.11
+      });
+      const dot = new THREE.Mesh(wakeGeo, wakeMat);
+      dot.position.set((i % 2 === 0 ? -1 : 1) * 0.025, 0.045, -0.24 - i * 0.085);
+      this.busModel.add(dot);
+      this.busWakeDots.push(dot);
+    }
+
+    // Hitbox klik untuk Bus Damri
+    const busHitGeo = new THREE.SphereGeometry(0.24, 12, 10);
+    const busHitMat = new THREE.MeshBasicMaterial({ visible: false });
+    this.busHitMesh = new THREE.Mesh(busHitGeo, busHitMat);
+    this.busHitMesh.position.set(0, 0.09, 0);
+    this.busAnchor.add(this.busHitMesh);
+
+    this.scene.add(this.busAnchor);
+  }
+
   buildHoverReticle() {
     const ringGeo = new THREE.RingGeometry(0.055, 0.078, 32);
     const ringMat = new THREE.MeshBasicMaterial({
@@ -338,6 +653,189 @@ export class AtlasGlobe3D {
     }
   }
 
+  // Sinkronkan label negara 3D yang menempel langsung di permukaan bumi
+  setCountryLabels(countries, visitedSet = new Set(), activeId = null) {
+    this.activeCountryId = activeId;
+    if (!this.labelsContainer) return;
+
+    this.labelsContainer.innerHTML = '';
+    this.countryLabels = countries.map((c) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'globe-country-label';
+      if (visitedSet.has(c.id)) btn.classList.add('is-visited');
+      if (c.id === activeId) btn.classList.add('is-active');
+      btn.dataset.countryId = c.id;
+      btn.innerHTML = `<span class="label-dot"></span><span>${c.name}</span>`;
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (this.onCountryLabelClick) this.onCountryLabelClick(c);
+      });
+      this.labelsContainer.appendChild(btn);
+
+      const pos = latLonToVec3(c.lat, c.lon, EARTH_RADIUS + 0.032);
+      return {
+        country: c,
+        el: btn,
+        pos,
+        normal: pos.clone().normalize()
+      };
+    });
+  }
+
+  updateCountryLabelStates(visitedSet = new Set(), activeId = null) {
+    this.activeCountryId = activeId;
+    for (let i = 0; i < this.countryLabels.length; i++) {
+      const item = this.countryLabels[i];
+      item.el.classList.toggle('is-visited', visitedSet.has(item.country.id));
+      item.el.classList.toggle('is-active', item.country.id === activeId);
+    }
+  }
+
+  setLabelsVisible(visible) {
+    this.labelsVisible = Boolean(visible);
+    if (this.labelsContainer) {
+      this.labelsContainer.classList.toggle('hidden', !this.labelsVisible);
+    }
+  }
+
+  projectCountryLabels() {
+    if (!this.labelsVisible || !this.countryLabels.length) return;
+    const width = this.canvas.clientWidth;
+    const height = this.canvas.clientHeight;
+    if (width <= 0 || height <= 0) return;
+
+    const camDir = this.camera.position.clone().normalize();
+    const candidates = [];
+
+    // Ambil kotak panel HUD aktif agar label negara tidak mengintip di balik kartu atau laci
+    const blockedBoxes = [];
+    const hudIds = ['round-dock', 'bus-drawer', 'beliau-popup'];
+    for (let b = 0; b < hudIds.length; b++) {
+      const node = document.getElementById(hudIds[b]);
+      if (node && !node.classList.contains('hidden')) {
+        const r = node.getBoundingClientRect();
+        if (r.width > 0 && r.height > 0) {
+          blockedBoxes.push({
+            left: r.left - 34,
+            right: r.right + 34,
+            top: r.top - 14,
+            bottom: r.bottom + 14
+          });
+        }
+      }
+    }
+
+    for (let i = 0; i < this.countryLabels.length; i++) {
+      const item = this.countryLabels[i];
+      const facing = item.normal.dot(camDir);
+      if (facing < 0.24) {
+        item.el.style.opacity = '0';
+        item.el.style.pointerEvents = 'none';
+        continue;
+      }
+
+      this._projVec.copy(item.pos).project(this.camera);
+      if (this._projVec.z > 1) {
+        item.el.style.opacity = '0';
+        item.el.style.pointerEvents = 'none';
+        continue;
+      }
+
+      const sx = (this._projVec.x * 0.5 + 0.5) * width;
+      const sy = (-this._projVec.y * 0.5 + 0.5) * height;
+      const isActive = item.country.id === this.activeCountryId;
+
+      // Hindari area HUD atas & kotak panel aktif agar label selalu bersih
+      let inBlocked = sy < 94 || sy > height - 42 || sx < 48 || sx > width - 48;
+      if (!inBlocked && !isActive) {
+        for (let b = 0; b < blockedBoxes.length; b++) {
+          const box = blockedBoxes[b];
+          if (sx >= box.left && sx <= box.right && sy >= box.top && sy <= box.bottom) {
+            inBlocked = true;
+            break;
+          }
+        }
+      }
+
+      if (inBlocked) {
+        item.el.style.opacity = '0';
+        item.el.style.pointerEvents = 'none';
+        continue;
+      }
+
+      candidates.push({
+        item,
+        sx,
+        sy,
+        facing,
+        priority: (isActive ? 10 : 0) + facing
+      });
+    }
+
+    // Urutkan dari prioritas tertinggi (negara aktif & paling menghadap kamera) agar tidak saling menumpuk
+    candidates.sort((a, b) => b.priority - a.priority);
+    const placed = [];
+
+    for (let i = 0; i < candidates.length; i++) {
+      const c = candidates[i];
+      const isActive = c.item.country.id === this.activeCountryId;
+      let collides = false;
+      if (!isActive) {
+        for (let j = 0; j < placed.length; j++) {
+          const p = placed[j];
+          if (Math.abs(c.sx - p.sx) < 76 && Math.abs(c.sy - p.sy) < 26) {
+            collides = true;
+            break;
+          }
+        }
+      }
+
+      if (collides) {
+        c.item.el.style.opacity = '0';
+        c.item.el.style.pointerEvents = 'none';
+        continue;
+      }
+
+      placed.push(c);
+      const fade = isActive ? 1 : clamp((c.facing - 0.24) / 0.26, 0.2, 0.96);
+      c.item.el.style.transform = `translate3d(${c.sx.toFixed(1)}px, ${c.sy.toFixed(1)}px, 0) translate(-50%, -50%)`;
+      c.item.el.style.opacity = fade.toFixed(2);
+      c.item.el.style.pointerEvents = 'auto';
+    }
+  }
+
+  flyBeliauTo(lat, lon) {
+    this.targetBeliauLat = clamp(lat, -72, 72);
+    this.targetBeliauLon = lon;
+  }
+
+  summonBusToBeliau() {
+    this.busSummonTarget = {
+      lat: clamp(this.targetBeliauLat + 4, -68, 68),
+      lon: this.targetBeliauLon + 7
+    };
+    this.busEncounterCooldown = 0;
+  }
+
+  focusBusDamri() {
+    this.setAutoRotate(false);
+    this.focusLatLon(this.busLat, this.busLon, 5.2);
+  }
+
+  focusBeliau() {
+    this.setAutoRotate(false);
+    this.focusLatLon(this.beliauLat, this.beliauLon, 5.2);
+  }
+
+  getBusLocation() {
+    return {
+      lat: this.busLat,
+      lon: this.busLon,
+      placeLabel: this.lookupPlaceLabel(this.busLat, this.busLon)
+    };
+  }
+
   lookupPlaceLabel(lat, lon) {
     if (!this.countriesMeta || !this.countriesMeta.length) {
       return getOceanLabel(lat, lon);
@@ -357,12 +855,10 @@ export class AtlasGlobe3D {
       const inLon = spanLon > 300 ? true : lon >= minLon - 0.6 && lon <= maxLon + 0.6;
       if (!inLat || !inLon) continue;
 
-      // Khusus Prancis agar wilayah daratan Eropa tidak tergeser oleh Guyana Prancis
       if (c.name === 'France' && lon < -8 && lat > 12) continue;
 
       const area = Math.max(1, Math.min(spanLon, 180) * (maxLat - minLat));
       const d = haversineKm(lat, lon, c.lat, c.lon);
-      // Gabungkan luas kotak pembatas + jarak sentroid agar negara kecil di dalam bbox negara besar tetap terbaca
       const score = d * 0.65 + Math.sqrt(area) * 42;
       if (score < bestScore) {
         bestScore = score;
@@ -387,7 +883,6 @@ export class AtlasGlobe3D {
     this.autoRotate = Boolean(enabled);
   }
 
-  // Membuat pin 3D vertikal mengikuti normal permukaan bola bumi
   createPinMarker(lat, lon, colorHex = 0xe85a4f, scale = 1.0, addPulse = true) {
     const group = new THREE.Group();
     const pos = latLonToVec3(lat, lon, EARTH_RADIUS);
@@ -395,7 +890,6 @@ export class AtlasGlobe3D {
     group.position.copy(pos);
     group.quaternion.setFromUnitVectors(UP_VEC, normal);
 
-    // Batang jarum kuningan
     const stemGeo = new THREE.CylinderGeometry(0.014 * scale, 0.005 * scale, 0.19 * scale, 10);
     const stemMat = new THREE.MeshStandardMaterial({
       color: 0xe7c985,
@@ -406,7 +900,6 @@ export class AtlasGlobe3D {
     stem.position.set(0, 0.095 * scale, 0);
     group.add(stem);
 
-    // Kepala pin bercahaya
     const headGeo = new THREE.SphereGeometry(0.056 * scale, 18, 14);
     const headMat = new THREE.MeshStandardMaterial({
       color: colorHex,
@@ -419,7 +912,6 @@ export class AtlasGlobe3D {
     head.position.set(0, 0.2 * scale, 0);
     group.add(head);
 
-    // Cincin alas di permukaan bumi
     const baseRingGeo = new THREE.RingGeometry(0.036 * scale, 0.062 * scale, 24);
     const baseRingMat = new THREE.MeshBasicMaterial({
       color: colorHex,
@@ -452,7 +944,6 @@ export class AtlasGlobe3D {
     return group;
   }
 
-  // Membuat lengkung cahaya 3D melengkung di atas permukaan bumi (Great-Circle Arc)
   createGreatCircleArc(lat1, lon1, lat2, lon2, colorHex = 0xf4cf7b, animateDraw = true) {
     const v1 = latLonToVec3(lat1, lon1, 1).normalize();
     const v2 = latLonToVec3(lat2, lon2, 1).normalize();
@@ -524,7 +1015,8 @@ export class AtlasGlobe3D {
       this.revealGroup.add(arc);
     }
 
-    this.focusLatLon(trueLat, trueLon, 5.5);
+    this.flyBeliauTo(trueLat, trueLon);
+    this.focusLatLon(trueLat, trueLon, 5.45);
   }
 
   showDuelMarkers(itemA, itemB, winnerSide = null) {
@@ -540,7 +1032,6 @@ export class AtlasGlobe3D {
     this.revealGroup.add(pinB);
     this.revealGroup.add(arc);
 
-    // Fokuskan kamera ke titik tengah vektor antara lokasi A dan lokasi B
     const vA = latLonToVec3(itemA.lat, itemA.lon, 1);
     const vB = latLonToVec3(itemB.lat, itemB.lon, 1);
     const mid = vA.add(vB);
@@ -548,6 +1039,7 @@ export class AtlasGlobe3D {
       const midCoord = vec3ToLatLon(mid.normalize());
       const distKm = haversineKm(itemA.lat, itemA.lon, itemB.lat, itemB.lon);
       const zoomDist = clamp(5.4 + (distKm / 12000) * 1.9, 5.4, 7.3);
+      this.flyBeliauTo(midCoord.lat, midCoord.lon);
       this.focusLatLon(midCoord.lat, midCoord.lon, zoomDist);
     } else {
       this.focusLatLon(itemA.lat, itemA.lon, 6.6);
@@ -576,11 +1068,11 @@ export class AtlasGlobe3D {
 
     if (sum.lengthSq() > 0.001) {
       const center = vec3ToLatLon(sum.normalize());
+      this.flyBeliauTo(center.lat, center.lon);
       this.focusLatLon(center.lat, center.lon, 6.55);
     }
   }
 
-  // Bintang penanda permanen di permukaan bumi untuk semua fakta yang telah terbuka
   syncUnlockedPins(items) {
     disposeGroupChildren(this.unlockedGroup);
     this.unlockedPinMeshes = [];
@@ -589,23 +1081,20 @@ export class AtlasGlobe3D {
     items.forEach((item) => {
       if (typeof item.lat !== 'number' || typeof item.lon !== 'number') return;
       const pos = latLonToVec3(item.lat, item.lon, EARTH_RADIUS + 0.042);
-      const geo = new THREE.OctahedronGeometry(0.042, 0);
-      const mat = new THREE.MeshBasicMaterial({
-        color: 0xf7d883
-      });
+      const geo = new THREE.OctahedronGeometry(0.04, 0);
+      const mat = new THREE.MeshBasicMaterial({ color: 0xf7d883 });
       const star = new THREE.Mesh(geo, mat);
       star.position.copy(pos);
       star.userData = { unlockedItem: item };
       this.unlockedGroup.add(star);
       this.unlockedPinMeshes.push(star);
 
-      // Titik cahaya kecil di kaki bintang
-      const haloGeo = new THREE.RingGeometry(0.032, 0.056, 16);
+      const haloGeo = new THREE.RingGeometry(0.03, 0.052, 16);
       const haloMat = new THREE.MeshBasicMaterial({
         color: 0xf7d883,
         side: THREE.DoubleSide,
         transparent: true,
-        opacity: 0.55,
+        opacity: 0.52,
         depthWrite: false
       });
       const halo = new THREE.Mesh(haloGeo, haloMat);
@@ -618,10 +1107,9 @@ export class AtlasGlobe3D {
   }
 
   focusLatLon(lat, lon, dist = null) {
-    const deltaLon = (((lon - this.camLon) % 360) + 540) % 360 - 180;
+    const deltaLon = shortestLonDelta(this.camLon, lon);
     this.targetLon = this.camLon + deltaLon;
-    // Geser -7 derajat lintang agar pin tampil lega di atas kartu ronde bawah
-    this.targetLat = clamp(lat - 7, -74, 74);
+    this.targetLat = clamp(lat - 13, -74, 74);
     if (dist !== null) {
       this.targetDist = clamp(dist, 4.15, 8.2);
     }
@@ -630,13 +1118,17 @@ export class AtlasGlobe3D {
     this.lastInteractionAt = performance.now();
   }
 
-  raycastEarth(clientX, clientY) {
+  setRayFromClient(clientX, clientY) {
     const rect = this.canvas.getBoundingClientRect();
-    if (rect.width <= 0 || rect.height <= 0) return null;
+    if (rect.width <= 0 || rect.height <= 0) return false;
     this.pointerNDC.x = ((clientX - rect.left) / rect.width) * 2 - 1;
     this.pointerNDC.y = -((clientY - rect.top) / rect.height) * 2 + 1;
     this.raycaster.setFromCamera(this.pointerNDC, this.camera);
+    return true;
+  }
 
+  raycastEarth(clientX, clientY) {
+    if (!this.setRayFromClient(clientX, clientY)) return null;
     const hits = this.raycaster.intersectObject(this.earthMesh, false);
     if (!hits.length) return null;
     const pt = hits[0].point;
@@ -649,14 +1141,19 @@ export class AtlasGlobe3D {
     };
   }
 
+  raycastTravelers(clientX, clientY) {
+    if (!this.setRayFromClient(clientX, clientY)) return null;
+    const targets = [this.busHitMesh, this.beliauHitMesh].filter(Boolean);
+    const hits = this.raycaster.intersectObjects(targets, false);
+    if (!hits.length) return null;
+    if (hits[0].object === this.busHitMesh) return 'bus';
+    if (hits[0].object === this.beliauHitMesh) return 'beliau';
+    return null;
+  }
+
   raycastUnlockedPins(clientX, clientY) {
     if (!this.unlockedPinMeshes.length) return null;
-    const rect = this.canvas.getBoundingClientRect();
-    if (rect.width <= 0 || rect.height <= 0) return null;
-    this.pointerNDC.x = ((clientX - rect.left) / rect.width) * 2 - 1;
-    this.pointerNDC.y = -((clientY - rect.top) / rect.height) * 2 + 1;
-    this.raycaster.setFromCamera(this.pointerNDC, this.camera);
-
+    if (!this.setRayFromClient(clientX, clientY)) return null;
     const hits = this.raycaster.intersectObjects(this.unlockedPinMeshes, false);
     if (!hits.length) return null;
     return hits[0].object.userData.unlockedItem || null;
@@ -676,7 +1173,7 @@ export class AtlasGlobe3D {
       try {
         this.canvas.setPointerCapture(e.pointerId);
       } catch {
-        // Abaikan jika capture tidak didukung
+        // Abaikan jika pointer capture tidak tersedia
       }
     });
 
@@ -688,7 +1185,7 @@ export class AtlasGlobe3D {
         this.lastY = e.clientY;
         this.dragDist += Math.hypot(dx, dy);
 
-        const zoomScale = (this.camDist / 6.3) * 0.27;
+        const zoomScale = (this.camDist / 6.2) * 0.27;
         const dLon = -dx * zoomScale;
         const dLat = dy * zoomScale;
         this.targetLon += dLon;
@@ -699,7 +1196,21 @@ export class AtlasGlobe3D {
         return;
       }
 
-      // Hover readout di permukaan bumi
+      const traveler = this.raycastTravelers(e.clientX, e.clientY);
+      if (traveler) {
+        this.canvas.style.cursor = 'pointer';
+        if (this.hoverReticle) this.hoverReticle.visible = false;
+        if (this.onHover) {
+          this.onHover({
+            specialLabel:
+              traveler === 'bus'
+                ? 'Bus Damri sedang melintasi langit bumi (klik untuk menyapa)'
+                : 'Beliau bersama kawanan ikan julung-julung terbang'
+          });
+        }
+        return;
+      }
+
       const hit = this.raycastEarth(e.clientX, e.clientY);
       if (hit) {
         this.canvas.style.cursor = this.interactivePinMode ? 'crosshair' : 'grab';
@@ -728,9 +1239,18 @@ export class AtlasGlobe3D {
         // Abaikan
       }
 
-      // Ketukan bersih (bukan geser putar)
       if (this.dragDist < 7) {
         if (!this.interactivePinMode) {
+          const traveler = this.raycastTravelers(e.clientX, e.clientY);
+          if (traveler === 'bus' && this.onBusClick) {
+            this.onBusClick(this.getBusLocation());
+            return;
+          }
+          if (traveler === 'beliau' && this.onBeliauClick) {
+            this.onBeliauClick();
+            return;
+          }
+
           const unlocked = this.raycastUnlockedPins(e.clientX, e.clientY);
           if (unlocked && this.onUnlockedPinClick) {
             this.onUnlockedPinClick(unlocked);
@@ -758,7 +1278,7 @@ export class AtlasGlobe3D {
       (e) => {
         e.preventDefault();
         const delta = Math.sign(e.deltaY) * 0.42;
-        this.targetDist = clamp(this.targetDist + delta, 4.15, 8.3);
+        this.targetDist = clamp(this.targetDist + delta, 4.05, 8.2);
         this.lastInteractionAt = performance.now();
       },
       { passive: false }
@@ -777,25 +1297,149 @@ export class AtlasGlobe3D {
     this.renderer.setSize(width, height, false);
   }
 
+  updateBeliauAndBus(dt, elapsed) {
+    // 1. Luncurkan Beliau perlahan menuju negara tujuan
+    const lerpB = 1 - Math.exp(-dt * 2.8);
+    this.beliauLat += (this.targetBeliauLat - this.beliauLat) * lerpB;
+    this.beliauLon += shortestLonDelta(this.beliauLon, this.targetBeliauLon) * lerpB;
+    if (this.beliauLon > 180) this.beliauLon -= 360;
+    if (this.beliauLon < -180) this.beliauLon += 360;
+
+    const bob = Math.sin(elapsed * 1.9) * 0.028;
+    const beliauPos = latLonToVec3(this.beliauLat, this.beliauLon, EARTH_RADIUS + 0.14 + bob);
+    const beliauNormal = beliauPos.clone().normalize();
+    this.beliauAnchor.position.copy(beliauPos);
+    this.beliauAnchor.quaternion.setFromUnitVectors(UP_VEC, beliauNormal);
+    this.beliauBody.rotation.y = elapsed * 0.45;
+
+    // 2. Animasi kawanan ikan julung-julung terbang mengelilingi Beliau
+    const encounterBoost = this.busEncounterTimer > 0 ? 1.45 : 1.0;
+    for (let i = 0; i < this.beliauFlyingFish.length; i++) {
+      const f = this.beliauFlyingFish[i];
+      const ang = elapsed * f.speed * encounterBoost + f.phase;
+      const r = f.radius * (this.busEncounterTimer > 0 ? 1.28 : 1.0);
+      const x = Math.cos(ang) * r;
+      const z = Math.sin(ang) * r;
+      const y = f.baseHeight + Math.sin(ang * 2.1 + f.phase) * 0.045 + Math.cos(ang) * f.tilt;
+      f.group.position.set(x, y, z);
+
+      // Arahkan hidung ikan julung-julung searah gerak orbitnya
+      const nextAng = ang + 0.08;
+      const nx = Math.cos(nextAng) * r;
+      const nz = Math.sin(nextAng) * r;
+      const ny = f.baseHeight + Math.sin(nextAng * 2.1 + f.phase) * 0.045 + Math.cos(nextAng) * f.tilt;
+      f.group.lookAt(
+        this.beliauAnchor.localToWorld(new THREE.Vector3(nx, ny, nz))
+      );
+
+      // Kepakan lembut sirip sayap dan ekor
+      const flap = Math.sin(elapsed * 7.5 + f.phase) * 0.38;
+      f.wingL.rotation.y = flap;
+      f.wingR.rotation.y = -flap;
+      f.tail.rotation.y = Math.sin(elapsed * 10 + f.phase) * 0.25;
+    }
+
+    // 3. Gerak Bus Damri 3D mengelilingi bumi (melambat manis saat berpapasan dengan Beliau)
+    if (this.busEncounterCooldown > 0) this.busEncounterCooldown = Math.max(0, this.busEncounterCooldown - dt);
+    if (this.busEncounterTimer > 0) this.busEncounterTimer = Math.max(0, this.busEncounterTimer - dt);
+
+    let nextBusLat;
+    let nextBusLon;
+
+    if (this.busSummonTarget) {
+      const dLat = this.busSummonTarget.lat - this.beliauLat;
+      const tLat = this.busSummonTarget.lat;
+      const tLon = this.busSummonTarget.lon;
+      const step = 1 - Math.exp(-dt * 2.2);
+      nextBusLat = this.busLat + (tLat - this.busLat) * step;
+      nextBusLon = this.busLon + shortestLonDelta(this.busLon, tLon) * step;
+      if (haversineKm(nextBusLat, nextBusLon, tLat, tLon) < 550 && Math.abs(dLat) < 30) {
+        // Selaraskan fase orbit alami agar Bus Damri melanjutkan perjalanan dengan halus setelah berpapasan
+        this.busOrbitAngle = Math.atan2(
+          Math.sin((nextBusLat * Math.PI) / 180) / Math.sin(this.busOrbitInclination),
+          Math.cos((nextBusLat * Math.PI) / 180)
+        );
+        const rawLon = (Math.atan2(Math.sin(this.busOrbitAngle) * Math.cos(this.busOrbitInclination), Math.cos(this.busOrbitAngle)) * 180) / Math.PI;
+        this.busOrbitPrecession = nextBusLon - rawLon;
+        this.busSummonTarget = null;
+      }
+    } else {
+      const orbitSpeed = this.busEncounterTimer > 0 ? 0.045 : 0.16;
+      this.busOrbitAngle += dt * orbitSpeed;
+      this.busOrbitPrecession += dt * 1.4;
+      const sinA = Math.sin(this.busOrbitAngle);
+      const cosA = Math.cos(this.busOrbitAngle);
+      const latRad = Math.asin(clamp(sinA * Math.sin(this.busOrbitInclination), -0.95, 0.95));
+      const lonRad = Math.atan2(sinA * Math.cos(this.busOrbitInclination), cosA);
+      nextBusLat = (latRad * 180) / Math.PI;
+      nextBusLon = ((lonRad * 180) / Math.PI + this.busOrbitPrecession + 540) % 360 - 180;
+    }
+
+    const prevPos = latLonToVec3(this.busLat, this.busLon, EARTH_RADIUS + 0.2);
+    this.busLat = nextBusLat;
+    this.busLon = nextBusLon;
+
+    const busPos = latLonToVec3(this.busLat, this.busLon, EARTH_RADIUS + 0.2 + Math.sin(elapsed * 2.5) * 0.015);
+    const busUp = busPos.clone().normalize();
+    const moveDir = busPos.clone().sub(prevPos);
+    if (moveDir.lengthSq() > 0.000001) {
+      const forward = moveDir.sub(busUp.clone().multiplyScalar(moveDir.dot(busUp))).normalize();
+      const right = new THREE.Vector3().crossVectors(busUp, forward).normalize();
+      this._basisMat.makeBasis(right, busUp, forward);
+      this.busAnchor.quaternion.setFromRotationMatrix(this._basisMat);
+    }
+    this.busAnchor.position.copy(busPos);
+
+    // Denyut debu bintang belakang Bus Damri
+    for (let i = 0; i < this.busWakeDots.length; i++) {
+      const s = 0.7 + Math.sin(elapsed * 5 + i * 1.3) * 0.3;
+      this.busWakeDots[i].scale.set(s, s, s);
+    }
+
+    // 4. Deteksi Pertemuan di Langit antara Beliau dan Bus Damri
+    const distBetween = haversineKm(this.beliauLat, this.beliauLon, this.busLat, this.busLon);
+    if (distBetween < 2200 && this.busEncounterCooldown <= 0) {
+      this.busEncounterTimer = 5.2;
+      this.busEncounterCooldown = 26;
+      if (this.onBusEncounter) {
+        this.onBusEncounter({
+          lat: this.busLat,
+          lon: this.busLon,
+          placeLabel: this.lookupPlaceLabel(this.busLat, this.busLon)
+        });
+      }
+    }
+
+    // Cincin cahaya pertemuan tipis dan elegan di sekitar Beliau
+    if (this.encounterRing) {
+      if (this.busEncounterTimer > 0) {
+        const wave = (elapsed * 1.15) % 1;
+        const sc = 1 + wave * 2.1;
+        this.encounterRing.scale.set(sc, sc, 1);
+        this.encounterRing.material.opacity = (1 - wave) * 0.48;
+      } else {
+        this.encounterRing.material.opacity = 0;
+      }
+    }
+  }
+
   animate() {
     requestAnimationFrame(() => this.animate());
     const dt = Math.min(this.clock.getDelta(), 0.05);
     const elapsed = this.clock.elapsedTime;
 
-    // Inersia lembut setelah drag dilepas
     if (!this.dragging) {
       if (Math.abs(this.velLon) > 0.002 || Math.abs(this.velLat) > 0.002) {
         this.targetLon += this.velLon;
         this.targetLat = clamp(this.targetLat + this.velLat, -76, 76);
         this.velLon *= 0.9;
         this.velLat *= 0.9;
-      } else if (this.autoRotate && performance.now() - this.lastInteractionAt > 3600) {
-        this.targetLon += dt * 3.8;
+      } else if (this.autoRotate && performance.now() - this.lastInteractionAt > 4200) {
+        this.targetLon += dt * 2.6;
       }
     }
 
-    // Interpolasi kamera halus
-    const lerpFactor = 1 - Math.exp(-dt * 8.5);
+    const lerpFactor = 1 - Math.exp(-dt * 8.2);
     this.camLat += (this.targetLat - this.camLat) * lerpFactor;
     this.camLon += (this.targetLon - this.camLon) * lerpFactor;
     this.camDist += (this.targetDist - this.camDist) * lerpFactor;
@@ -804,19 +1448,14 @@ export class AtlasGlobe3D {
     this.camera.position.copy(camPos);
     this.camera.lookAt(0, 0, 0);
 
-    // Arahkan cahaya matahari sedikit ke kanan-atas kamera agar seluruh negara selalu cerah namun tetap berdimensi
     const sunPos = latLonToVec3(clamp(this.camLat + 22, -75, 75), this.camLon + 34, 14);
     this.sunLight.position.copy(sunPos);
 
-    if (this.cloudsMesh) {
-      this.cloudsMesh.rotation.y += dt * 0.012;
-    }
+    if (this.cloudsMesh) this.cloudsMesh.rotation.y += dt * 0.011;
+    if (this.stars) this.stars.rotation.y += dt * 0.0025;
 
-    if (this.stars) {
-      this.stars.rotation.y += dt * 0.003;
-    }
+    this.updateBeliauAndBus(dt, elapsed);
 
-    // Animasi tumbuh garis lengkung cahaya 3D
     for (let i = this.animatedArcs.length - 1; i >= 0; i--) {
       const item = this.animatedArcs[i];
       item.progress = Math.min(1, item.progress + dt * item.speed);
@@ -827,20 +1466,19 @@ export class AtlasGlobe3D {
       }
     }
 
-    // Denyut cincin pin
     for (let i = 0; i < this.pulseRings.length; i++) {
       const p = this.pulseRings[i];
-      const wave = ((elapsed * 1.15 + p.phase) % 1);
+      const wave = (elapsed * 1.15 + p.phase) % 1;
       const s = p.baseScale * (1 + wave * 2.1);
       p.mesh.scale.set(s, s, 1);
       p.mesh.material.opacity = (1 - wave) * 0.65;
     }
 
-    // Putar pelan bintang landmark yang sudah terbuka
     for (let i = 0; i < this.unlockedPinMeshes.length; i++) {
       this.unlockedPinMeshes[i].rotation.y = elapsed * 1.4 + i;
     }
 
     this.renderer.render(this.scene, this.camera);
+    this.projectCountryLabels();
   }
 }

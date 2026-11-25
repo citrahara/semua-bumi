@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Atlas Bumi 3D</title>
-  <meta name="description" content="Gim bola bumi 3D interaktif lintas film, buku, sejarah, sains, teknologi, dan seni bersama teman obrolan Ramyeon." />
+  <title>Semua Bumi</title>
+  <meta name="description" content="Jelajahi bola bumi 3D berlabel bersama Beliau, kawanan ikan julung-julung terbang, dan Bus Damri untuk mengenal hasil bumi, buku, film, dan karya lintas negeri." />
   <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -12,79 +12,125 @@
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
-  <canvas id="globe-canvas" aria-label="Bola Bumi 3D Interaktif Atlas Bumi"></canvas>
+  <canvas id="globe-canvas" aria-label="Bola Bumi 3D Interaktif Semua Bumi"></canvas>
 
-  <!-- Lapisan HUD Mengambang yang Ringan & Lega -->
+  <!-- Lapisan Label Negara 3D Proyektif yang Mengikuti Putaran Bumi -->
+  <div id="globe-labels-layer" class="globe-labels-layer" aria-label="Label negara di bola bumi"></div>
+
+  <!-- Lapisan HUD Mengambang yang Bersih & Lega -->
   <div id="hud-layer" class="hud-layer hidden">
-    <!-- Kiri Atas: Akun, Skor, Streak, Koleksi, Filter Bidang -->
+    <!-- Kiri Atas: Akun, Negeri Dijelajahi, Skor, Pilih Cepat -->
     <div class="hud-top-left">
       <div class="stat-pill-bar">
-        <button class="avatar-btn" id="btn-open-profile" type="button" title="Akun & Pengaturan">
-          <span id="hud-initial">A</span>
+        <button class="avatar-btn" id="btn-open-profile" type="button" title="Akun & Progres">
+          <span id="hud-initial">S</span>
         </button>
+        <button class="collection-pill" id="btn-open-collection" type="button" title="Atlas Negeri & Penemuan">
+          <span class="collection-dot"></span>
+          <span id="hud-visited">1/30 Negeri</span>
+        </button>
+        <div class="stat-divider"></div>
         <div class="stat-metric">
           <span class="stat-label">Skor</span>
           <strong id="hud-score">0</strong>
         </div>
         <div class="stat-divider"></div>
         <div class="stat-metric">
-          <span class="stat-label">Streak</span>
-          <strong id="hud-streak">0</strong>
+          <span class="stat-label">Temu Bus</span>
+          <strong id="hud-encounters">0</strong>
         </div>
-        <div class="stat-divider"></div>
-        <button class="collection-pill" id="btn-open-collection" type="button" title="Lihat semua fakta yang sudah terbuka">
-          <span class="collection-dot"></span>
-          <span id="hud-collection">0/55</span>
-        </button>
       </div>
 
       <div class="filter-bar">
-        <label class="sr-only" for="category-select">Saring bidang pengetahuan</label>
-        <select id="category-select" class="category-select" aria-label="Bidang pengetahuan"></select>
+        <label class="sr-only" for="country-jump-select">Pilih negara untuk dijelajahi</label>
+        <select id="country-jump-select" class="top-select" aria-label="Pilih negara"></select>
+
+        <label class="sr-only" for="category-select">Saring bidang tantangan</label>
+        <select id="category-select" class="top-select hidden" aria-label="Bidang tantangan"></select>
+      </div>
+
+      <!-- Pop-up Halus Beliau & Kawanan Ikan Julung-Julung -->
+      <div class="beliau-popup hidden" id="beliau-popup" role="status" aria-live="polite">
+        <div class="beliau-badge" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 12c3.5-4.5 9-6 14.5-3.5L21 12l-4.5 3.5C11 18 5.5 16.5 2 12z" />
+            <path d="M16 12h6" />
+            <circle cx="14" cy="11" r="1" fill="currentColor" stroke="none" />
+          </svg>
+        </div>
+        <div class="beliau-copy">
+          <div class="beliau-head">
+            <strong id="beliau-title">Beliau & Ikan Terbang</strong>
+            <button class="beliau-dismiss" id="btn-close-beliau" type="button" aria-label="Tutup pesan Beliau">×</button>
+          </div>
+          <p id="beliau-text"></p>
+          <div class="beliau-actions hidden" id="beliau-actions">
+            <button class="beliau-link-btn" id="btn-beliau-greet-bus" type="button">Sapa Bus Damri</button>
+          </div>
+        </div>
       </div>
     </div>
 
     <!-- Tengah Atas: Readout Negara & Koordinat Kursor -->
     <div class="globe-hover-pill" id="globe-hover-pill" aria-live="polite">
-      Geser untuk memutar bumi · Gulir untuk memperbesar
+      Geser untuk memutar bumi · Ketuk label negara untuk menjelajah
     </div>
 
-    <!-- Kanan Atas: Pilihan Mode, Suara, dan Ramyeon -->
+    <!-- Kanan Atas: Mode Jelajah & Tantangan, Suara, Bus Damri -->
     <div class="hud-top-right">
       <div class="mode-switcher" role="tablist" aria-label="Mode permainan">
-        <button class="mode-tab active" data-mode="mix" type="button">Campur</button>
+        <button class="mode-tab active" data-mode="explore" type="button">Jelajah</button>
         <button class="mode-tab" data-mode="pin" type="button">Tancap Peta</button>
         <button class="mode-tab" data-mode="duel" type="button">Duel Tahun</button>
         <button class="mode-tab" data-mode="connect" type="button">Benang Merah</button>
       </div>
       <div class="utility-row">
         <button class="util-btn" id="btn-toggle-sound" type="button">Suara</button>
-        <button class="util-btn ramyeon-btn" id="btn-toggle-ramyeon" type="button">
-          <span class="ramyeon-dot"></span>
-          <span>Ramyeon</span>
+        <button class="util-btn bus-btn" id="btn-toggle-bus" type="button">
+          <svg class="bus-ico" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3" y="5" width="18" height="12" rx="3" />
+            <path d="M3 11h18" />
+            <circle cx="7.5" cy="17.5" r="1.5" />
+            <circle cx="16.5" cy="17.5" r="1.5" />
+          </svg>
+          <span>Bus Damri</span>
+          <span class="bus-live-dot" aria-hidden="true"></span>
         </button>
       </div>
     </div>
 
-    <!-- Tengah Bawah: Kartu Ronde Interaktif Ringkas -->
-    <section class="round-dock" id="round-dock" aria-label="Ronde Aktif">
+    <!-- Tengah Bawah: Kartu Jelajah Negara / Kartu Tantangan -->
+    <section class="round-dock" id="round-dock" aria-label="Panel Jelajah dan Tantangan">
       <div class="round-card" id="round-card"></div>
     </section>
 
-    <!-- Kanan: Laci Obrolan & Saran Ramyeon (100% Offline, Opsional) -->
-    <aside class="ramyeon-drawer hidden" id="ramyeon-drawer" aria-label="Obrolan dengan Ramyeon">
-      <div class="ramyeon-head">
-        <div>
-          <strong>Ramyeon</strong>
-          <span class="ramyeon-sub">Teman saran dan obrolan</span>
+    <!-- Kanan: Laci Obrolan & Pemandu Bus Damri (100% Offline) -->
+    <aside class="bus-drawer hidden" id="bus-drawer" aria-label="Obrolan dengan Bus Damri">
+      <div class="bus-head">
+        <div class="bus-head-info">
+          <div class="bus-avatar" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="5" width="18" height="12" rx="3" />
+              <path d="M3 11h18" />
+              <circle cx="7.5" cy="17.5" r="1.5" />
+              <circle cx="16.5" cy="17.5" r="1.5" />
+            </svg>
+          </div>
+          <div>
+            <strong>Bus Damri</strong>
+            <span class="bus-sub" id="bus-location-sub">Berputar di langit bumi</span>
+          </div>
         </div>
-        <button class="icon-close-btn" id="btn-close-ramyeon" type="button" aria-label="Tutup Ramyeon">Tutup</button>
+        <div class="bus-head-actions">
+          <button class="icon-close-btn" id="btn-follow-bus" type="button" title="Arahkan kamera ke posisi Bus Damri">Lihat Bus</button>
+          <button class="icon-close-btn" id="btn-close-bus" type="button" aria-label="Tutup Bus Damri">Tutup</button>
+        </div>
       </div>
-      <div class="ramyeon-messages" id="ramyeon-messages"></div>
-      <div class="ramyeon-chips" id="ramyeon-chips"></div>
-      <form class="ramyeon-form" id="ramyeon-form">
-        <input id="ramyeon-input" class="ramyeon-input" type="text" autocomplete="off" placeholder="Tanya saran film, buku, atau petunjuk..." />
-        <button class="ramyeon-send" type="submit">Kirim</button>
+      <div class="bus-messages" id="bus-messages"></div>
+      <div class="bus-chips" id="bus-chips"></div>
+      <form class="bus-form" id="bus-form">
+        <input id="bus-input" class="bus-input" type="text" autocomplete="off" placeholder="Tanya negara, hasil bumi, buku, atau film..." />
+        <button class="bus-send" type="submit">Kirim</button>
       </form>
     </aside>
   </div>
@@ -92,10 +138,10 @@
   <!-- Notifikasi Singkat -->
   <div id="toast" class="toast" aria-live="polite"></div>
 
-  <!-- Overlay Pendaftaran 2 Langkah (Username + Tes Singkat 3 Soal) -->
+  <!-- Overlay Pendaftaran Akun & Verifikasi -->
   <div id="auth-overlay" class="modal-overlay hidden"></div>
 
-  <!-- Modal Koleksi Penemuan / Profil -->
+  <!-- Modal Atlas Negeri & Profil -->
   <div id="modal-overlay" class="modal-overlay hidden"></div>
 
   <script type="module" src="./js/main.js"></script>

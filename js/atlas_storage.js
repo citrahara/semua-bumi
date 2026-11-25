@@ -1,7 +1,7 @@
-// Penyimpanan multi-akun untuk Atlas Bumi 3D.
-// Menyimpan skor, streak, koleksi pin terbuka, preferensi mode, dan riwayat obrolan Ramyeon.
+// Penyimpanan multi-akun untuk Semua Bumi.
+// Menyimpan progres jelajah 30 negara, koleksi tantangan, skor, pertemuan Bus Damri, dan riwayat obrolan Bus Damri.
 
-const STORE_KEY = 'atlas_bumi_accounts_v1';
+const STORE_KEY = 'semua_bumi_accounts_v1';
 
 function readStore() {
   try {
@@ -33,13 +33,15 @@ export function createFreshAtlasAccount(username) {
     streak: 0,
     bestStreak: 0,
     roundsPlayed: 0,
+    visitedCountryIds: ['indonesia'],
     unlockedIds: [],
-    selectedMode: 'mix',
+    busEncounters: 0,
+    selectedMode: 'explore',
     selectedCategory: 'all',
-    ramyeonHistory: [
+    busHistory: [
       {
-        role: 'ramyeon',
-        text: `Halo @${username}. Aku Ramyeon. Kalau butuh arah untuk ronde yang sedang jalan, atau sekadar cari saran film, buku, dan fakta tak terduga, tinggal ketuk aku di sini.`
+        role: 'bus',
+        text: `Selamat datang di Semua Bumi, @${username}. Saya Bus Damri yang ikut berputar mengelilingi bumi. Ketuk label negara mana saja untuk melihat hasil bumi, buku, film, dan karyanya bersama Beliau dan kawanan ikan julung-julung.`
       }
     ],
     muted: false,
@@ -55,7 +57,10 @@ export function listAtlasAccounts() {
 export function getActiveAtlasAccount() {
   const store = readStore();
   if (!store.active || !store.accounts[store.active]) return null;
-  return store.accounts[store.active];
+  const acc = store.accounts[store.active];
+  if (!Array.isArray(acc.visitedCountryIds)) acc.visitedCountryIds = ['indonesia'];
+  if (!Array.isArray(acc.busHistory)) acc.busHistory = createFreshAtlasAccount(acc.username).busHistory;
+  return acc;
 }
 
 export function registerAtlasAccount(username) {

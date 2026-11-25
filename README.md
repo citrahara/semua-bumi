@@ -1,16 +1,13 @@
-# Atlas Bumi 3D
+# Semua Bumi
 
-Gim penemuan wawasan berbasis bola bumi 3D interaktif lintas enam bidang universal: Film & Sinema, Buku & Psikologi, Sejarah Dunia & Nusantara, Sains & Antariksa, Berita Terkini & Teknologi, serta Seni & Budaya.
+Gim edukasi eksplorasi bola bumi 3D berlabel yang terinspirasi oleh suasana perjalanan lintas ruang dalam novel *Semua Ikan di Langit* karya Ziggy Zezsyazeoviennazabrizkie.
 
-## Mode Permainan
+## Fitur Utama
 
-1. **Tancap Peta & Tahun**: Baca petunjuk singkat, putar bola bumi 3D, ketuk langsung permukaan bumi untuk menancapkan pin, lalu geser tahun kejadian. Lengkung cahaya 3D akan mengukur jarak tebakanmu dan membuka kartu "Oh, Baru Tahu!" sekaligus memasang bintang permanen di bola bumi.
-2. **Duel Garis Waktu**: Bandingkan dua peristiwa nyata dari berbagai belahan dunia dan tebak mana yang terjadi lebih dahulu.
-3. **Benang Merah**: Temukan tiga kartu dari enam pilihan yang diam-diam saling terhubung untuk menyalakan rasi cahaya segitiga 3D di atas bola bumi.
-
-## Teman Obrolan Ramyeon (100% Offline)
-
-Ramyeon hadir sebagai laci obrolan opsional tanpa memerlukan API key AI. Kamu bisa meminta petunjuk tanpa spoiler pada ronde aktif, cerita lanjutan setelah fakta terbuka, fakta tak terduga acak, atau rekomendasi film dan buku.
+1. **Bola Bumi 3D Berlabel 30 Negara**: Putar bumi secara bebas, ketuk label negara di permukaan bumi (Indonesia, Jepang, Korea Selatan, Belanda, Swiss, Chili, Islandia, Maroko, Peru, dan puluhan negeri lain) untuk mempelajari **Hasil Bumi & SDA**, **Buku**, **Film**, **Karya & Sains**, serta fakta menarik setiap negeri.
+2. **Tokoh 3D Beliau dan Kawanan Ikan Julung-Julung Terbang**: Setiap kali kamu menjelajahi negeri baru, Beliau meluncur melintasi langit bumi ditemani enam ikan julung-julung terbang dengan pop-up catatan singkat yang tenang.
+3. **Bus Damri 3D dan Obrolan Offline**: Bus Damri ("Saya") ikut berputar mengelilingi bumi pada lintasannya sendiri, dapat berpapasan langsung dengan Beliau di langit (*Pertemuan di Langit*), dan berfungsi sebagai pemandu obrolan 100% offline tanpa memerlukan API key AI.
+4. **Tantangan Tambahan Opsional**: Selain mode utama **Jelajah**, tersedia tiga tantangan cepat (**Tancap Peta**, **Duel Tahun**, dan **Benang Merah**) untuk mengasah daya ingat wilayah dan garis waktu dunia.
 
 ## Menjalankan Secara Lokal
 
